@@ -166,11 +166,26 @@ export async function showMonthFrom(page, date) {
   await setDate(); // 期間ボタンで日付が戻る場合に備えてもう一度
   await clickText(page, '表示');
   await assertNoError(page);
+  await page
+    .waitForFunction(() => document.querySelectorAll('table').length > 0, null, { timeout: 30000 })
+    .catch(() => {});
+  await settle(page);
   await snap(page, `grid-${date}`);
 }
 
 // 3枚目の表を読む（施設ごとの表 → 部屋 × 日付 の記号）
 export async function readGrid(page, facilities) {
+  const r = await readGridRaw(page, facilities);
+  if (!r.tables.length) {
+    console.log(`URL: ${page.url()} / table数: ${await page.locator('table').count()}`);
+    console.log('最初の表: ' + (await page.evaluate(() => { const t = document.querySelector('table'); return t ? t.outerHTML.replace(/\s+/g, ' ').slice(0, 2500) : 'なし'; })));
+    console.log('見出し: ' + (await page.evaluate((n) => { const e = [...document.querySelectorAll('*')].find((x) => x.children.length === 0 && x.textContent.trim() === n); return e ? e.parentElement.outerHTML.replace(/\s+/g, ' ').slice(0, 600) : 'なし'; }, facilities[0])));
+    console.log('画面の文字: ' + (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 800));
+  }
+  return r;
+}
+
+function readGridRaw(page, facilities) {
   return page.evaluate((facilities) => {
     const N = (s) => (s || '').normalize('NFKC').replace(/\s+/g, '');
     const byNorm = new Map(facilities.map((f) => [N(f), f]));
