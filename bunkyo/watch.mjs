@@ -86,6 +86,16 @@ async function scanWindow(browser, start, until, targets) {
       (c) => c.date >= start && (!until || c.date < until) && targets.has(c.date) &&
         config.notifyMarks.includes(L.markOf(c.sym)) && roomOk(c, config.roomFilter),
     );
+    if (process.env.DEBUG === '1') {
+      const tg = cells.filter((c) => targets.has(c.date) && c.date >= start && (!until || c.date < until));
+      const cnt = {};
+      for (const c of tg) cnt[c.sym || '(空)'] = (cnt[c.sym || '(空)'] || 0) + 1;
+      console.log(`  見張る日の記号の内訳: ${JSON.stringify(cnt)}`);
+      const rooms = new Map(cells.map((c) => [`${c.facility} ${c.room.slice(0, 20)} 定員${c.cap ?? '-'}${roomOk(c, config.roomFilter) ? '✓' : ''}`, 1]));
+      console.log(`  部屋(${rooms.size}): ${[...rooms.keys()].join(' / ')}`);
+      const any = cells.filter((c) => /[○◯〇△]/.test(c.sym)).slice(0, 5);
+      console.log(`  ○△の例: ${any.map((c) => `${c.date} ${c.facility} ${c.room.slice(0, 15)} ${c.sym}`).join(' / ')}`);
+    }
     console.log(`${start}〜: 対象の空き候補 ${picks.length}コマ`);
     for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room} 定員${c.cap ?? '表記なし'} ${L.markOf(c.sym)}`);
 
