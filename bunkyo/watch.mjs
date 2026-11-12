@@ -9,7 +9,7 @@ import * as S from './scrape.mjs';
 
 const config = JSON.parse(await fs.readFile(new URL('./config.json', import.meta.url), 'utf8'));
 const STATE_FILE = 'state-bunkyo/state.json';
-const MAX_SELECT = 10;
+const MAX_SELECT = 40;
 
 async function line(text) {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
@@ -131,7 +131,6 @@ async function scanWindow(browser, start, until, targets) {
         }))
         .filter((s) => s.date && targets.has(s.date));
       console.log(`  時間帯の表 ${raw.length}マス / 空き ${slots.length}コマ`);
-      if (!raw.length) console.log('  時間帯画面の文字: ' + (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1500));
       out.push(...slots);
     }
     return out;

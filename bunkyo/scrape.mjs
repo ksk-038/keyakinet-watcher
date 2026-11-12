@@ -281,9 +281,18 @@ export async function selectCells(page, ids) {
   }
   await snap(page, 'cells-selected');
   await clickText(page, '次へ進む', { last: true });
+  const t0 = Date.now();
   await page
-    .waitForFunction(() => /\d{4}年\d{1,2}月\d{1,2}日/.test(document.body?.innerText || ''), null, { timeout: 30000 })
-    .catch(() => {});
+    .waitForFunction(() => (document.body?.innerText || '').includes('時間帯別空き状況を確認する画面'), null, { timeout: 150000 })
+    .catch(() => console.warn('⚠ 時間帯別の画面に進めませんでした'));
+  console.log(`  時間帯画面まで ${Math.round((Date.now() - t0) / 1000)}秒`);
+  if (DEBUG) {
+    console.log('時間帯HTML: ' + (await page.evaluate(() => {
+      const e = [...document.querySelectorAll('body *')].find((x) => x.children.length <= 1 && /\d{4}年\s*\d{1,2}月\d{1,2}日/.test(x.textContent));
+      let p = e; for (let i = 0; i < 5 && p?.parentElement; i++) { p = p.parentElement; if (p.outerHTML.length > 6000) break; }
+      return p ? p.outerHTML.replace(/\s+/g, ' ').slice(0, 6000) : 'なし';
+    })));
+  }
   await settle(page);
   await assertNoError(page);
   await snap(page, 'timeslots');
