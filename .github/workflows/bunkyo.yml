@@ -1,8 +1,6 @@
 name: 文京区 空き監視
 
 on:
-  push:
-    branches: [bunkyo-watcher]   # 動作確認用（マージ前に消す）
   schedule:
     - cron: "7-59/15 * * * *"   # 15分おき（世田谷と重ならないよう7分ずらし）
   workflow_dispatch:
