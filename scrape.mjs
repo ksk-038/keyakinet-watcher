@@ -28,6 +28,12 @@ async function clickText(page, text, { last = false } = {}) {
     page.getByRole('link', ropt),
     page.getByRole('tab', ropt),
   ];
+  if (typeof text === 'string') {
+    // アイコン文字が前についたボタン（例: value=" 検索"）にも対応
+    const esc = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`(^|[^\\p{L}\\p{N}])${esc}\\s*$`, 'u');
+    tries.push(page.getByRole('button', { name: re }), page.getByRole('link', { name: re }));
+  }
   let loc = null;
   for (const t of tries) {
     const v = t.filter({ visible: true });
