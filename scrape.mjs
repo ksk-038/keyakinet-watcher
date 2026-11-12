@@ -209,8 +209,11 @@ function readGridRaw(page, facilities) {
       let hdr = -1;
       let days = [];
       for (let i = 0; i < rows.length; i++) {
-        const nums = [...rows[i].cells].map((c) => N(c.textContent)).filter((t) => /^\d{1,2}$/.test(t));
-        if (nums.length >= 3) { hdr = i; days = nums.map(Number); break; }
+        // 見出しセルは「14土」のように日にち＋曜日
+        const nums = [...rows[i].cells]
+          .map((c) => N(c.textContent).match(/^(\d{1,2})[日月火水木金土]?$/))
+          .filter(Boolean);
+        if (nums.length >= 3) { hdr = i; days = nums.map((m) => Number(m[1])); break; }
       }
       if (hdr < 0) continue;
       const monthLabel = (tb.textContent.normalize('NFKC').match(/\d{4}年\d{1,2}月/) || [''])[0];
