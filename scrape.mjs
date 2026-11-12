@@ -69,6 +69,18 @@ export async function openFacilityGrid(page, config) {
   await clickText(page, config.purpose.category);
   await clickText(page, config.purpose.use);
   await snap(page, 'purpose-selected');
+  if (process.env.DEBUG === '1') {
+    console.log('目的まわりのHTML: ' + (await page.evaluate((t) => {
+      const el = [...document.querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === t);
+      let p = el; for (let i = 0; i < 3 && p?.parentElement; i++) p = p.parentElement;
+      return p ? p.outerHTML.replace(/\s+/g, ' ').slice(0, 1500) : 'なし';
+    }, config.purpose.use)));
+    console.log('分類まわりのHTML: ' + (await page.evaluate((t) => {
+      const el = [...document.querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === t);
+      let p = el; for (let i = 0; i < 2 && p?.parentElement; i++) p = p.parentElement;
+      return p ? p.outerHTML.replace(/\s+/g, ' ').slice(0, 1000) : 'なし';
+    }, config.purpose.category)));
+  }
   await clickText(page, '検索', { last: true });
   await assertNoError(page);
   await snap(page, 'facility-list');
