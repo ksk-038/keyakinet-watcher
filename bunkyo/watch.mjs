@@ -88,51 +88,40 @@ async function loadGrid(page, start) {
   return cells.map((c) => ({ ...c, date: tdates[c.table][c.col], key: `${c.facility}|${c.room}|${tdates[c.table][c.col]}` }));
 }
 
-async function scanWindow(browser, start, until, targets) {
-  let { ctx, page } = await newPage(browser);
+// 1ヶ月分の表を読み、○△のコマのうち最大 maxCheckPerWindow 件を時間帯画面で確認する
+//   前回から記号が変わったコマ → 確認してから時間が経ったコマ の順。確認しなかったコマは前回の結果を使う
+async function scanWindow(browser, start, until, targets, cache) {
+  const { ctx, page } = await newPage(browser);
   try {
-    let cells = await loadGrid(page, start);
+    const cells = await loadGrid(page, start);
     const picks = cells.filter(
       (c) => c.date >= start && (!until || c.date < until) && targets.has(c.date) &&
         config.notifyMarks.includes(markOf(c.sym)) && roomOk(c, config.roomFilter),
     );
-    if (process.env.DEBUG === '1') {
-      const tg = cells.filter((c) => targets.has(c.date) && c.date >= start && (!until || c.date < until));
-      const cnt = {};
-      for (const c of tg) cnt[c.sym || '(空)'] = (cnt[c.sym || '(空)'] || 0) + 1;
-      console.log(`  見張る日の記号の内訳: ${JSON.stringify(cnt)}`);
-      const any = cells.filter((c) => ['○', '△'].includes(markOf(c.sym))).slice(0, 5);
-      console.log(`  ○△の例: ${any.map((c) => `${c.date} ${c.facility} ${c.room.slice(0, 15)} ${c.sym}`).join(' / ')}`);
-    }
-    console.log(`${start}〜: 対象の空き候補 ${picks.length}コマ`);
-    for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room} 定員${c.cap ?? '表記なし'} ${markOf(c.sym)}`);
+    const prio = (c) => { const h = cache[c.key]; return !h || h.sym !== c.sym ? 0 : Date.parse(h.at); };
+    picks.sort((a, b) => prio(a) - prio(b));
+    const check = picks.slice(0, config.maxCheckPerWindow || MAX_SELECT);
+    console.log(`${start}〜: 対象の空き候補 ${picks.length}コマ（今回確認 ${check.length}コマ）`);
+    for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room.slice(0, 20)} 定員${c.cap ?? '表記なし'} ${markOf(c.sym)}${check.includes(c) ? ' ←確認' : ''}`);
 
     const out = [];
-    for (let i = 0; i < picks.length; i += MAX_SELECT) {
-      const group = picks.slice(i, i + MAX_SELECT);
-      const keys = new Set(group.map((c) => c.key));
-      if (i > 0) {
-        await ctx.close();
-        ({ ctx, page } = await newPage(browser));
-        cells = await loadGrid(page, start);
-      }
-      const ids = cells.filter((c) => keys.has(c.key)).map((c) => c.id);
-      await S.selectCells(page, ids);
+    for (const c of picks.filter((c) => !check.includes(c))) out.push(...(cache[c.key]?.slots || []));
+    if (check.length) {
+      await S.selectCells(page, check.map((c) => c.id));
       const raw = await S.readSlots(page, config.facilities);
-      const capOf = new Map(group.map((c) => [`${c.facility}|${L.norm(c.room)}`, c.cap]));
-      const slots = raw
-        .filter((s) => (config.slotMarks || ['○']).includes(markOf(s.sym)))
-        .map((s) => ({
-          facility: s.facility,
-          room: s.room,
-          cap: s.cap ?? capOf.get(`${s.facility}|${L.norm(s.room)}`),
-          date: L.parseJpDate(s.dateText),
-          time: L.fmtTime(s.time) || '時間帯不明',
-        }))
-        .filter((s) => s.date && targets.has(s.date));
-      console.log(`  時間帯 ${raw.length}コマ / 空き ${slots.length}コマ`);
+      console.log(`  時間帯 ${raw.length}コマ`);
       if (process.env.DEBUG === '1') for (const r of raw) console.log(`    ${r.dateText} ${r.facility} ${r.room.slice(0, 12)} ${r.time} [${r.sym}]`);
-      out.push(...slots);
+      const now = new Date().toISOString();
+      for (const c of check) cache[c.key] = { sym: c.sym, at: now, slots: [] };
+      for (const r of raw) {
+        const date = L.parseJpDate(r.dateText);
+        if (!date || !targets.has(date) || !(config.slotMarks || ['○']).includes(markOf(r.sym))) continue;
+        const slot = { facility: r.facility, room: r.room, cap: r.cap, date, time: L.fmtTime(r.time) || '時間帯不明' };
+        out.push(slot);
+        // 部屋名の表記が表と時間帯画面で違うので、施設・日付・部屋名の先頭で対応づける
+        const c = check.find((c) => c.facility === r.facility && c.date === date && L.norm(r.room).startsWith(L.norm(c.room).replace(/[≪«《].*$/, '')));
+        if (c) cache[c.key].slots.push(slot);
+      }
     }
     return out;
   } catch (e) {
@@ -159,17 +148,19 @@ async function main() {
   const state = await loadState();
   const browser = await chromium.launch();
   const open = [];
+  const cache = state.cells || {};
   try {
     const starts = L.windows(dates).slice(0, Number(process.env.MAX_WINDOWS) || undefined);
-    for (let i = 0; i < starts.length; i++) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets)));
+    for (let i = 0; i < starts.length; i++) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets, cache)));
     for (const s of open) console.log(`  空き: ${L.label(s.date)} ${s.facility} ${s.room} ${s.time}`);
   } catch (e) {
     console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);
     const last = state.lastErrorAt ? Date.parse(state.lastErrorAt) : 0;
     if (Date.now() - last > 12 * 3600e3) {
       await line(`⚠️ 文京区 空き監視でエラー\n${e.message.slice(0, 300)}\n（12時間に1回だけお知らせします）`).catch(() => {});
-      await saveState({ ...state, lastErrorAt: new Date().toISOString() });
+      await saveState({ ...state, cells: cache, lastErrorAt: new Date().toISOString() });
     }
+    if (Date.now() - last <= 12 * 3600e3) await saveState({ ...state, cells: cache });
     process.exitCode = 1;
     return;
   } finally {
@@ -181,7 +172,8 @@ async function main() {
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
   if (process.env.DEBUG === '1' && open.length) console.log(`--- 通知文のプレビュー ---\n${buildMessage(open)}`);
   if (fresh.length) await line(buildMessage(fresh));
-  await saveState({ notified: open.map(L.slotKey), lastErrorAt: state.lastErrorAt });
+  const cells = Object.fromEntries(Object.entries(cache).filter(([k]) => k.split('|').at(-1) > today));
+  await saveState({ notified: open.map(L.slotKey), cells, lastErrorAt: state.lastErrorAt });
 }
 
 await main();

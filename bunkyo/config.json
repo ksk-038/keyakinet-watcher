@@ -16,6 +16,7 @@
 
   "notifyMarks": ["○", "△"],
   "slotMarks": ["○"],
+  "maxCheckPerWindow": 10,
 
   "quietHours": { "from": 1, "to": 6 },
 

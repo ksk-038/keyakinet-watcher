@@ -287,7 +287,9 @@ export async function selectCells(page, ids) {
     .catch(() => console.warn('⚠ 時間帯別の画面に進めませんでした'));
   console.log(`  時間帯画面まで ${Math.round((Date.now() - t0) / 1000)}秒`);
   if (!(await page.evaluate(() => document.body.innerText.includes('時間帯別空き状況を確認する画面')))) {
-    console.log('進めなかった画面のメッセージ: ' + (await page.evaluate(() => [...document.querySelectorAll('.alert,.text-danger,.modal.show,[role=alert],.toast')].map((x) => x.innerText.trim()).filter(Boolean).join(' / ').slice(0, 500))));
+    await snap(page, 'timeslots-failed', true);
+    const msg = await page.evaluate(() => [...document.querySelectorAll('.alert,.text-danger,.modal.show,[role=alert],.toast')].map((x) => x.innerText.trim()).filter(Boolean).join(' / ').slice(0, 300));
+    throw new Error(`時間帯別の画面に進めませんでした ${msg}`);
   }
   await settle(page);
   await assertNoError(page);
