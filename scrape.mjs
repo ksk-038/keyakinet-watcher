@@ -20,11 +20,31 @@ async function settle(page) {
 }
 
 async function clickText(page, text, { last = false } = {}) {
-  const loc = page
-    .getByText(text, typeof text === 'string' ? { exact: true } : undefined)
-    .filter({ visible: true });
-  const n = await loc.count();
-  if (!n) throw new Error(`「${text}」が画面に見つかりません（${page.url()}）`);
+  const opt = typeof text === 'string' ? { exact: true } : undefined;
+  const ropt = typeof text === 'string' ? { name: text, exact: true } : { name: text };
+  const tries = [
+    page.getByText(text, opt),
+    page.getByRole('button', ropt),
+    page.getByRole('link', ropt),
+    page.getByRole('tab', ropt),
+  ];
+  let loc = null;
+  for (const t of tries) {
+    const v = t.filter({ visible: true });
+    if (await v.count()) { loc = v; break; }
+  }
+  if (!loc) {
+    // 原因調査用: 画面上のボタン・リンクの文字をログに出す
+    const names = await page.evaluate(() =>
+      [...document.querySelectorAll('a,button,input[type=submit],input[type=button],[role=button],[onclick]')]
+        .filter((e) => e.offsetParent)
+        .map((e) => `${e.tagName}:${(e.innerText || e.value || e.getAttribute('aria-label') || e.title || '').trim().slice(0, 30)}`)
+        .slice(0, 80)
+        .join(' | '),
+    );
+    console.log(`画面上のボタン類: ${names}`);
+    throw new Error(`「${text}」が画面に見つかりません（${page.url()}）`);
+  }
   await (last ? loc.last() : loc.first()).click();
   await settle(page);
 }
