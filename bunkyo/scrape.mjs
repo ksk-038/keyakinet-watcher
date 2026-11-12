@@ -180,7 +180,7 @@ export async function showMonthFrom(page, date) {
   await inp.fill(`${y}-${m}-${d}`);
   await inp.press('Tab').catch(() => {});
   await page.waitForTimeout(300);
-  await page.getByRole('button', { name: '表示', exact: true }).filter({ visible: true }).first().click();
+  await page.locator('button').filter({ hasText: /^\s*表示\s*$/ }).filter({ visible: true }).first().click();
   await page
     .waitForFunction(
       ([b, md]) => { const t = document.querySelector('table')?.rows[0]?.innerText.replace(/\s+/g, ' ') || ''; return t !== b && t.includes(md); },
