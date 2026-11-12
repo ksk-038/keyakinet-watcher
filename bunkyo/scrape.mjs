@@ -134,6 +134,21 @@ export async function openFacilityGrid(page, config) {
   await assertNoError(page);
 }
 
+
+// 原因調査用: 表示期間まわりのHTMLと入力欄をログに出す
+export async function dumpPeriod(page, tag) {
+  if (!DEBUG) return;
+  const info = await page.evaluate(() => {
+    const ins = [...document.querySelectorAll('input,select,button')].filter((i) => i.type !== 'hidden' && i.type !== 'checkbox')
+      .map((i) => `${i.tagName}[type=${i.type},id=${i.id},name=${i.name},value=${(i.value || '').slice(0, 20)},checked=${i.checked},text=${(i.innerText || '').trim().slice(0, 15)}]`).slice(0, 40).join('\n  ');
+    const e = [...document.querySelectorAll('*')].find((x) => x.children.length === 0 && x.textContent.includes('表示期間'));
+    let p = e; for (let i = 0; i < 4 && p?.parentElement; i++) p = p.parentElement;
+    const tb = document.querySelector('table');
+    return `入力欄:\n  ${ins}\n表示期間まわり: ${p ? p.outerHTML.replace(/\s+/g, ' ').slice(0, 3000) : 'なし'}\n最初の表の見出し: ${tb ? tb.rows[0]?.innerText.replace(/\s+/g, ' ').slice(0, 300) : 'なし'}`;
+  });
+  console.log(`--- [${tag}] ${page.url()}\n${info}`);
+}
+
 // 3枚目: 表示期間の開始日をセットして「1ヶ月」で表示
 export async function showMonthFrom(page, date) {
   const [y, m, d] = date.split('-');
@@ -154,6 +169,7 @@ export async function showMonthFrom(page, date) {
     .waitForFunction(() => [...document.querySelectorAll('input')].some((i) => /^\d{4}[/-]\d{1,2}[/-]\d{1,2}$/.test(i.value.trim())), null, { timeout: 30000 })
     .catch(() => {});
   await settle(page);
+  await dumpPeriod(page, '表示前');
   if ((await setDate()) === null) {
     console.log(`URL: ${page.url()}`);
     console.log('入力欄: ' + (await page.evaluate(() => [...document.querySelectorAll('input,select')].map((i) => `${i.tagName}[type=${i.type},id=${i.id},name=${i.name},value=${i.value}]`).slice(0, 30).join(' '))));
@@ -166,6 +182,7 @@ export async function showMonthFrom(page, date) {
   await page.waitForFunction(() => document.querySelectorAll('table').length > 0, null, { timeout: 30000 }).catch(() => {});
   await settle(page);
   await snap(page, `grid-${date}`);
+  await dumpPeriod(page, '表示後');
 }
 
 // 施設名の見出し（«説明文» が後ろについていてもOK。長い名前を優先）
