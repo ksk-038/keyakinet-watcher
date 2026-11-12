@@ -95,6 +95,10 @@ export async function openFacilityGrid(page, config) {
   await snap(page, 'purpose-selected');
   await clickText(page, '検索', { last: true });
   await assertNoError(page);
+  // 施設一覧は後から描画されるので、施設名が出るまで待つ
+  await page
+    .waitForFunction((n) => document.body?.innerText.includes(n), config.facilities[0], { timeout: 30000 })
+    .catch(() => {});
   await snap(page, 'facility-list');
 
   const missing = [];
