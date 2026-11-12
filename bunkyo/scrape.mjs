@@ -169,20 +169,31 @@ export async function showMonthFrom(page, date) {
     .waitForFunction(() => [...document.querySelectorAll('input')].some((i) => /^\d{4}[/-]\d{1,2}[/-]\d{1,2}$/.test(i.value.trim())), null, { timeout: 30000 })
     .catch(() => {});
   await settle(page);
-  await dumpPeriod(page, '表示前');
-  if ((await setDate()) === null) {
-    console.log(`URL: ${page.url()}`);
-    console.log('入力欄: ' + (await page.evaluate(() => [...document.querySelectorAll('input,select')].map((i) => `${i.tagName}[type=${i.type},id=${i.id},name=${i.name},value=${i.value}]`).slice(0, 30).join(' '))));
-    throw new Error('表示期間の日付入力欄が見つかりません');
-  }
-  await clickText(page, /^1[ヶかケカヵ]月$/);
-  await setDate();
-  await clickText(page, '表示');
+  const md = `${Number(m)}/${Number(d)}`;
+  const head = () => page.evaluate(() => document.querySelector('table')?.rows[0]?.innerText.replace(/\s+/g, ' ') || '');
+  const before = await head();
+  // 期間「1ヶ月」（ラベルをクリック）
+  await page.getByText(/^1[ヶかケカヵ]月$/).filter({ visible: true }).first().click();
+  await page.waitForTimeout(300);
+  // 日付は普通に入力する（値を直接書き換えても画面側が拾わないため）
+  const inp = page.locator('input[type=date]').first();
+  await inp.fill(`${y}-${m}-${d}`);
+  await inp.press('Tab').catch(() => {});
+  await page.waitForTimeout(300);
+  await page.getByRole('button', { name: '表示', exact: true }).filter({ visible: true }).first().click();
+  await page
+    .waitForFunction(
+      ([b, md]) => { const t = document.querySelector('table')?.rows[0]?.innerText.replace(/\s+/g, ' ') || ''; return t !== b && t.includes(md); },
+      [before, md],
+      { timeout: 30000 },
+    )
+    .catch(() => console.warn('⚠ 表の切り替わりを確認できませんでした'));
+  await settle(page);
+  console.log(`表の見出し: ${(await head()).slice(0, 200)}`);
   await assertNoError(page);
   await page.waitForFunction(() => document.querySelectorAll('table').length > 0, null, { timeout: 30000 }).catch(() => {});
   await settle(page);
   await snap(page, `grid-${date}`);
-  await dumpPeriod(page, '表示後');
 }
 
 // 施設名の見出し（«説明文» が後ろについていてもOK。長い名前を優先）
