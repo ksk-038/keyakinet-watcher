@@ -1,0 +1,11 @@
+{
+  "name": "keyakinet-watcher",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "watch": "node watch.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.65.0"
+  }
+}
