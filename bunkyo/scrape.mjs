@@ -288,10 +288,15 @@ export async function selectCells(page, ids) {
   console.log(`  時間帯画面まで ${Math.round((Date.now() - t0) / 1000)}秒`);
   if (DEBUG) {
     console.log('時間帯HTML: ' + (await page.evaluate(() => {
-      const e = [...document.querySelectorAll('body *')].find((x) => x.children.length <= 1 && /\d{4}年\s*\d{1,2}月\d{1,2}日/.test(x.textContent));
-      let p = e; for (let i = 0; i < 5 && p?.parentElement; i++) { p = p.parentElement; if (p.outerHTML.length > 6000) break; }
-      return p ? p.outerHTML.replace(/\s+/g, ' ').slice(0, 6000) : 'なし';
+      const w = document.querySelector('.cd-time-schedule');
+      if (!w) return 'なし';
+      const c = w.cloneNode(true);
+      c.querySelectorAll('.timeline').forEach((x) => x.remove());
+      return c.outerHTML.replace(/\s+/g, ' ').slice(0, 5000);
     })));
+    console.log('予定ブロックの親: ' + (await page.evaluate(() => { const w = document.querySelector('.cd-time-schedule'); let p = w; for (let i = 0; i < 3 && p?.parentElement; i++) p = p.parentElement; return p ? [...p.children].map((x) => `<${x.tagName} class=${x.className}>${x.innerText.replace(/\s+/g, ' ').slice(0, 80)}`).join(' | ') : ''; })));
+  } else if (!(await page.evaluate(() => document.body.innerText.includes('時間帯別空き状況を確認する画面')))) {
+    console.log('進めなかった画面のメッセージ: ' + (await page.evaluate(() => [...document.querySelectorAll('.alert,.text-danger,.modal.show,[role=alert],.toast')].map((x) => x.innerText.trim()).filter(Boolean).join(' / ').slice(0, 500))));
   }
   await settle(page);
   await assertNoError(page);

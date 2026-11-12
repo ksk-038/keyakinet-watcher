@@ -9,7 +9,7 @@ import * as S from './scrape.mjs';
 
 const config = JSON.parse(await fs.readFile(new URL('./config.json', import.meta.url), 'utf8'));
 const STATE_FILE = 'state-bunkyo/state.json';
-const MAX_SELECT = 40;
+const MAX_SELECT = 10;
 
 async function line(text) {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
@@ -159,7 +159,7 @@ async function main() {
   const browser = await chromium.launch();
   const open = [];
   try {
-    const starts = L.windows(dates);
+    const starts = L.windows(dates).slice(0, Number(process.env.MAX_WINDOWS) || undefined);
     for (let i = 0; i < starts.length; i++) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets)));
     for (const s of open) console.log(`  空き: ${L.label(s.date)} ${s.facility} ${s.room} ${s.time}`);
   } catch (e) {

@@ -44,6 +44,7 @@ jobs:
         env:
           DEBUG: ${{ (github.event_name == 'push' || inputs.debug) && '1' || '0' }}
           FORCE: ${{ github.event_name != 'schedule' && '1' || '0' }}
+          MAX_WINDOWS: ${{ github.event_name == 'push' && '1' || '' }}
           TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
