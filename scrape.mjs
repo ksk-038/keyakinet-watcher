@@ -80,7 +80,12 @@ export async function openFacilityGrid(page, config) {
     await loc.first().click();
     await page.waitForTimeout(150);
   }
-  if (missing.length === config.facilities.length) throw new Error('施設一覧で対象施設が1つも見つかりません');
+  if (missing.length === config.facilities.length) {
+    const body = (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ');
+    console.log(`URL: ${page.url()}\n画面の文字: ${body.slice(0, 1200)}`);
+    console.log(`施設名を含む要素: ${await page.evaluate((n) => [...document.querySelectorAll('*')].filter((e) => e.children.length === 0 && (e.textContent || e.value || '').includes(n)).map((e) => e.outerHTML.slice(0, 200)).slice(0, 5).join(' || '), config.facilities[0])}`);
+    throw new Error('施設一覧で対象施設が1つも見つかりません');
+  }
   if (missing.length) console.warn(`⚠ 一覧に見つからなかった施設: ${missing.join('、')}`);
   await snap(page, 'facility-selected');
   await clickText(page, '次へ進む', { last: true });
