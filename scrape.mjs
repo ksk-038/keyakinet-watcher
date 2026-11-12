@@ -11,7 +11,7 @@ export async function snap(page, name, force = false) {
   await fs.mkdir('debug', { recursive: true });
   const p = `debug/${String(++step).padStart(2, '0')}-${name}`;
   await page.screenshot({ path: `${p}.png`, fullPage: true }).catch(() => {});
-  await fs.writeFile(`${p}.html`, await page.content()).catch(() => {});
+  await fs.writeFile(`${p}.html`, await page.content().catch(() => '')).catch(() => {});
 }
 
 async function settle(page) {
@@ -100,6 +100,20 @@ export async function openFacilityGrid(page, config) {
     .waitForFunction((n) => document.body?.innerText.includes(n), config.facilities[0], { timeout: 30000 })
     .catch(() => {});
   await snap(page, 'facility-list');
+
+  // 一覧は少しずつ表示されるので「さらに読み込む」を押して全施設を出す
+  for (let i = 0; i < 20; i++) {
+    const shown = await page.evaluate(
+      (names) => names.every((n) => document.body.innerText.includes(n)),
+      config.facilities,
+    );
+    if (shown) break;
+    const more = page.getByText(/さらに読み込む/).filter({ visible: true });
+    if (!(await more.count())) break;
+    await more.first().click();
+    await page.waitForTimeout(800);
+    await settle(page);
+  }
 
   const missing = [];
   for (const name of config.facilities) {
