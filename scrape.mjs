@@ -55,6 +55,22 @@ async function clickText(page, text, { last = false } = {}) {
   await settle(page);
 }
 
+// <label for=...>文字</label> に対応する input のチェック状態
+function isChecked(page, text) {
+  return page.evaluate((t) => {
+    const lb = [...document.querySelectorAll('label')].find((l) => l.textContent.trim() === t);
+    const inp = lb && (lb.control || document.getElementById(lb.htmlFor));
+    return !!inp?.checked;
+  }, text);
+}
+function forceCheck(page, text) {
+  return page.evaluate((t) => {
+    const lb = [...document.querySelectorAll('label')].find((l) => l.textContent.trim() === t);
+    const inp = lb && (lb.control || document.getElementById(lb.htmlFor));
+    if (inp) { inp.checked = true; inp.dispatchEvent(new Event('change', { bubbles: true })); }
+  }, text);
+}
+
 async function assertNoError(page) {
   const t = L.norm(await page.locator('body').innerText().catch(() => ''));
   if (t.includes('処理を続行できません')) throw new Error('「処理を続行できません」画面になりました');
@@ -66,21 +82,17 @@ export async function openFacilityGrid(page, config) {
   await settle(page);
   await snap(page, 'top');
   await clickText(page, '使用目的から探す');
-  await clickText(page, config.purpose.category);
-  await clickText(page, config.purpose.use);
-  await snap(page, 'purpose-selected');
-  if (process.env.DEBUG === '1') {
-    console.log('目的まわりのHTML: ' + (await page.evaluate((t) => {
-      const el = [...document.querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === t);
-      let p = el; for (let i = 0; i < 3 && p?.parentElement; i++) p = p.parentElement;
-      return p ? p.outerHTML.replace(/\s+/g, ' ').slice(0, 1500) : 'なし';
-    }, config.purpose.use)));
-    console.log('分類まわりのHTML: ' + (await page.evaluate((t) => {
-      const el = [...document.querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === t);
-      let p = el; for (let i = 0; i < 2 && p?.parentElement; i++) p = p.parentElement;
-      return p ? p.outerHTML.replace(/\s+/g, ' ').slice(0, 1000) : 'なし';
-    }, config.purpose.category)));
+  // 分類（ラジオ）: 既に選ばれていれば触らない。選ぶと使用目的の一覧が読み直される
+  if (!(await isChecked(page, config.purpose.category))) {
+    await clickText(page, config.purpose.category);
+    await page.waitForTimeout(1500);
+    await settle(page);
   }
+  // 使用目的（チェックボックス）
+  await clickText(page, config.purpose.use);
+  if (!(await isChecked(page, config.purpose.use))) await forceCheck(page, config.purpose.use);
+  if (!(await isChecked(page, config.purpose.use))) throw new Error(`使用目的「${config.purpose.use}」を選択できません`);
+  await snap(page, 'purpose-selected');
   await clickText(page, '検索', { last: true });
   await assertNoError(page);
   await snap(page, 'facility-list');
