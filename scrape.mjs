@@ -110,6 +110,7 @@ export async function openFacilityGrid(page, config) {
     if (shown) break;
     const more = page.getByText(/さらに読み込む/).filter({ visible: true });
     if (!(await more.count())) break;
+    console.log(`さらに読み込む (${i + 1})`);
     await more.first().click();
     await page.waitForTimeout(800);
     await settle(page);
@@ -120,7 +121,8 @@ export async function openFacilityGrid(page, config) {
     const loc = page.getByText(name, { exact: true }).filter({ visible: true });
     if (!(await loc.count())) { missing.push(name); continue; }
     await loc.first().click();
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(300);
+    console.log(`選択: ${name} → ${page.url().split('/').pop()}`);
   }
   if (missing.length === config.facilities.length) {
     const body = (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ');

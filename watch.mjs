@@ -85,7 +85,7 @@ async function main() {
   try {
     for (const start of L.windows(dates)) open.push(...(await scanWindow(browser, start, targets)));
   } catch (e) {
-    console.error(`❌ ${e.message}`);
+    console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);
     const last = state.lastErrorAt ? Date.parse(state.lastErrorAt) : 0;
     if (Date.now() - last > 12 * 3600e3) {
       await line(`⚠️ けやきネット監視でエラー\n${e.message.slice(0, 300)}\n（12時間に1回だけお知らせします）`).catch(() => {});
