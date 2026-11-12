@@ -30,34 +30,48 @@ async function saveState(s) {
   await fs.writeFile(STATE_FILE, JSON.stringify(s, null, 2));
 }
 
-// 1ヶ月分の表示1回ぶん: 候補セルを選んで時間帯の空きを返す
-async function scanWindow(browser, start, targets) {
+// 1ヶ月分の表示ぶん: 候補セルを選んで時間帯の空きを返す（選べるのは1回10件まで）
+const MAX_SELECT = 10;
+
+async function loadGrid(page, start) {
+  await S.openFacilityGrid(page, config);
+  await S.showMonthFrom(page, start);
+  const { tables, cells } = await S.readGrid(page, config.facilities);
+  if (!tables.length) throw new Error('施設別空き状況の表が読み取れません');
+  const tdates = tables.map((t) => L.datesFromDays(t.monthLabel, t.days, start));
+  if (!tdates[0].includes(start)) console.warn(`⚠ 表示開始日 ${start} が表に出ていません（${tdates[0][0]}〜）`);
+  return cells.map((c) => ({ ...c, date: tdates[c.table][c.col], key: `${c.facility}|${c.room}|${tdates[c.table][c.col]}` }));
+}
+
+async function scanWindow(browser, start, until, targets) {
   const ctx = await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo', viewport: { width: 1280, height: 900 } });
   const page = await ctx.newPage();
   page.on('dialog', async (d) => { console.warn(`ダイアログ: ${d.message()}`); await d.accept().catch(() => {}); });
   try {
-    await S.openFacilityGrid(page, config);
-    await S.showMonthFrom(page, start);
-    const { tables, cells } = await S.readGrid(page, config.facilities);
-    if (!tables.length) throw new Error('施設別空き状況の表が読み取れません');
+    let cells = await loadGrid(page, start);
+    const picks = cells.filter(
+      (c) => c.date >= start && (!until || c.date < until) && targets.has(c.date) &&
+        config.notifyMarks.includes(L.markOf(c.sym)) && L.roomOk(c.room, config.roomFilter),
+    );
+    console.log(`${start}〜: 対象の空き候補 ${picks.length}コマ`);
+    for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room} ${L.markOf(c.sym)}`);
 
-    const tdates = tables.map((t) => L.datesFromDays(t.monthLabel, t.days, start));
-    if (!tdates[0].includes(start)) console.warn(`⚠ 表示開始日 ${start} が表に出ていません（${tdates[0][0]}〜）`);
-
-    const picks = cells.filter((c) => {
-      const date = tdates[c.table][c.col];
-      return targets.has(date) && config.notifyMarks.includes(L.markOf(c.sym)) && L.roomOk(c.room, config.roomFilter);
-    });
-    console.log(`${start}〜: 表${tables.length}個 / 対象の空き候補 ${picks.length}コマ`);
-    for (const c of picks) console.log(`  ${tdates[c.table][c.col]} ${c.facility} ${c.room} ${L.markOf(c.sym)}`);
-    if (!picks.length) return [];
-
-    await S.selectCells(page, picks.map((c) => c.id));
-    const raw = await S.readSlots(page, config.facilities);
-    return raw
-      .filter((s) => L.markOf(s.sym) === '○')
-      .map((s) => ({ facility: s.facility, room: s.room, date: L.parseJpDate(s.dateText), time: L.fmtTime(s.time) }))
-      .filter((s) => s.date && targets.has(s.date));
+    const out = [];
+    for (let i = 0; i < picks.length; i += MAX_SELECT) {
+      const keys = new Set(picks.slice(i, i + MAX_SELECT).map((c) => c.key));
+      if (i > 0) cells = await loadGrid(page, start); // 2組目以降は最初からやり直す
+      const ids = cells.filter((c) => keys.has(c.key)).map((c) => c.id);
+      await S.selectCells(page, ids);
+      const raw = await S.readSlots(page, config.facilities);
+      const slots = raw
+        .filter((s) => L.markOf(s.sym) === '○')
+        .map((s) => ({ facility: s.facility, room: s.room, date: L.parseJpDate(s.dateText), time: L.fmtTime(s.time) }))
+        .filter((s) => s.date && targets.has(s.date));
+      console.log(`  時間帯の表 ${raw.length}マス / 空き ${slots.length}コマ`);
+      if (!raw.length) console.log('  時間帯画面の文字: ' + (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1500));
+      out.push(...slots);
+    }
+    return out;
   } catch (e) {
     await S.snap(page, 'error', true);
     throw e;
@@ -83,7 +97,9 @@ async function main() {
   const browser = await chromium.launch();
   let open = [];
   try {
-    for (const start of L.windows(dates)) open.push(...(await scanWindow(browser, start, targets)));
+    const starts = L.windows(dates);
+    for (let i = 0; i < starts.length; i++) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets)));
+    for (const s of open) console.log(`  空き: ${L.label(s.date)} ${s.facility} ${s.room} ${s.time}`);
   } catch (e) {
     console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);
     const last = state.lastErrorAt ? Date.parse(state.lastErrorAt) : 0;
