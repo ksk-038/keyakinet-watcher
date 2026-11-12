@@ -125,12 +125,13 @@ async function scanWindow(browser, start, until, targets) {
         .map((s) => ({
           facility: s.facility,
           room: s.room,
-          cap: capOf.get(`${s.facility}|${L.norm(s.room)}`) ?? (L.norm(s.room).match(/定員(\d+)/) || [])[1],
+          cap: s.cap ?? capOf.get(`${s.facility}|${L.norm(s.room)}`),
           date: L.parseJpDate(s.dateText),
           time: L.fmtTime(s.time) || '時間帯不明',
         }))
         .filter((s) => s.date && targets.has(s.date));
-      console.log(`  時間帯の表 ${raw.length}マス / 空き ${slots.length}コマ`);
+      console.log(`  時間帯 ${raw.length}コマ / 空き ${slots.length}コマ`);
+      if (process.env.DEBUG === '1') for (const r of raw) console.log(`    ${r.dateText} ${r.facility} ${r.room.slice(0, 12)} ${r.time} [${r.sym}]`);
       out.push(...slots);
     }
     return out;

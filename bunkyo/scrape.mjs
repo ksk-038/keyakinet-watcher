@@ -286,16 +286,7 @@ export async function selectCells(page, ids) {
     .waitForFunction(() => (document.body?.innerText || '').includes('時間帯別空き状況を確認する画面'), null, { timeout: 150000 })
     .catch(() => console.warn('⚠ 時間帯別の画面に進めませんでした'));
   console.log(`  時間帯画面まで ${Math.round((Date.now() - t0) / 1000)}秒`);
-  if (DEBUG) {
-    console.log('時間帯HTML: ' + (await page.evaluate(() => {
-      const w = document.querySelector('.cd-time-schedule');
-      if (!w) return 'なし';
-      const c = w.cloneNode(true);
-      c.querySelectorAll('.timeline').forEach((x) => x.remove());
-      return c.outerHTML.replace(/\s+/g, ' ').slice(0, 5000);
-    })));
-    console.log('予定ブロックの親: ' + (await page.evaluate(() => { const w = document.querySelector('.cd-time-schedule'); let p = w; for (let i = 0; i < 3 && p?.parentElement; i++) p = p.parentElement; return p ? [...p.children].map((x) => `<${x.tagName} class=${x.className}>${x.innerText.replace(/\s+/g, ' ').slice(0, 80)}`).join(' | ') : ''; })));
-  } else if (!(await page.evaluate(() => document.body.innerText.includes('時間帯別空き状況を確認する画面')))) {
+  if (!(await page.evaluate(() => document.body.innerText.includes('時間帯別空き状況を確認する画面')))) {
     console.log('進めなかった画面のメッセージ: ' + (await page.evaluate(() => [...document.querySelectorAll('.alert,.text-danger,.modal.show,[role=alert],.toast')].map((x) => x.innerText.trim()).filter(Boolean).join(' / ').slice(0, 500))));
   }
   await settle(page);
@@ -304,50 +295,32 @@ export async function selectCells(page, ids) {
 }
 
 // 5枚目: 時間帯別空き状況を読む
-//   見出し行: 「2026年11月15日(日) | 9:00 | 10:00 | …」、データ行: 「部屋 | ○午前(横に何マス分か) | …」
+//   日付ごとに <li class="events-date"> → 部屋ごとの <li class="events-group">、その中にコマの <li>
+//   表示されているアイコン（circle=○ / triangle=△ / cross=× …）で空きを判断し、時間は読み上げ用の文字「9時から12時まで」から取る
 export async function readSlots(page, facilities) {
   await page.evaluate(installHeads);
-  const out = await page.evaluate(
-    (facilities) => {
-      const N = (s) => (s || '').normalize('NFKC').replace(/\s+/g, '');
-      const heads = window.__kwHeads(facilities);
-      const out = [];
-      for (const tb of document.querySelectorAll('table')) {
-        const rows = [...tb.rows];
-        const prev = heads.filter((h) => h.el.compareDocumentPosition(tb) & Node.DOCUMENT_POSITION_FOLLOWING);
-        const facility = prev.length ? prev.at(-1).facility : '';
-        let dateText = '';
-        let hpos = [];
-        for (const r of rows) {
-          const cs = [...r.cells];
-          if (!cs.length) continue;
-          if (/\d{4}年\d{1,2}月\d{1,2}日/.test(N(cs[0].textContent))) {
-            dateText = N(cs[0].textContent);
-            hpos = [];
-            let col = 0;
-            for (const c of cs.slice(1)) { hpos.push({ col, t: N(c.textContent) }); col += c.colSpan || 1; }
-            continue;
-          }
-          if (!dateText || cs.length < 2) continue;
-          const room = cs[0].innerText.replace(/\s+/g, ' ').trim();
-          let col = 0;
-          for (const c of cs.slice(1)) {
-            const span = c.colSpan || 1;
-            const text = N(c.textContent);
-            const MARK = /空きあり|空きなし|一部空き|施設に問合せ|抽選申込可能|申込期間外|利用時間外|空き|[○◯〇△×✕]/g;
-            const sym = (text.match(MARK) || []).join('');
-            const name = text.replace(MARK, '');
-            const st = [...hpos].reverse().find((h) => h.col <= col)?.t || '';
-            const en = hpos.find((h) => h.col === col + span)?.t || '';
-            const range = st && /\d/.test(st) ? `${st}〜${/\d/.test(en) ? en : ''}` : '';
-            out.push({ facility, room, dateText, time: [name, range].filter(Boolean).join(' '), sym });
-            col += span;
-          }
-        }
+  return page.evaluate((facilities) => {
+    const N = (s) => (s || '').normalize('NFKC').replace(/\s+/g, '');
+    const heads = window.__kwHeads(facilities);
+    const ICON = { circle: '○', triangle: '△', cross: '×', 'times-solid': '×', minus: '-', asterisk: '*' };
+    const out = [];
+    let dateText = '';
+    for (const el of document.querySelectorAll('li.events-date, li.events-group')) {
+      if (el.classList.contains('events-date')) { dateText = N(el.textContent); continue; }
+      const prev = heads.filter((h) => h.el.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+      const facility = prev.length ? prev.at(-1).facility : '';
+      const room = (el.querySelector('.room-name')?.innerText || '').replace(/\s+/g, ' ').trim();
+      const cap = N(el.querySelector('.capacity')?.textContent).match(/定員(\d+)/)?.[1];
+      for (const li of el.querySelectorAll('li.btn-group-toggle')) {
+        const use = [...li.querySelectorAll('svg')].find((v) => v.style.display !== 'none')?.querySelector('use');
+        const href = use?.getAttribute('xlink:href') || use?.getAttribute('href') || '';
+        const sym = ICON[href.split('#')[1]] || '';
+        const name = N([...li.querySelectorAll('span')].find((x) => !x.classList.contains('sr-only'))?.textContent);
+        const range = N(li.querySelector('.sr-only')?.textContent)
+          .replace(/(\d+)時(\d+)分/g, '$1:$2').replace(/(\d+)時/g, '$1:00').replace('から', '〜').replace('まで', '');
+        out.push({ facility, room, cap, dateText, time: [name, range].filter(Boolean).join(' '), sym });
       }
-      return out;
-    },
-    facilities,
-  );
-  return out;
+    }
+    return out;
+  }, facilities);
 }
