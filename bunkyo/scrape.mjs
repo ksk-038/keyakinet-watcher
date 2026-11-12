@@ -172,6 +172,11 @@ export async function showMonthFrom(page, date) {
   const md = `${Number(m)}/${Number(d)}`;
   const head = () => page.evaluate(() => document.querySelector('table')?.rows[0]?.innerText.replace(/\s+/g, ' ') || '');
   const before = await head();
+  if (DEBUG) {
+    console.log('日付まわりHTML: ' + (await page.evaluate(() => { let p = document.querySelector('input[type=date]'); for (let i = 0; i < 6 && p?.parentElement; i++) p = p.parentElement; return p.outerHTML.replace(/\s+/g, ' ').slice(0, 4000); })));
+    console.log('scripts: ' + (await page.evaluate(() => [...document.scripts].map((x) => x.src || `inline(${x.textContent.length})`).join(' '))));
+    page.on('request', (r) => { if (!/\.(png|svg|css|js|woff2?)(\?|$)/.test(r.url())) console.log(`  → ${r.method()} ${r.url()} ${(r.postData() || '').slice(0, 300)}`); });
+  }
   // 期間「1ヶ月」（ラベルをクリック）
   await page.getByText(/^1[ヶかケカヵ]月$/).filter({ visible: true }).first().click();
   await page.waitForTimeout(300);
