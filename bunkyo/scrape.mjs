@@ -3,7 +3,7 @@
 import fs from 'node:fs/promises';
 import * as L from '../lib.mjs';
 
-export const TOP = 'https://shisetsu.city.bunkyo.lg.jp/';
+export const TOP = 'https://www.shisetsu.city.bunkyo.lg.jp/user/Home';
 const DEBUG = process.env.DEBUG === '1';
 const DEBUG_DIR = 'debug-bunkyo';
 let step = 0;
