@@ -31,8 +31,18 @@ async function saveState(s) {
   await fs.writeFile(STATE_FILE, JSON.stringify(s, null, 2));
 }
 
-// 部屋の条件: 定員80以上 or 定員が書いていない
+// 記号: 画面上は ○△ だが、読み取ると「空き」「一部空き」などの文字になる
+export function markOf(raw) {
+  const t = L.norm(raw);
+  if (/空きなし|[×✕]/.test(t)) return '×';
+  if (/一部空き|問合せ|△/.test(t)) return '△';
+  if (/空き|[○◯〇]/.test(t)) return '○';
+  return t || '?';
+}
+
+// 部屋の条件: 定員80以上 or 定員が書いていない（「学生」などの部屋は除く）
 export function roomOk(c, f) {
+  if ((f.excludeRoomWords || []).some((w) => L.norm(c.room).includes(w))) return false;
   if (c.cap == null) return f.includeUnlabeled !== false;
   return c.cap >= f.minCapacity;
 }
@@ -84,20 +94,18 @@ async function scanWindow(browser, start, until, targets) {
     let cells = await loadGrid(page, start);
     const picks = cells.filter(
       (c) => c.date >= start && (!until || c.date < until) && targets.has(c.date) &&
-        config.notifyMarks.includes(L.markOf(c.sym)) && roomOk(c, config.roomFilter),
+        config.notifyMarks.includes(markOf(c.sym)) && roomOk(c, config.roomFilter),
     );
     if (process.env.DEBUG === '1') {
       const tg = cells.filter((c) => targets.has(c.date) && c.date >= start && (!until || c.date < until));
       const cnt = {};
       for (const c of tg) cnt[c.sym || '(空)'] = (cnt[c.sym || '(空)'] || 0) + 1;
       console.log(`  見張る日の記号の内訳: ${JSON.stringify(cnt)}`);
-      const rooms = new Map(cells.map((c) => [`${c.facility} ${c.room.slice(0, 20)} 定員${c.cap ?? '-'}${roomOk(c, config.roomFilter) ? '✓' : ''}`, 1]));
-      console.log(`  部屋(${rooms.size}): ${[...rooms.keys()].join(' / ')}`);
-      const any = cells.filter((c) => /[○◯〇△]/.test(c.sym)).slice(0, 5);
+      const any = cells.filter((c) => ['○', '△'].includes(markOf(c.sym))).slice(0, 5);
       console.log(`  ○△の例: ${any.map((c) => `${c.date} ${c.facility} ${c.room.slice(0, 15)} ${c.sym}`).join(' / ')}`);
     }
     console.log(`${start}〜: 対象の空き候補 ${picks.length}コマ`);
-    for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room} 定員${c.cap ?? '表記なし'} ${L.markOf(c.sym)}`);
+    for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room} 定員${c.cap ?? '表記なし'} ${markOf(c.sym)}`);
 
     const out = [];
     for (let i = 0; i < picks.length; i += MAX_SELECT) {
@@ -113,7 +121,7 @@ async function scanWindow(browser, start, until, targets) {
       const raw = await S.readSlots(page, config.facilities);
       const capOf = new Map(group.map((c) => [`${c.facility}|${L.norm(c.room)}`, c.cap]));
       const slots = raw
-        .filter((s) => (config.slotMarks || ['○']).includes(L.markOf(s.sym)))
+        .filter((s) => (config.slotMarks || ['○']).includes(markOf(s.sym)))
         .map((s) => ({
           facility: s.facility,
           room: s.room,

@@ -10,7 +10,8 @@
 
   "roomFilter": {
     "minCapacity": 80,
-    "includeUnlabeled": true
+    "includeUnlabeled": true,
+    "excludeRoomWords": ["学生"]
   },
 
   "notifyMarks": ["○", "△"],

@@ -320,8 +320,9 @@ export async function readSlots(page, facilities) {
           for (const c of cs.slice(1)) {
             const span = c.colSpan || 1;
             const text = N(c.textContent);
-            const sym = (text.match(/[○◯〇△×✕]/) || [''])[0];
-            const name = text.replace(/[○◯〇△×✕]/g, '');
+            const MARK = /空きあり|空きなし|一部空き|施設に問合せ|抽選申込可能|申込期間外|利用時間外|空き|[○◯〇△×✕]/g;
+            const sym = (text.match(MARK) || []).join('');
+            const name = text.replace(MARK, '');
             const st = [...hpos].reverse().find((h) => h.col <= col)?.t || '';
             const en = hpos.find((h) => h.col === col + span)?.t || '';
             const range = st && /\d/.test(st) ? `${st}〜${/\d/.test(en) ? en : ''}` : '';
