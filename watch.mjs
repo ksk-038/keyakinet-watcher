@@ -8,6 +8,7 @@ import * as L from './lib.mjs';
 import * as S from './scrape.mjs';
 
 const config = JSON.parse(await fs.readFile(new URL('./config.json', import.meta.url), 'utf8'));
+const rooms = JSON.parse(await fs.readFile(new URL('./rooms.json', import.meta.url), 'utf8'));
 const STATE_FILE = 'state/state.json';
 
 async function line(text) {
@@ -75,7 +76,7 @@ async function scanWindow(browser, start, until, targets) {
       const raw = await S.readSlots(page, config.facilities);
       const slots = raw
         .filter((s) => L.markOf(s.sym) === '○')
-        .map((s) => ({ facility: s.facility, room: s.room, date: L.parseJpDate(s.dateText), time: L.fmtTime(s.time) }))
+        .map((s) => ({ facility: s.facility, room: s.room, date: L.parseJpDate(s.dateText), time: L.fmtTime(s.time), area: L.areaOf(s.facility, s.room, rooms) }))
         .filter((s) => s.date && targets.has(s.date));
       console.log(`  時間帯の表 ${raw.length}マス / 空き ${slots.length}コマ`);
       if (!raw.length) console.log('  時間帯画面の文字: ' + (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1500));
@@ -126,6 +127,7 @@ async function main() {
   const seen = new Set(state.notified);
   const fresh = open.filter((s) => !seen.has(L.slotKey(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
+  if (process.env.DEBUG === '1' && open.length) console.log(`--- 通知文のプレビュー ---\n${L.buildMessage(open)}`);
   if (fresh.length) await line(L.buildMessage(fresh));
   // いま空いているコマだけ記録 → 埋まってまた空いたら再通知される
   await saveState({ notified: open.map(L.slotKey), lastErrorAt: state.lastErrorAt });

@@ -90,13 +90,32 @@ export function parseJpDate(s) {
   return m ? ymd(+m[1], +m[2], +m[3]) : null;
 }
 
+// 部屋の広さ(㎡)。画面に書いてあればそれを、なければ rooms.json から探す
+const nf = (s) => norm(s).replace(/[(（][^)）]*階[)）]/g, '').replace(/[()（）・]/g, '');
+export function areaOf(facility, room, table = {}) {
+  const t = norm(room).match(/([\d.]+)m2/);
+  if (t) return Number(t[1]);
+  const r = nf(room).replace(/定員\d+/, '');
+  const f = nf(facility);
+  let best = null;
+  let len = 0;
+  for (const [fac, rooms] of Object.entries(table)) {
+    if (typeof rooms !== 'object' || !nf(fac).startsWith(f)) continue;
+    for (const [name, area] of Object.entries(rooms)) {
+      const k = nf(name);
+      if (r.startsWith(k) && k.length > len) { best = area; len = k.length; }
+    }
+  }
+  return best;
+}
+
 export const fmtTime = (s) => norm(s).replace(/[~～〜-]/, '〜');
 export const slotKey = (s) => `${s.date}|${s.facility}|${s.room}|${s.time}`;
 
 export function buildMessage(slots) {
   const byDate = new Map();
   for (const s of slots) {
-    const k = `${s.facility} ${s.room}`;
+    const k = `${s.facility} ${s.room.replace(/[(（]定員\d+[)）]/, '').trim()}${s.area ? `（${Math.round(s.area)}㎡）` : ''}`;
     if (!byDate.has(s.date)) byDate.set(s.date, new Map());
     const m = byDate.get(s.date);
     if (!m.has(k)) m.set(k, []);
