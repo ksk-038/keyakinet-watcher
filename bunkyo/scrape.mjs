@@ -180,7 +180,8 @@ export async function showMonthFrom(page, date) {
   await inp.fill(`${y}-${m}-${d}`);
   await inp.press('Tab').catch(() => {});
   await page.waitForTimeout(300);
-  const resp = page.waitForResponse((r) => r.url().includes('/SearchCondition'), { timeout: 30000 }).catch(() => null);
+  const t0 = Date.now();
+  const resp = page.waitForResponse((r) => r.url().includes('/SearchCondition'), { timeout: 120000 }).catch(() => null);
   await page.locator('button').filter({ hasText: /^\s*表示\s*$/ }).filter({ visible: true }).first().click();
   if (!(await resp)) console.warn('⚠ 表示の送信を確認できませんでした');
   await page.waitForLoadState('domcontentloaded').catch(() => {});
@@ -188,11 +189,11 @@ export async function showMonthFrom(page, date) {
     .waitForFunction(
       ([b, md]) => { const t = document.querySelector('table')?.rows[0]?.innerText.replace(/\s+/g, ' ') || ''; return t !== b && new RegExp(`(^| )${md}( |$)`).test(t); },
       [before, md],
-      { timeout: 30000 },
+      { timeout: 90000 },
     )
     .catch(() => console.warn('⚠ 表の切り替わりを確認できませんでした'));
   await settle(page);
-  console.log(`表の見出し: ${(await head()).slice(0, 200)}`);
+  console.log(`表の見出し(${Math.round((Date.now() - t0) / 1000)}秒): ${(await head()).slice(0, 120)}`);
   await assertNoError(page);
   await page.waitForFunction(() => document.querySelectorAll('table').length > 0, null, { timeout: 30000 }).catch(() => {});
   await settle(page);
