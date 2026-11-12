@@ -240,6 +240,10 @@ export async function selectCells(page, ids) {
   }
   await snap(page, 'cells-selected');
   await clickText(page, '次へ進む', { last: true });
+  await page
+    .waitForFunction(() => /\d{4}年\d{1,2}月\d{1,2}日/.test(document.querySelector('table')?.innerText || ''), null, { timeout: 30000 })
+    .catch(() => {});
+  await settle(page);
   await assertNoError(page);
   await snap(page, 'timeslots');
 }

@@ -43,10 +43,15 @@ async function loadGrid(page, start) {
   return cells.map((c) => ({ ...c, date: tdates[c.table][c.col], key: `${c.facility}|${c.room}|${tdates[c.table][c.col]}` }));
 }
 
-async function scanWindow(browser, start, until, targets) {
+async function newPage(browser) {
   const ctx = await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo', viewport: { width: 1280, height: 900 } });
   const page = await ctx.newPage();
   page.on('dialog', async (d) => { console.warn(`ダイアログ: ${d.message()}`); await d.accept().catch(() => {}); });
+  return { ctx, page };
+}
+
+async function scanWindow(browser, start, until, targets) {
+  let { ctx, page } = await newPage(browser);
   try {
     let cells = await loadGrid(page, start);
     const picks = cells.filter(
@@ -59,7 +64,12 @@ async function scanWindow(browser, start, until, targets) {
     const out = [];
     for (let i = 0; i < picks.length; i += MAX_SELECT) {
       const keys = new Set(picks.slice(i, i + MAX_SELECT).map((c) => c.key));
-      if (i > 0) cells = await loadGrid(page, start); // 2組目以降は最初からやり直す
+      if (i > 0) {
+        // 2組目以降は新しいブラウザ画面で最初からやり直す（途中から戻ると弾かれるため）
+        await ctx.close();
+        ({ ctx, page } = await newPage(browser));
+        cells = await loadGrid(page, start);
+      }
       const ids = cells.filter((c) => keys.has(c.key)).map((c) => c.id);
       await S.selectCells(page, ids);
       const raw = await S.readSlots(page, config.facilities);
