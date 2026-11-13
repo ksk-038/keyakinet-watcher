@@ -26,6 +26,7 @@ async function go(page, locator, what) {
     const body = L.norm(await page.locator('body').innerText().catch(() => ''));
     throw new Error(`「${what}」が見つかりません（${page.url().split('/').pop()}）${body.slice(0, 100)}`);
   }
+  console.log(`  → ${what}`);
   await Promise.all([page.waitForNavigation({ timeout: 60000 }), el.click()]);
   await page.waitForLoadState('load').catch(() => {});
   await checkError(page);
@@ -35,6 +36,7 @@ async function go(page, locator, what) {
 //（トップの注意書きにも「システムエラー」の文字があるので、文言だけでは判定しない）
 async function checkError(page) {
   const body = L.norm(await page.locator('body').innerText().catch(() => ''));
+  if (/システムエラー/.test(body)) console.log(`  画面(${page.url().split('/').pop()}): ${body.slice(0, 400)}`);
   const m = body.match(/(システムエラー|エラーが発生|時間外|処理を続行).{0,80}/);
   if (m && body.length < 1500) throw new Error(`予約サイトでエラー: ${m[0]}`);
 }
@@ -71,6 +73,7 @@ export async function show(page, start, weekdays) {
     set('radioshow', 'week');
     for (const c of ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN', 'HOL']) set(`checkShowDay${c}`, codes.includes(c) ? c : '');
   }, { y, m, d, codes });
+  console.log(`  → 表示（${start}〜 ${codes.join(',')}）`);
   await Promise.all([page.waitForNavigation({ timeout: 90000 }), page.evaluate(() => isSubmitDataSet('Setup'))]);
   await page.waitForLoadState('load').catch(() => {});
   await snap(page, `result-${start}`);
