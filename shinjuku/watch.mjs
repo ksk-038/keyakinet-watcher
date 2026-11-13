@@ -144,18 +144,21 @@ async function scan(browser, targets, G) {
             const area = areaOf(b.name, r.name);
             // いつもの条件。YANAGIBAのまだ取れていない平日は100㎡以上も
             const usual = roomOk(area, config.roomFilter, r.name);
-            if (!usual && !(G.dates.size && area != null && area >= 100)) continue;
+            // 空き検索の日は、その広さの部屋も
+            const srch = (G.sdates?.size || 0) > 0 && [...G.sdates].some((d) => Y.searchHit(G, d, area));
+            if (!usual && !srch && !(G.dates.size && area != null && area >= 100)) continue;
             const key = `${start}|${b.value}|${r.value}`;
             if (done.has(key)) continue;
             done.add(key);
             const cells = await S.readRoom(page, r.value);
+            const isUsual = (c) => usual || (G.dates.has(c.date) && Y.bigEnough(area, c.date));
             const hits = cells.filter((c) => tset.has(c.date) && config.notifyMarks.includes(markOf(c.sym)) &&
-              (usual || (G.dates.has(c.date) && Y.bigEnough(area, c.date))));
+              (isUsual(c) || Y.searchHit(G, c.date, area)));
             for (const c of cells) marks.set(c.sym, (marks.get(c.sym) || 0) + 1);
             console.log(`  ${b.name} ${r.name}（${area ?? '広さ不明'}${area ? '㎡' : ''}）: ${cells.length}コマ中 空き${hits.length}`);
             const lt = labelTimes(b.name, cells);
             for (const c of hits) {
-              open.push({ building: b.name, room: r.name, area, date: c.date, time: L.fmtTime(c.time) || lt[L.norm(c.label)] || L.norm(c.label) });
+              open.push({ building: b.name, room: r.name, area, date: c.date, time: L.fmtTime(c.time) || lt[L.norm(c.label)] || L.norm(c.label), usual: isUsual(c) });
             }
           }
         }
@@ -186,7 +189,7 @@ async function main() {
   const today = L.jstToday();
   const G = await Y.load(config.watch, today, WARD);
   const cfgDates = new Set(L.targetDates(config.watch, today));
-  const dates = [...new Set([...cfgDates, ...G.dates])].sort();
+  const dates = [...new Set([...cfgDates, ...G.dates, ...G.sdates])].sort();
   if (!dates.length) { console.log('見張る日付がありません'); return; }
   console.log(`見張る日付: ${dates.map(L.label).join(' ')}`);
 
@@ -212,7 +215,7 @@ async function main() {
   await Y.report(G, { site: SITE_KEY, ward: WARD, url: TOP }, placed);
   // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
-  open = placed.filter((s) => (cfgDates.has(s.date) || Y.hitsGap(s, G, WARD)) && Y.bookable(G, WARD, s.place, s.date));
+  open = placed.filter((s) => s.usual !== false && (cfgDates.has(s.date) || Y.hitsGap(s, G, WARD)) && Y.bookable(G, WARD, s.place, s.date));
   const key = (s) => `${s.date}|${s.building}|${s.room}|${s.time}`;
   // 初めて動いたとき（通知記録がないとき）は、今ある空きを記録するだけ（全部が一度にLINEに届くのを防ぐ）
   if (state.first) console.log('初回のため、今ある空きは記録だけします（全部見たいときは notify_all で実行）');

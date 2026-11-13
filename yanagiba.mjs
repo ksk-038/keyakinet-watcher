@@ -23,6 +23,11 @@ async function rpc(fn, body) {
 // 土日祝か
 export const isRestDay = (d) => ['土', '日'].includes(L.weekday(d)) || Boolean(holidayJp.holidays[d]);
 
+// 空き検索の広さに入るか（広さ不明の部屋もふくむ）
+const inRange = (area, q) => area == null || (area >= (q.min ?? 0) && (q.max == null || area <= q.max));
+// その日のどれかの空き検索に入る部屋か
+export const searchHit = (G, date, area) => (G.searches || []).some((q) => q.date === date && inRange(area, q));
+
 // まだ取れていない日に見る部屋の広さ: 土日祝は150㎡以上、平日は100㎡以上（広さ不明の部屋は各区のいつもの条件で）
 export const bigEnough = (area, date) => area != null && area >= (isRestDay(date) ? 150 : 100);
 
@@ -30,7 +35,7 @@ export const bigEnough = (area, date) => area != null && area >= (isRestDay(date
 //   その区を使う拠点（区・施設の予約のきまりの「どこの練習の施設か」）の練習だけ。きまりがない区は東京
 //   → { teams, gaps: [{ team, date, time, title, base }], dates: Set, rules }。読めなかったら gaps は null
 export async function load(watch, today, ward) {
-  const empty = { teams: [], gaps: null, dates: new Set(), rules: [] };
+  const empty = { teams: [], gaps: null, dates: new Set(), rules: [], searches: [], sdates: new Set() };
   if (!SECRET) return empty;
   try {
     const [y, m] = today.split('-').map(Number);
@@ -50,7 +55,15 @@ export async function load(watch, today, ward) {
     );
     const dates = new Set(gaps.map((g) => g.date));
     console.log(`YANAGIBAのまだ取れていない日: ${[...dates].sort().map(L.label).join(' ') || 'なし'}`);
-    return { teams: list.map((x) => x.team_id), gaps, dates, rules };
+    // 空き検索（アプリに載せない練習用）。日にち・時間・拠点・広さ（min〜max）
+    const searches = list.flatMap((x) =>
+      (x.searches || [])
+        .filter((q) => q.date > today && q.date <= end && forBase(x.team_id, q.base || null))
+        .map((q) => ({ team: x.team_id, id: q.id, date: q.date, time: q.time || null, title: '空き検索', min: q.min_area ?? null, max: q.max_area ?? null })),
+    );
+    const sdates = new Set(searches.map((q) => q.date));
+    if (searches.length) console.log(`空き検索: ${searches.map((q) => `${L.label(q.date)} ${q.time || '終日'} ${q.min ?? 0}〜${q.max ?? ''}㎡`).join(' / ')}`);
+    return { teams: list.map((x) => x.team_id), gaps, dates, rules, searches, sdates };
   } catch (e) {
     console.warn(`⚠ YANAGIBAのまだ取れていない日を読めません: ${e.message}`);
     return empty;
@@ -143,18 +156,21 @@ const range = (s) => {
 //   続きのコマはつなげて考える。練習の時間をまるごと含めば「全部」、一部だけ重なれば「一部」
 export function match(slots, G, ward) {
   const rows = [];
-  if (!G.gaps?.length) return rows;
+  const all = [...(G.gaps || []), ...(G.searches || []).map((q) => ({ ...q, search: true }))];
+  if (!all.length) return rows;
   const groups = new Map();
   for (const s of slots) {
-    if (!G.dates.has(s.date)) continue;
+    if (!G.dates.has(s.date) && !G.sdates?.has(s.date)) continue;
     const k = `${s.date}|${s.place}`;
     if (!groups.has(k)) groups.set(k, { ...s, times: [] });
     groups.get(k).times.push(s.time);
   }
-  for (const g of G.gaps) {
+  for (const g of all) {
     const gr = range(g.time);
     for (const p of groups.values()) {
       if (p.date !== g.date || hidden(G, g.team, ward, p.place, p.date)) continue;
+      // まだ取れていない日は、いつもの条件の部屋だけ。空き検索は、その広さの部屋だけ
+      if (g.search ? !inRange(p.area ?? null, g) : p.usual === false) continue;
       const rs = p.times.map(range).filter(Boolean).sort((a, b) => a[0] - b[0]);
       const merged = [];
       for (const r of rs) {
@@ -179,6 +195,7 @@ export function match(slots, G, ward) {
         team: g.team, date: g.date, place: p.place, area: p.area ?? null, cap: p.cap ?? null, time,
         gap_time: g.time, gap_title: g.title, partial: !full,
         opens_at: opensAt(G, g.team, ward, p.place, g.date, g.base),
+        search_id: g.search ? g.id : null,
       });
     }
   }
@@ -204,7 +221,7 @@ export async function report(G, { site, ward, url }, slots) {
   for (const team of G.teams) {
     const mine = rows
       .filter((r) => r.team === team)
-      .map(({ team: _, ...r }) => ({ ...r, key: `${site}|${r.date}|${r.place}|${r.gap_time || ''}`, url }));
+      .map(({ team: _, ...r }) => ({ ...r, key: `${site}|${r.search_id ? `s:${r.search_id}|` : ''}${r.date}|${r.place}|${r.gap_time || ''}`, url }));
     try {
       const r = await rpc('facility_watch_report', { p_team: team, p_site: site, p_ward: ward, p_rows: mine });
       console.log(`YANAGIBAへ送信: ${mine.length}件（新しい空き ${r.new}件・なくなった空き ${r.removed}件）`);

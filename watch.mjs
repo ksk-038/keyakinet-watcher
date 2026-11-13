@@ -39,7 +39,8 @@ const MAX_SELECT = 10;
 //   施設が多いと表の表示が重くて止まるので、平日用の施設は15施設ずつに分けて見る
 const WD_ONLY = new Set((config.weekdayFacilities || []).filter((f) => !config.facilities.includes(f)));
 function facilityGroups(start, until, G) {
-  const wd = [...G.dates].some((d) => d >= start && (!until || d < until) && !Y.isRestDay(d));
+  const inWin = (d) => d >= start && (!until || d < until);
+  const wd = [...G.dates].some((d) => inWin(d) && !Y.isRestDay(d)) || [...G.sdates].some(inWin);
   const groups = [config.facilities];
   const extra = [...WD_ONLY];
   if (wd) for (let i = 0; i < extra.length; i += 15) groups.push(extra.slice(i, i + 15));
@@ -47,6 +48,10 @@ function facilityGroups(start, until, G) {
 }
 // 平日用だけの施設は、まだ取れていない平日だけ
 const facilityOk = (c, G) => !WD_ONLY.has(c.facility) || (G.dates.has(c.date) && !Y.isRestDay(c.date));
+// いつもの条件（土曜はいつもの施設・部屋。YANAGIBAのまだ取れていない平日は平日用の施設の100㎡以上も）
+const usualOk = (c, G) => facilityOk(c, G) && (L.roomOk(c.room, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(L.areaOf(c.facility, c.room, rooms), c.date)));
+// 空き検索の日は、いつもの施設と平日用の施設の、その広さの部屋
+const searchOk = (c, G) => Y.searchHit(G, c.date, L.areaOf(c.facility, c.room, rooms));
 
 async function loadGrid(page, start, cfg = config) {
   await S.openFacilityGrid(page, cfg);
@@ -72,9 +77,7 @@ async function scanWindow(browser, start, until, targets, G, facilities = config
     let cells = await loadGrid(page, start, cfg);
     const picks = cells.filter(
       (c) => c.date >= start && (!until || c.date < until) && targets.has(c.date) &&
-        config.notifyMarks.includes(L.markOf(c.sym)) && facilityOk(c, G) &&
-        // いつもの条件。YANAGIBAのまだ取れていない平日は100㎡以上も
-        (L.roomOk(c.room, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(L.areaOf(c.facility, c.room, rooms), c.date))),
+        config.notifyMarks.includes(L.markOf(c.sym)) && (usualOk(c, G) || searchOk(c, G)),
     );
     console.log(`${start}〜: 対象の空き候補 ${picks.length}コマ`);
     for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room} ${L.markOf(c.sym)}`);
@@ -94,7 +97,9 @@ async function scanWindow(browser, start, until, targets, G, facilities = config
       const slots = raw
         .filter((s) => L.markOf(s.sym) === '○')
         .map((s) => ({ facility: s.facility, room: s.room, date: L.parseJpDate(s.dateText), time: L.fmtTime(s.time), area: L.areaOf(s.facility, s.room, rooms) }))
-        .filter((s) => s.date && targets.has(s.date));
+        .filter((s) => s.date && targets.has(s.date))
+        .map((s) => ({ ...s, usual: usualOk(s, G) }))
+        .filter((s) => s.usual || searchOk(s, G));
       console.log(`  時間帯の表 ${raw.length}マス / 空き ${slots.length}コマ`);
       if (!raw.length) console.log('  時間帯画面の文字: ' + (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1500));
       out.push(...slots);
@@ -118,7 +123,7 @@ async function main() {
   const today = L.jstToday();
   const G = await Y.load(config.watch, today, '世田谷区');
   const cfgDates = new Set(L.targetDates(config.watch, today));
-  const dates = [...new Set([...cfgDates, ...G.dates])].sort();
+  const dates = [...new Set([...cfgDates, ...G.dates, ...G.sdates])].sort();
   if (!dates.length) { console.log('見張る日付がありません'); return; }
   console.log(`見張る日付: ${dates.map(L.label).join(' ')}`);
   const targets = new Set(dates);
@@ -147,7 +152,7 @@ async function main() {
   await Y.report(G, { site: 'setagaya', ward: '世田谷区', url: 'https://setagaya.keyakinet.net/Web/Home/WgR_ModeSelect' }, placed);
   // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
-  open = placed.filter((s) => (cfgDates.has(s.date) || Y.hitsGap(s, G, '世田谷区')) && Y.bookable(G, '世田谷区', s.place, s.date));
+  open = placed.filter((s) => s.usual !== false && (cfgDates.has(s.date) || Y.hitsGap(s, G, '世田谷区')) && Y.bookable(G, '世田谷区', s.place, s.date));
   const seen = new Set(state.notified);
   const fresh = open.filter((s) => !seen.has(L.slotKey(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
