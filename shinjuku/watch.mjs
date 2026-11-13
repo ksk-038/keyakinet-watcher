@@ -136,6 +136,8 @@ async function scan(browser, targets, G) {
         const { buildings, viewDays } = await S.search(page, { top: TOP, area, purpose, start, weekdays });
         console.log(`【${area}・${purpose}】${start}〜 表示: ${viewDays.map(L.label).join(' ')} / 館 ${buildings.length}`);
         for (const b of buildings) {
+          // 外す館（品川区の児童センター・学校など）
+          if ((config.excludeBuildingWords || []).some((w) => L.norm(b.name).includes(L.norm(w)))) continue;
           const rooms = await S.selectBuilding(page, b.value);
           for (const r of rooms) {
             if ((config.excludeRoomWords || []).some((w) => L.norm(r.name).includes(L.norm(w)))) continue;
