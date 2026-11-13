@@ -45,7 +45,6 @@ jobs:
         env:
           DEBUG: ${{ (github.event_name == 'push' || inputs.debug) && '1' || '0' }}
           FORCE: ${{ github.event_name != 'schedule' && '1' || '0' }}
-          LIST_ROOMS: ${{ github.event_name == 'push' && '1' || '0' }}
           TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
           LINE_CHANNEL_ACCESS_TOKEN: ${{ github.event_name != 'push' && secrets.LINE_CHANNEL_ACCESS_TOKEN || '' }}
           LINE_USER_ID: ${{ github.event_name != 'push' && secrets.LINE_USER_ID || '' }}
