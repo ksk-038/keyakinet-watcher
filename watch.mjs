@@ -102,7 +102,7 @@ async function main() {
   if (q && hour >= q.from && hour < q.to && process.env.FORCE !== '1') { console.log('深夜のためお休み'); return; }
 
   const today = L.jstToday();
-  const G = await Y.load(config.watch, today);
+  const G = await Y.load(config.watch, today, '世田谷区');
   const cfgDates = new Set(L.targetDates(config.watch, today));
   const dates = [...new Set([...cfgDates, ...G.dates])].sort();
   if (!dates.length) { console.log('見張る日付がありません'); return; }
@@ -132,7 +132,8 @@ async function main() {
   const placed = open.map((s) => ({ ...s, place: `${s.facility} ${s.room.replace(/[(（]定員\d+[)）]/, '').trim()}` }));
   await Y.report(G, { site: 'setagaya', ward: '世田谷区', url: 'https://setagaya.keyakinet.net/Web/Home/WgR_ModeSelect' }, placed);
   // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
-  open = placed.filter((s) => cfgDates.has(s.date) || Y.hitsGap(s, G, '世田谷区'));
+  // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
+  open = placed.filter((s) => (cfgDates.has(s.date) || Y.hitsGap(s, G, '世田谷区')) && Y.bookable(G, '世田谷区', s.place, s.date));
   const seen = new Set(state.notified);
   const fresh = open.filter((s) => !seen.has(L.slotKey(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
