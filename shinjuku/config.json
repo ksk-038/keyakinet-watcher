@@ -11,6 +11,10 @@
   "area": "新宿区全域(すべて)",
   "purposes": ["ダンス（社交ダンス以外）", "ダンス・健康体操"],
 
+  "roomFilter": {
+    "minArea": 150,
+    "includeUnlabeled": true
+  },
   "excludeRoomWords": [],
   "notifyMarks": ["○", "△"],
 
