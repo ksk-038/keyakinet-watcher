@@ -2,7 +2,7 @@ name: 文京区 空き監視
 
 on:
   schedule:
-    - cron: "18,48 * * * *"   # 30分おき（他と重ならないよう18分ずらし）
+    - cron: "18 0-14,22-23 * * *"   # 予備（ふだんは YANAGIBA の Supabase から1時間おき・日本時間7〜24時）
   workflow_dispatch:
     inputs:
       debug:

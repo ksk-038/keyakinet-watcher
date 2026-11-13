@@ -2,7 +2,7 @@ name: けやきネット空き監視
 
 on:
   schedule:
-    - cron: "0,30 * * * *"   # 30分おき（:00と:30。GitHub側の混雑で数分遅れることがあります）
+    - cron: "0 0-14,22-23 * * *"   # 予備（ふだんは YANAGIBA の Supabase から1時間おき・日本時間7〜24時）
   workflow_dispatch:
     inputs:
       debug:
