@@ -1,8 +1,6 @@
 name: 板橋区 空き監視
 
 on:
-  push:
-    branches: [itabashi]
   schedule:
     - cron: "12,42 * * * *"   # 30分おき（他と重ならないよう12分ずらし）
   workflow_dispatch:
@@ -46,10 +44,10 @@ jobs:
 
       - name: 監視実行
         env:
-          DEBUG: ${{ (github.event_name == 'push' || inputs.debug) && '1' || '0' }}
+          DEBUG: ${{ inputs.debug && '1' || '0' }}
           FORCE: ${{ github.event_name != 'schedule' && '1' || '0' }}
           TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
-          NOTIFY_ALL: ${{ (github.event_name == 'push' || inputs.notify_all) && '1' || '0' }}
+          NOTIFY_ALL: ${{ inputs.notify_all && '1' || '0' }}
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
         run: node itabashi/watch.mjs
