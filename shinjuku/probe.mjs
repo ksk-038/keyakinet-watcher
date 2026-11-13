@@ -8,13 +8,14 @@ page.on('dialog', async (d) => { console.log(`ダイアログ: ${d.message()}`);
 const sq = (s) => s.replace(/\s+/g, ' ');
 await page.goto(TOP + 'index.jsp', { waitUntil: 'domcontentloaded' });
 await page.waitForLoadState('networkidle').catch(() => {});
+const nav = page.waitForURL((u) => !u.href.includes('index.jsp'), { timeout: 60000 });
 await page.evaluate(() => {
   $('#bname').val('1000_0'); $('#purpose').val('24_280');
   $('#daystart').val('2026-11-14'); $('#days').val('31');
   $('#saturday').prop('checked', true);
   doSearch(document.form1, gRsvWOpeInstSrchVacantAction);
 });
-await page.waitForLoadState('domcontentloaded'); await page.waitForLoadState('networkidle').catch(() => {});
+await nav; await page.waitForLoadState('domcontentloaded'); await page.waitForLoadState('networkidle').catch(() => {});
 console.log('URL ' + page.url());
 const dump = async (tag) => {
   const html = await page.content();
