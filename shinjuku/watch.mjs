@@ -54,8 +54,13 @@ export function areaOf(building, room) {
 }
 
 // 部屋の条件: 150㎡以上 or 広さ不明
-function roomOk(area, f = {}) {
-  if (area == null) return f.includeUnlabeled !== false;
+//   広さ不明でも、部屋名に「（２４）」のような定員があり minCapacityIfUnknown 未満なら小部屋として外す
+function roomOk(area, f = {}, room = '') {
+  if (area == null) {
+    const cap = L.norm(room).match(/\((\d+)\)$/);
+    if (cap && f.minCapacityIfUnknown && Number(cap[1]) < f.minCapacityIfUnknown) return false;
+    return f.includeUnlabeled !== false;
+  }
   return !f.minArea || area >= f.minArea;
 }
 
@@ -121,7 +126,7 @@ async function scan(browser, targets) {
           for (const r of rooms) {
             if ((config.excludeRoomWords || []).some((w) => L.norm(r.name).includes(L.norm(w)))) continue;
             const area = areaOf(b.name, r.name);
-            if (!roomOk(area, config.roomFilter)) continue;
+            if (!roomOk(area, config.roomFilter, r.name)) continue;
             const key = `${start}|${b.value}|${r.value}`;
             if (done.has(key)) continue;
             done.add(key);
