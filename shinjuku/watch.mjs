@@ -57,6 +57,13 @@ export function areaOf(building, room) {
   return k ? t[k] : null;
 }
 
+// 表の区分（午前・午後・夜間）の時刻。午後1・午後2がある部屋は labelTimes4。館ごとに違うところは labelTimesBy
+function labelTimes(building, cells) {
+  const four = cells.some((c) => /午後[12]/.test(L.norm(c.label)));
+  const by = (config.labelTimesBy || []).find((x) => L.norm(building).includes(L.norm(x.building)));
+  return (four ? by?.times4 || config.labelTimes4 : by?.times) || config.labelTimes || {};
+}
+
 // 部屋の条件: 150㎡以上 or 広さ不明
 //   広さ不明でも、部屋名に「（２４）」のような定員があり minCapacityIfUnknown 未満なら小部屋として外す
 function roomOk(area, f = {}, room = '') {
@@ -144,8 +151,9 @@ async function scan(browser, targets, G) {
               (usual || (G.dates.has(c.date) && Y.bigEnough(area, c.date))));
             for (const c of cells) marks.set(c.sym, (marks.get(c.sym) || 0) + 1);
             console.log(`  ${b.name} ${r.name}（${area ?? '広さ不明'}${area ? '㎡' : ''}）: ${cells.length}コマ中 空き${hits.length}`);
+            const lt = labelTimes(b.name, cells);
             for (const c of hits) {
-              open.push({ building: b.name, room: r.name, area, date: c.date, time: L.fmtTime(c.time) || config.labelTimes?.[L.norm(c.label)] || L.norm(c.label) });
+              open.push({ building: b.name, room: r.name, area, date: c.date, time: L.fmtTime(c.time) || lt[L.norm(c.label)] || L.norm(c.label) });
             }
           }
         }
