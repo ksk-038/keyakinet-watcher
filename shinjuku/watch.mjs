@@ -82,7 +82,7 @@ function mergeTimes(times) {
   const out = [];
   for (const r of rs) {
     const p = out.at(-1);
-    if (p && toMin(r[0]) - toMin(p[1]) <= 10) { if (toMin(r[1]) > toMin(p[1])) p[1] = r[1]; } else out.push([...r]);
+    if (p && toMin(r[0]) - toMin(p[1]) <= 15) { if (toMin(r[1]) > toMin(p[1])) p[1] = r[1]; } else out.push([...r]);
   }
   return out.map(([a, b]) => `${a}〜${b}`);
 }
@@ -135,7 +135,7 @@ async function scan(browser, targets) {
             for (const c of cells) marks.set(c.sym, (marks.get(c.sym) || 0) + 1);
             console.log(`  ${b.name} ${r.name}（${area ?? '広さ不明'}${area ? '㎡' : ''}）: ${cells.length}コマ中 空き${hits.length}`);
             for (const c of hits) {
-              open.push({ building: b.name, room: r.name, area, date: c.date, time: L.fmtTime(c.time) || L.norm(c.label) });
+              open.push({ building: b.name, room: r.name, area, date: c.date, time: L.fmtTime(c.time) || config.labelTimes?.[L.norm(c.label)] || L.norm(c.label) });
             }
           }
         }
