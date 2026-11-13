@@ -27,8 +27,8 @@ async function idle(page) {
 }
 
 // 1枚目: 検索 → 2枚目へ。館の一覧と、表に出る日付（最大7日）を返す
-export async function search(page, { area, purpose, start, weekdays }) {
-  await page.goto(TOP, { waitUntil: 'domcontentloaded' });
+export async function search(page, { top = TOP, area, purpose, start, weekdays }) {
+  await page.goto(top, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.$ && window.doSearch && document.querySelector('#purpose option'), null, { timeout: 30000 });
   const nav = page.waitForURL((u) => !u.href.includes('index.jsp'), { timeout: 60000 });
   const err = await page.evaluate(
@@ -62,7 +62,7 @@ export async function search(page, { area, purpose, start, weekdays }) {
   }));
   if (!r.buildings.length) {
     const body = L.norm(await page.locator('body').innerText().catch(() => ''));
-    if (/システム異常|処理を続行できません/.test(body)) throw new Error(`新宿区のサイトでエラー: ${body.slice(0, 120)}`);
+    if (/システム異常|処理を続行できません/.test(body)) throw new Error(`予約サイトでエラー: ${body.slice(0, 120)}`);
     console.log(`  （館の一覧がありません）${body.slice(0, 300)}`);
   }
   r.viewDays = r.viewDays.map((d) => L.ymd(+d.slice(0, 4), +d.slice(4, 6), +d.slice(6, 8)));

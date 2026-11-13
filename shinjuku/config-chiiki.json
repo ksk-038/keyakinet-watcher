@@ -1,0 +1,25 @@
+{
+  "_説明": "新宿区 地域センター（しせつよやく 地域センター版）用",
+  "name": "新宿区の地域センター",
+  "url": "https://www.shinjuku.eprs.jp/chiiki/web/index.jsp",
+  "roomsFile": "rooms-chiiki.json",
+
+  "watch": {
+    "weekdays": ["土"],
+    "monthsAhead": 2,
+    "dates": [],
+    "excludeDates": []
+  },
+
+  "area": "新宿区立地域センター(すべて)",
+  "purposes": ["ダンス（軽スポーツ）"],
+
+  "roomFilter": {
+    "minArea": 150,
+    "includeUnlabeled": true
+  },
+  "excludeRoomWords": [],
+  "notifyMarks": ["○", "△"],
+
+  "quietHours": { "from": 1, "to": 6 }
+}
