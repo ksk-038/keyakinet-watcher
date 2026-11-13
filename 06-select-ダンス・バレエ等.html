@@ -1,0 +1,3256 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja"><head>
+
+
+
+<!-- HTTPヘッダ制御 -->
+<meta http-equiv="Content-Type" content="text/html; charset=shift_jis">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<!-- キャッシュ対策(2行) -->
+<meta http-equiv="Expire" content="0">
+<meta http-equiv="Pragma" content="no-cache">
+<!-- ページの説明とキーワード -->
+<meta name="description" content="板橋区公共施設予約システム ITA-リザーブ">
+<meta name="keywords" content="公共,施設予約">
+<!-- タイトル -->
+<title>板橋区公共施設予約システム ITA-リザーブ（施設絞り込み（場所選択））</title>
+
+
+
+
+
+<!-- CSS、IMGのデフォルトパスの設定 -->
+
+<!-- 共通スタイルシート -->
+<link rel="stylesheet" type="text/css" href="/eshisetsu/css/std/common.css?var=20200709">
+<link rel="SHORTCUT ICON" href="/eshisetsu/img/std/icon/favicon.ico">
+
+<!-- Google Tag Manager -->
+<script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-FD0500G5ZQ&amp;cx=c&amp;_slc=1"></script><script type="text/javascript" async="" src="https://www.google-analytics.com/analytics.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-PNVJC325J2&amp;cx=c&amp;gtm=4e6bb1"></script><script async="" src="https://www.googletagmanager.com/gtm.js?id=GTM-W989BTH"></script><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-W989BTH');</script>
+<!-- End Google Tag Manager -->
+<!-- 共通スクリプト -->
+<script type="text/javascript" src="/eshisetsu/js/CommonFunctions.js?var=20200709"></script>
+<script type="text/javascript" src="/eshisetsu/js/jquery.js?var=20200709"></script>
+<script type="text/javascript" src="/eshisetsu/js/jquery-ui-personalized.js?var=20200709"></script>
+<script type="text/javascript" src="/eshisetsu/js/meca.js?var=20200709"></script>
+<!--[if IE 6]>
+	<script type="text/javascript" src="/eshisetsu/js/DD_belatedPNG-min.js"></script>
+	<script type="text/javascript">
+		DD_belatedPNG.fix('.pngbg');
+	</script>
+<![endif]-->
+<!-- キーボードの制御 -->
+<script type="text/javascript" src="/eshisetsu/js/checkHistoryBack.js"></script>
+
+<!-- 共通変数の設定 -->
+
+
+
+
+<script type="text/javascript">
+
+function setInitImages() {
+
+	var obj_K;
+	var obj_R;
+	
+	/* チェックボックス画像セット */
+	
+		
+		obj_K = document.getElementById('k_record0');
+		obj_R = document.getElementById('r_record0');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record0',obj_R.value,'','i_record0','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record1');
+		obj_R = document.getElementById('r_record1');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record1',obj_R.value,'','i_record1','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record2');
+		obj_R = document.getElementById('r_record2');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record2',obj_R.value,'','i_record2','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record3');
+		obj_R = document.getElementById('r_record3');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record3',obj_R.value,'','i_record3','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record4');
+		obj_R = document.getElementById('r_record4');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record4',obj_R.value,'','i_record4','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record5');
+		obj_R = document.getElementById('r_record5');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record5',obj_R.value,'','i_record5','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record6');
+		obj_R = document.getElementById('r_record6');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record6',obj_R.value,'','i_record6','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record7');
+		obj_R = document.getElementById('r_record7');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record7',obj_R.value,'','i_record7','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record8');
+		obj_R = document.getElementById('r_record8');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record8',obj_R.value,'','i_record8','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record9');
+		obj_R = document.getElementById('r_record9');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record9',obj_R.value,'','i_record9','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record10');
+		obj_R = document.getElementById('r_record10');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record10',obj_R.value,'','i_record10','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record11');
+		obj_R = document.getElementById('r_record11');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record11',obj_R.value,'','i_record11','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record12');
+		obj_R = document.getElementById('r_record12');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record12',obj_R.value,'','i_record12','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record13');
+		obj_R = document.getElementById('r_record13');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record13',obj_R.value,'','i_record13','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record14');
+		obj_R = document.getElementById('r_record14');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record14',obj_R.value,'','i_record14','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record15');
+		obj_R = document.getElementById('r_record15');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record15',obj_R.value,'','i_record15','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record16');
+		obj_R = document.getElementById('r_record16');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record16',obj_R.value,'','i_record16','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record17');
+		obj_R = document.getElementById('r_record17');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record17',obj_R.value,'','i_record17','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record18');
+		obj_R = document.getElementById('r_record18');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record18',obj_R.value,'','i_record18','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record19');
+		obj_R = document.getElementById('r_record19');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record19',obj_R.value,'','i_record19','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record20');
+		obj_R = document.getElementById('r_record20');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record20',obj_R.value,'','i_record20','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record21');
+		obj_R = document.getElementById('r_record21');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record21',obj_R.value,'','i_record21','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record22');
+		obj_R = document.getElementById('r_record22');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record22',obj_R.value,'','i_record22','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record23');
+		obj_R = document.getElementById('r_record23');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record23',obj_R.value,'','i_record23','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record24');
+		obj_R = document.getElementById('r_record24');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record24',obj_R.value,'','i_record24','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record25');
+		obj_R = document.getElementById('r_record25');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record25',obj_R.value,'','i_record25','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record26');
+		obj_R = document.getElementById('r_record26');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record26',obj_R.value,'','i_record26','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record27');
+		obj_R = document.getElementById('r_record27');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record27',obj_R.value,'','i_record27','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record28');
+		obj_R = document.getElementById('r_record28');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record28',obj_R.value,'','i_record28','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record29');
+		obj_R = document.getElementById('r_record29');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record29',obj_R.value,'','i_record29','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record30');
+		obj_R = document.getElementById('r_record30');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record30',obj_R.value,'','i_record30','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record31');
+		obj_R = document.getElementById('r_record31');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record31',obj_R.value,'','i_record31','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record32');
+		obj_R = document.getElementById('r_record32');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record32',obj_R.value,'','i_record32','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record33');
+		obj_R = document.getElementById('r_record33');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record33',obj_R.value,'','i_record33','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record34');
+		obj_R = document.getElementById('r_record34');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record34',obj_R.value,'','i_record34','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record35');
+		obj_R = document.getElementById('r_record35');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record35',obj_R.value,'','i_record35','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record36');
+		obj_R = document.getElementById('r_record36');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record36',obj_R.value,'','i_record36','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record37');
+		obj_R = document.getElementById('r_record37');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record37',obj_R.value,'','i_record37','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record38');
+		obj_R = document.getElementById('r_record38');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record38',obj_R.value,'','i_record38','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record39');
+		obj_R = document.getElementById('r_record39');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record39',obj_R.value,'','i_record39','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record40');
+		obj_R = document.getElementById('r_record40');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record40',obj_R.value,'','i_record40','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record41');
+		obj_R = document.getElementById('r_record41');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record41',obj_R.value,'','i_record41','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record42');
+		obj_R = document.getElementById('r_record42');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record42',obj_R.value,'','i_record42','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record43');
+		obj_R = document.getElementById('r_record43');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record43',obj_R.value,'','i_record43','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record44');
+		obj_R = document.getElementById('r_record44');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record44',obj_R.value,'','i_record44','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record45');
+		obj_R = document.getElementById('r_record45');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record45',obj_R.value,'','i_record45','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record46');
+		obj_R = document.getElementById('r_record46');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record46',obj_R.value,'','i_record46','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record47');
+		obj_R = document.getElementById('r_record47');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record47',obj_R.value,'','i_record47','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record48');
+		obj_R = document.getElementById('r_record48');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record48',obj_R.value,'','i_record48','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record49');
+		obj_R = document.getElementById('r_record49');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record49',obj_R.value,'','i_record49','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record50');
+		obj_R = document.getElementById('r_record50');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record50',obj_R.value,'','i_record50','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record51');
+		obj_R = document.getElementById('r_record51');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record51',obj_R.value,'','i_record51','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record52');
+		obj_R = document.getElementById('r_record52');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record52',obj_R.value,'','i_record52','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record53');
+		obj_R = document.getElementById('r_record53');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record53',obj_R.value,'','i_record53','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record54');
+		obj_R = document.getElementById('r_record54');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record54',obj_R.value,'','i_record54','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record55');
+		obj_R = document.getElementById('r_record55');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record55',obj_R.value,'','i_record55','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record56');
+		obj_R = document.getElementById('r_record56');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record56',obj_R.value,'','i_record56','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record57');
+		obj_R = document.getElementById('r_record57');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record57',obj_R.value,'','i_record57','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record58');
+		obj_R = document.getElementById('r_record58');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record58',obj_R.value,'','i_record58','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record59');
+		obj_R = document.getElementById('r_record59');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record59',obj_R.value,'','i_record59','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record60');
+		obj_R = document.getElementById('r_record60');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record60',obj_R.value,'','i_record60','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record61');
+		obj_R = document.getElementById('r_record61');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record61',obj_R.value,'','i_record61','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record62');
+		obj_R = document.getElementById('r_record62');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record62',obj_R.value,'','i_record62','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record63');
+		obj_R = document.getElementById('r_record63');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record63',obj_R.value,'','i_record63','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record64');
+		obj_R = document.getElementById('r_record64');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record64',obj_R.value,'','i_record64','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record65');
+		obj_R = document.getElementById('r_record65');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record65',obj_R.value,'','i_record65','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record66');
+		obj_R = document.getElementById('r_record66');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record66',obj_R.value,'','i_record66','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record67');
+		obj_R = document.getElementById('r_record67');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record67',obj_R.value,'','i_record67','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record68');
+		obj_R = document.getElementById('r_record68');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record68',obj_R.value,'','i_record68','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record69');
+		obj_R = document.getElementById('r_record69');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record69',obj_R.value,'','i_record69','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record70');
+		obj_R = document.getElementById('r_record70');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record70',obj_R.value,'','i_record70','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record71');
+		obj_R = document.getElementById('r_record71');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record71',obj_R.value,'','i_record71','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record72');
+		obj_R = document.getElementById('r_record72');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record72',obj_R.value,'','i_record72','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record73');
+		obj_R = document.getElementById('r_record73');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record73',obj_R.value,'','i_record73','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record74');
+		obj_R = document.getElementById('r_record74');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record74',obj_R.value,'','i_record74','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record75');
+		obj_R = document.getElementById('r_record75');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record75',obj_R.value,'','i_record75','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record76');
+		obj_R = document.getElementById('r_record76');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record76',obj_R.value,'','i_record76','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record77');
+		obj_R = document.getElementById('r_record77');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record77',obj_R.value,'','i_record77','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record78');
+		obj_R = document.getElementById('r_record78');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record78',obj_R.value,'','i_record78','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record79');
+		obj_R = document.getElementById('r_record79');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record79',obj_R.value,'','i_record79','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record80');
+		obj_R = document.getElementById('r_record80');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record80',obj_R.value,'','i_record80','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record81');
+		obj_R = document.getElementById('r_record81');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record81',obj_R.value,'','i_record81','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record82');
+		obj_R = document.getElementById('r_record82');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record82',obj_R.value,'','i_record82','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record83');
+		obj_R = document.getElementById('r_record83');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record83',obj_R.value,'','i_record83','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record84');
+		obj_R = document.getElementById('r_record84');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record84',obj_R.value,'','i_record84','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record85');
+		obj_R = document.getElementById('r_record85');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record85',obj_R.value,'','i_record85','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record86');
+		obj_R = document.getElementById('r_record86');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record86',obj_R.value,'','i_record86','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record87');
+		obj_R = document.getElementById('r_record87');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record87',obj_R.value,'','i_record87','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record88');
+		obj_R = document.getElementById('r_record88');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record88',obj_R.value,'','i_record88','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record89');
+		obj_R = document.getElementById('r_record89');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record89',obj_R.value,'','i_record89','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record90');
+		obj_R = document.getElementById('r_record90');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record90',obj_R.value,'','i_record90','/eshisetsu/img/std/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record91');
+		obj_R = document.getElementById('r_record91');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record91',obj_R.value,'','i_record91','/eshisetsu/img/std/');
+		}
+		
+	
+	
+}
+
+</script>
+
+</head>
+<body onload="setInitImages();" onunload="ignoreTrue();">
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W989BTH"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+
+<div id="header">
+	
+	
+
+
+
+
+<form name="menu.Menu.Form" method="post" action="/eshisetsu/menu/MenuLookup.cgi" onsubmit="return false;" id="formMenuMain">
+
+<input type="hidden" name="txtProcId" value="/menu/Menu" style="">
+<input type="hidden" name="txtFunctionCode" value="" id="txtFunctionCode" style="">
+
+<div id="sidecolumn">
+	<h1 class="logo"><img src="/eshisetsu/img/std/side/logo.png" alt="公共施設予約システム" title="公共施設予約システム" class="pngfix"></h1>
+	<div class="loginMessage">ゲストログイン中です。</div>
+	<div id="gnavi">
+		<ul>
+			
+			
+			
+				
+					<li class="vis"><a href="#" onclick="isNextFuncCodeSet('Yoyaku')">空き照会・予約</a></li>
+				
+				
+				
+				
+
+				
+				
+				
+			
+			
+			
+				
+			
+			
+			
+				
+			
+
+			
+			
+				
+				
+				
+					<li><a href="#" onclick="isNextFuncCodeSet('TodayInfo')">お知らせ</a></li>
+				
+			
+			
+
+			<li class="return">
+				<a href="#" onclick="isNextFuncCodeSet('MainMenu')">処理選択に戻る</a>
+			</li>
+			<li class="logout">
+				<a href="#" onclick="isNextFuncCodeSet('Logout')">ログアウト</a>
+			</li>
+		</ul>
+	</div>
+
+	
+	</div>
+</form>
+	
+	<form name="yoyaku.ShisetsuMultiSelect.Form" method="post" action="/eshisetsu/yoyaku/ShisetsuMultiSelect.cgi" onsubmit="return false;" id="formMain">
+	
+	<input type="hidden" name="action" value="" id="action" style="">
+	<input type="hidden" name="txtProcId" value="/yoyaku/ShisetsuMultiSelect" id="txtProcId" style="">
+	
+
+	
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[0]" value="" id="k_record0" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[1]" value="" id="k_record1" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[2]" value="" id="k_record2" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[3]" value="" id="k_record3" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[4]" value="" id="k_record4" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[5]" value="" id="k_record5" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[6]" value="" id="k_record6" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[7]" value="" id="k_record7" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[8]" value="" id="k_record8" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[9]" value="" id="k_record9" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[10]" value="" id="k_record10" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[11]" value="" id="k_record11" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[12]" value="" id="k_record12" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[13]" value="" id="k_record13" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[14]" value="" id="k_record14" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[15]" value="" id="k_record15" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[16]" value="" id="k_record16" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[17]" value="" id="k_record17" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[18]" value="" id="k_record18" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[19]" value="" id="k_record19" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[20]" value="" id="k_record20" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[21]" value="" id="k_record21" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[22]" value="" id="k_record22" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[23]" value="" id="k_record23" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[24]" value="" id="k_record24" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[25]" value="" id="k_record25" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[26]" value="" id="k_record26" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[27]" value="" id="k_record27" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[28]" value="" id="k_record28" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[29]" value="" id="k_record29" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[30]" value="" id="k_record30" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[31]" value="" id="k_record31" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[32]" value="" id="k_record32" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[33]" value="" id="k_record33" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[34]" value="" id="k_record34" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[35]" value="" id="k_record35" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[36]" value="" id="k_record36" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[37]" value="" id="k_record37" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[38]" value="" id="k_record38" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[39]" value="" id="k_record39" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[40]" value="" id="k_record40" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[41]" value="" id="k_record41" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[42]" value="" id="k_record42" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[43]" value="" id="k_record43" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[44]" value="" id="k_record44" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[45]" value="" id="k_record45" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[46]" value="" id="k_record46" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[47]" value="" id="k_record47" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[48]" value="" id="k_record48" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[49]" value="" id="k_record49" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[50]" value="" id="k_record50" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[51]" value="" id="k_record51" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[52]" value="" id="k_record52" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[53]" value="" id="k_record53" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[54]" value="" id="k_record54" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[55]" value="" id="k_record55" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[56]" value="" id="k_record56" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[57]" value="" id="k_record57" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[58]" value="" id="k_record58" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[59]" value="" id="k_record59" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[60]" value="" id="k_record60" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[61]" value="" id="k_record61" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[62]" value="" id="k_record62" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[63]" value="" id="k_record63" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[64]" value="" id="k_record64" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[65]" value="" id="k_record65" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[66]" value="" id="k_record66" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[67]" value="" id="k_record67" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[68]" value="" id="k_record68" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[69]" value="" id="k_record69" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[70]" value="" id="k_record70" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[71]" value="" id="k_record71" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[72]" value="" id="k_record72" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[73]" value="" id="k_record73" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[74]" value="" id="k_record74" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[75]" value="" id="k_record75" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[76]" value="" id="k_record76" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[77]" value="" id="k_record77" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[78]" value="" id="k_record78" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[79]" value="" id="k_record79" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[80]" value="" id="k_record80" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[81]" value="" id="k_record81" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[82]" value="" id="k_record82" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[83]" value="" id="k_record83" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[84]" value="" id="k_record84" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[85]" value="" id="k_record85" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[86]" value="" id="k_record86" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[87]" value="" id="k_record87" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[88]" value="" id="k_record88" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[89]" value="" id="k_record89" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[90]" value="" id="k_record90" style="">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[91]" value="" id="k_record91" style="">
+	
+	
+	<div id="errcolumn">
+		<noscript><p class="jserr">JavaScriptが無効になっているため使用できません。<br />ブラウザ設定でJavaScriptを有効にしてください。</p></noscript>
+		
+	</div>
+	
+	<div id="hmaincolumn" class="pngbg">
+		<div id="reservation_flow" class="pngbg">
+			<ul>
+				<li>照会方法選択</li>
+				<li class="flowon"><p><strong><span>施設選択</span></strong></p></li>
+				<li>空き照会</li>
+				
+			</ul>
+		</div>
+		<h2>施設絞り込み（場所選択）
+			<span class="pager">
+				<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('Back');return false;"><img src="/eshisetsu/img/std/common/btn_return.png" width="122" height="37" alt="前に戻るボタン" title="前に戻るボタン" class="pngfix btn"></a>
+				<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('Enter');return false;"><img src="/eshisetsu/img/std/common/btn_next.png" width="122" height="37" alt="次に進むボタン" title="次に進むボタン" class="pngfix btn"></a>
+			</span>
+		</h2>
+	</div>
+
+	<div id="mmaincolumn">
+
+		<p>空き状況を照会する施設を一つ以上選択し、［次に進むボタン］を押してください。</p>
+		
+			
+			
+				<div class="tablebox">
+					<table border="0" cellspacing="1" cellpadding="0" summary="照会する施設を選択するための表">
+						<tbody><tr>
+							<th scope="col">会館</th>
+							<th scope="col">施設</th>
+						</tr>
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record0','131199_001_01_01_02','','i_record0','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record0" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_01_02" id="r_record0" style="">
+									地域センター
+								</td>
+								<td>
+									板橋地域センターレクリエーションホール半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record1','131199_001_01_10_01','','i_record1','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record1" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_10_01" id="r_record1" style="">
+									地域センター
+								</td>
+								<td>
+									仲宿地域センターレクホール
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record2','131199_001_01_12_01','','i_record2','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record2" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_12_01" id="r_record2" style="">
+									地域センター
+								</td>
+								<td>
+									仲宿地域センター第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record3','131199_001_01_13_01','','i_record3','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record3" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_13_01" id="r_record3" style="">
+									地域センター
+								</td>
+								<td>
+									仲宿地域センター第２洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record4','131199_001_01_15_02','','i_record4','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record4" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_15_02" id="r_record4" style="">
+									地域センター
+								</td>
+								<td>
+									仲町地域センターレクリエーションホール半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record5','131199_001_01_18_01','','i_record5','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record5" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_18_01" id="r_record5" style="">
+									地域センター
+								</td>
+								<td>
+									仲町地域センター第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record6','131199_001_01_21_01','','i_record6','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record6" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_21_01" id="r_record6" style="">
+									地域センター
+								</td>
+								<td>
+									富士見地域センターレクホール
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record7','131199_001_01_23_01','','i_record7','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record7" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_23_01" id="r_record7" style="">
+									地域センター
+								</td>
+								<td>
+									富士見地域センター第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record8','131199_001_01_25_01','','i_record8','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record8" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_25_01" id="r_record8" style="">
+									地域センター
+								</td>
+								<td>
+									大谷口地域センター洋室Ａ
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record9','131199_001_01_26_01','','i_record9','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record9" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_26_01" id="r_record9" style="">
+									地域センター
+								</td>
+								<td>
+									大谷口地域センター洋室Ｂ
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record10','131199_001_01_27_01','','i_record10','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record10" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_27_01" id="r_record10" style="">
+									地域センター
+								</td>
+								<td>
+									向原ホールレクホール
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record11','131199_001_01_30_01','','i_record11','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record11" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_30_01" id="r_record11" style="">
+									地域センター
+								</td>
+								<td>
+									向原ホール第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record12','131199_001_01_32_02','','i_record12','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record12" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_32_02" id="r_record12" style="">
+									地域センター
+								</td>
+								<td>
+									常盤台地域センターレクリエーションホール半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record13','131199_001_01_35_01','','i_record13','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record13" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_35_01" id="r_record13" style="">
+									地域センター
+								</td>
+								<td>
+									清水地域センターレクホール
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record14','131199_001_01_37_01','','i_record14','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record14" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_37_01" id="r_record14" style="">
+									地域センター
+								</td>
+								<td>
+									清水地域センター第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record15','131199_001_01_38_01','','i_record15','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record15" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_38_01" id="r_record15" style="">
+									地域センター
+								</td>
+								<td>
+									清水地域センター第２洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record16','131199_001_01_40_01','','i_record16','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record16" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_40_01" id="r_record16" style="">
+									地域センター
+								</td>
+								<td>
+									志村坂上地域センター洋室Ａ（大）
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record17','131199_001_01_41_01','','i_record17','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record17" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_41_01" id="r_record17" style="">
+									地域センター
+								</td>
+								<td>
+									志村坂上地域センター洋室Ｂ（小）
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record18','131199_001_01_44_02','','i_record18','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record18" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_44_02" id="r_record18" style="">
+									地域センター
+								</td>
+								<td>
+									志村コミュニティホールレクリエーションホール半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record19','131199_001_01_49_02','','i_record19','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record19" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_49_02" id="r_record19" style="">
+									地域センター
+								</td>
+								<td>
+									中台地域センターレクリエーションホール半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record20','131199_001_01_54_01','','i_record20','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record20" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_54_01" id="r_record20" style="">
+									地域センター
+								</td>
+								<td>
+									蓮根地域センター蓮根地域センター＿レクホール
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record21','131199_001_01_56_01','','i_record21','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record21" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_56_01" id="r_record21" style="">
+									地域センター
+								</td>
+								<td>
+									蓮根地域センター蓮根地域センター＿第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record22','131199_001_01_58_02','','i_record22','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record22" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_58_02" id="r_record22" style="">
+									地域センター
+								</td>
+								<td>
+									ロータスホールレクリエーションホール
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record23','131199_001_01_62_01','','i_record23','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record23" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_62_01" id="r_record23" style="">
+									地域センター
+								</td>
+								<td>
+									舟渡ホールレクホール
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record24','131199_001_01_65_01','','i_record24','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record24" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_65_01" id="r_record24" style="">
+									地域センター
+								</td>
+								<td>
+									舟渡ホール第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record25','131199_001_01_67_01','','i_record25','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record25" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_67_01" id="r_record25" style="">
+									地域センター
+								</td>
+								<td>
+									舟渡地域センター洋室Ａ【大】
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record26','131199_001_01_68_01','','i_record26','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record26" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_68_01" id="r_record26" style="">
+									地域センター
+								</td>
+								<td>
+									舟渡地域センター洋室Ｂ【小】
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record27','131199_001_01_70_01','','i_record27','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record27" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_70_01" id="r_record27" style="">
+									地域センター
+								</td>
+								<td>
+									前野地域センター洋室Ａ
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record28','131199_001_01_71_02','','i_record28','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record28" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_71_02" id="r_record28" style="">
+									地域センター
+								</td>
+								<td>
+									前野ホールレクリエーションホール半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record29','131199_001_01_74_01','','i_record29','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record29" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_74_01" id="r_record29" style="">
+									地域センター
+								</td>
+								<td>
+									前野ホール第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record30','131199_001_01_76_02','','i_record30','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record30" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_76_02" id="r_record30" style="">
+									地域センター
+								</td>
+								<td>
+									桜川地域センターレクリエーションホール半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record31','131199_001_01_79_01','','i_record31','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record31" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_79_01" id="r_record31" style="">
+									地域センター
+								</td>
+								<td>
+									桜川地域センター第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record32','131199_001_01_81_02','','i_record32','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record32" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_81_02" id="r_record32" style="">
+									地域センター
+								</td>
+								<td>
+									下赤塚地域センターレクリエーションホール半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record33','131199_001_01_83_01','','i_record33','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record33" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_83_01" id="r_record33" style="">
+									地域センター
+								</td>
+								<td>
+									下赤塚地域センター第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record34','131199_001_01_84_01','','i_record34','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record34" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_84_01" id="r_record34" style="">
+									地域センター
+								</td>
+								<td>
+									下赤塚地域センター第２洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record35','131199_001_01_85_01','','i_record35','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record35" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_85_01" id="r_record35" style="">
+									地域センター
+								</td>
+								<td>
+									下赤塚地域センター第３洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record36','131199_001_01_89_01','','i_record36','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record36" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_89_01" id="r_record36" style="">
+									地域センター
+								</td>
+								<td>
+									徳丸地域センター洋室Ａ
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record37','131199_001_01_90_01','','i_record37','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record37" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_90_01" id="r_record37" style="">
+									地域センター
+								</td>
+								<td>
+									徳丸地域センター洋室Ｂ
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record38','131199_001_01_91_02','','i_record38','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record38" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_91_02" id="r_record38" style="">
+									地域センター
+								</td>
+								<td>
+									きたのホールレクリエーションホール半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record39','131199_001_01_93_01','','i_record39','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record39" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_93_01" id="r_record39" style="">
+									地域センター
+								</td>
+								<td>
+									きたのホール第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record40','131199_001_01_96_01','','i_record40','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record40" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_96_01" id="r_record40" style="">
+									地域センター
+								</td>
+								<td>
+									高島平地域センター第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record41','131199_001_01_97_01','','i_record41','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record41" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_97_01" id="r_record41" style="">
+									地域センター
+								</td>
+								<td>
+									常盤台地域センター常盤台地域集会室＿洋室Ａ
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record42','131199_001_01_9A_01','','i_record42','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record42" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_01_9A_01" id="r_record42" style="">
+									地域センター
+								</td>
+								<td>
+									前野地域センター洋室Ｂ
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record43','131199_001_02_01_01','','i_record43','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record43" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_001_02_01_01" id="r_record43" style="">
+									成増アクトホール
+								</td>
+								<td>
+									成増アクトホール　ホール
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record44','131199_002_01_05_01','','i_record44','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record44" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_05_01" id="r_record44" style="">
+									集会所
+								</td>
+								<td>
+									集会所【板橋地区】下板橋駅前集会所　２階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record45','131199_002_01_15_01','','i_record45','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record45" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_15_01" id="r_record45" style="">
+									集会所
+								</td>
+								<td>
+									集会所【仲町地区】仲町ふれあい館＿工作室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record46','131199_002_01_16_01','','i_record46','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record46" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_16_01" id="r_record46" style="">
+									集会所
+								</td>
+								<td>
+									集会所【富士見地区】本町集会所＿洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record47','131199_002_01_22_01','','i_record47','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record47" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_22_01" id="r_record47" style="">
+									集会所
+								</td>
+								<td>
+									集会所【大谷口地区】大谷口北町集会所＿洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record48','131199_002_01_28_01','','i_record48','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record48" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_28_01" id="r_record48" style="">
+									集会所
+								</td>
+								<td>
+									集会所【常盤台地区】七軒家集会所＿１階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record49','131199_002_01_32_01','','i_record49','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record49" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_32_01" id="r_record49" style="">
+									集会所
+								</td>
+								<td>
+									集会所【常盤台地区】南常盤台一丁目集会所＿１階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record50','131199_002_01_37_01','','i_record50','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record50" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_37_01" id="r_record50" style="">
+									集会所
+								</td>
+								<td>
+									集会所【志村坂上地区】小豆沢集会所＿洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record51','131199_002_01_41_01','','i_record51','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record51" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_41_01" id="r_record51" style="">
+									集会所
+								</td>
+								<td>
+									集会所【中台地区】西徳第二公園内集会所＿１階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record52','131199_002_01_44_01','','i_record52','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record52" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_44_01" id="r_record52" style="">
+									集会所
+								</td>
+								<td>
+									集会所【中台地区】中台三丁目集会所＿１階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record53','131199_002_01_46_01','','i_record53','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record53" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_46_01" id="r_record53" style="">
+									集会所
+								</td>
+								<td>
+									集会所【中台地区】西台三丁目集会所＿３階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record54','131199_002_01_48_01','','i_record54','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record54" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_48_01" id="r_record54" style="">
+									集会所
+								</td>
+								<td>
+									集会所【中台地区】中台二丁目集会所＿１階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record55','131199_002_01_51_01','','i_record55','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record55" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_51_01" id="r_record55" style="">
+									集会所
+								</td>
+								<td>
+									集会所【中台地区】西台集会所＿洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record56','131199_002_01_54_01','','i_record56','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record56" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_54_01" id="r_record56" style="">
+									集会所
+								</td>
+								<td>
+									集会所【蓮根地区】蓮根集会所＿第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record57','131199_002_01_58_01','','i_record57','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record57" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_58_01" id="r_record57" style="">
+									集会所
+								</td>
+								<td>
+									集会所【前野地区】見次公園内集会所＿１階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record58','131199_002_01_64_01','','i_record58','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record58" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_64_01" id="r_record58" style="">
+									集会所
+								</td>
+								<td>
+									集会所【桜川地区】上板橋健康福祉センター内集会所＿２階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record59','131199_002_01_67_01','','i_record59','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record59" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_67_01" id="r_record59" style="">
+									集会所
+								</td>
+								<td>
+									集会所【下赤塚地区】赤塚新町光が丘集会所＿１階第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record60','131199_002_01_68_01','','i_record60','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record60" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_68_01" id="r_record60" style="">
+									集会所
+								</td>
+								<td>
+									集会所【下赤塚地区】赤塚新町光が丘集会所＿１階第２洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record61','131199_002_01_72_01','','i_record61','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record61" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_72_01" id="r_record61" style="">
+									集会所
+								</td>
+								<td>
+									集会所【下赤塚地区】下赤塚駅前集会所＿１階第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record62','131199_002_01_73_01','','i_record62','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record62" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_73_01" id="r_record62" style="">
+									集会所
+								</td>
+								<td>
+									集会所【下赤塚地区】下赤塚駅前集会所＿１階第２洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record63','131199_002_01_76_01','','i_record63','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record63" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_76_01" id="r_record63" style="">
+									集会所
+								</td>
+								<td>
+									集会所【下赤塚地区】赤塚七丁目集会所＿洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record64','131199_002_01_78_01','','i_record64','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record64" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_78_01" id="r_record64" style="">
+									集会所
+								</td>
+								<td>
+									集会所【下赤塚地区】四葉集会所＿１階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record65','131199_002_01_80_01','','i_record65','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record65" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_80_01" id="r_record65" style="">
+									集会所
+								</td>
+								<td>
+									集会所【成増地区】成増三丁目集会所＿第１洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record66','131199_002_01_85_01','','i_record66','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record66" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_85_01" id="r_record66" style="">
+									集会所
+								</td>
+								<td>
+									集会所【徳丸地区】徳丸ヶ丘公園内集会所＿１階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record67','131199_002_01_87_01','','i_record67','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record67" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_87_01" id="r_record67" style="">
+									集会所
+								</td>
+								<td>
+									集会所【徳丸地区】徳丸石川集会所＿１階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record68','131199_002_01_89_01','','i_record68','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record68" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_89_01" id="r_record68" style="">
+									集会所
+								</td>
+								<td>
+									集会所【徳丸地区】徳丸三丁目集会所＿２階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record69','131199_002_01_93_01','','i_record69','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record69" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_93_01" id="r_record69" style="">
+									集会所
+								</td>
+								<td>
+									集会所【高島平地区】高島平一丁目集会所＿１階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record70','131199_002_01_94_01','','i_record70','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record70" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_94_01" id="r_record70" style="">
+									集会所
+								</td>
+								<td>
+									集会所【高島平地区】高島平二丁目集会所＿２階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record71','131199_002_01_97_01','','i_record71','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record71" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_97_01" id="r_record71" style="">
+									集会所
+								</td>
+								<td>
+									集会所【高島平地区】高島平七丁目公園内集会所＿洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record72','131199_002_01_A3_01','','i_record72','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record72" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_A3_01" id="r_record72" style="">
+									集会所
+								</td>
+								<td>
+									集会所【高島平地区】新河岸一丁目集会所＿洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record73','131199_002_01_A5_01','','i_record73','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record73" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_A5_01" id="r_record73" style="">
+									集会所
+								</td>
+								<td>
+									集会所【高島平地区】新河岸公園内集会所＿洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record74','131199_002_01_A9_01','','i_record74','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record74" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_A9_01" id="r_record74" style="">
+									集会所
+								</td>
+								<td>
+									集会所【仲宿地区】仲宿集会所＿１階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record75','131199_002_01_B1_01','','i_record75','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record75" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_B1_01" id="r_record75" style="">
+									集会所
+								</td>
+								<td>
+									集会所【仲宿地区】仲宿集会所＿２階洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record76','131199_002_01_B3_01','','i_record76','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record76" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_B3_01" id="r_record76" style="">
+									集会所
+								</td>
+								<td>
+									集会所【仲町地区】弥生集会所＿洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record77','131199_002_01_B4_01','','i_record77','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record77" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_B4_01" id="r_record77" style="">
+									集会所
+								</td>
+								<td>
+									集会所【成増地区】成増三丁目集会所＿第１和室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record78','131199_002_01_B5_01','','i_record78','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record78" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_B5_01" id="r_record78" style="">
+									集会所
+								</td>
+								<td>
+									集会所【成増地区】成増三丁目集会所＿第２和室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record79','131199_002_01_B6_01','','i_record79','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record79" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_002_01_B6_01" id="r_record79" style="">
+									集会所
+								</td>
+								<td>
+									集会所【成増地区】成増三丁目集会所＿第２洋室
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record80','131199_004_01_11_00','','i_record80','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record80" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_004_01_11_00" id="r_record80" style="">
+									体育館
+								</td>
+								<td>
+									小豆沢体育館　競技場全面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record81','131199_004_01_1A_00','','i_record81','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record81" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_004_01_1A_00" id="r_record81" style="">
+									体育館
+								</td>
+								<td>
+									小豆沢体育館　多目的室全面（音響あり）
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record82','131199_004_01_1A_01','','i_record82','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record82" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_004_01_1A_01" id="r_record82" style="">
+									体育館
+								</td>
+								<td>
+									小豆沢体育館　多目的室半面（音響あり・なし）
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record83','131199_004_01_21_00','','i_record83','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record83" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_004_01_21_00" id="r_record83" style="">
+									体育館
+								</td>
+								<td>
+									赤塚体育館　競技場全面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record84','131199_004_01_31_00','','i_record84','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record84" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_004_01_31_00" id="r_record84" style="">
+									体育館
+								</td>
+								<td>
+									植村記念加賀スポーツセンター　競技場全面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record85','131199_004_01_33_01','','i_record85','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record85" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_004_01_33_01" id="r_record85" style="">
+									体育館
+								</td>
+								<td>
+									植村記念加賀スポーツセンター　第２武道場（板張）
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record86','131199_004_01_41_00','','i_record86','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record86" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_004_01_41_00" id="r_record86" style="">
+									体育館
+								</td>
+								<td>
+									上板橋体育館　競技場全面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record87','131199_004_01_43_01','','i_record87','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record87" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_004_01_43_01" id="r_record87" style="">
+									体育館
+								</td>
+								<td>
+									上板橋体育館　第２武道場（板張）
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record88','131199_004_01_55_01','','i_record88','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record88" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_004_01_55_01" id="r_record88" style="">
+									体育館
+								</td>
+								<td>
+									高島平温水プール　多目的室（音響あり）
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record89','131199_009_02_01_01','','i_record89','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record89" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_009_02_01_01" id="r_record89" style="">
+									リサイクルプラザ
+								</td>
+								<td>
+									多目的室全面利用
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record90','131199_009_02_01_02','','i_record90','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record90" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_009_02_01_02" id="r_record90" style="">
+									リサイクルプラザ
+								</td>
+								<td>
+									多目的室１／３面利用
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record91','131199_010_02_21_02','','i_record91','/eshisetsu/img/std/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record91" src="https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/img/std/common/btn_check_o.png" width="42" height="42" alt="選択済み" title="選択済み">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="131199_010_02_21_02" id="r_record91" style="">
+									成増生涯学習センター
+								</td>
+								<td>
+									まなぽーとホール半面
+								</td>
+							</tr>
+						
+						
+						<tr class="tr2">
+							<td colspan="2">
+								<p class="btnright">
+									<a href="#header">
+										<img src="/eshisetsu/img/std/common/btn_pagetop.png" alt="ページの先頭へボタン" title="ページの先頭へボタン" class="pngfix btn">
+									</a>
+								</p>
+							</td>
+						</tr>
+					</tbody></table>
+				</div>
+
+				
+				<p class="btncenter">
+					<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('AllSelect');return false;"><img src="/eshisetsu/img/std/common/btn_allselect.png" alt="全て選択するボタン" title="全て選択するボタン" class="pngfix btn"></a>
+					<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('AllClear');return false;"><img src="/eshisetsu/img/std/common/btn_reset.png" alt="選択を全てやめるボタン" title="選択を全てやめるボタン" class="pngfix btn"></a>
+				</p>
+			
+		
+	</div>
+	</form>
+
+	<div id="fmaincolumn">	
+		<div id="pagerbox">
+		  <span>
+			<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('Back');return false;"><img src="/eshisetsu/img/std/common/btn_return.png" width="122" height="37" alt="前に戻るボタン" title="前に戻るボタン" class="pngfix btn"></a>
+			<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('Enter');return false;"><img src="/eshisetsu/img/std/common/btn_next.png" width="122" height="37" alt="次に進むボタン" title="次に進むボタン" class="pngfix btn"></a>
+		  </span>
+		</div>
+		<div id="footer" class="pngbg"><address class="pngbg">&nbsp;</address></div>
+	</div>
+
+</div>
+
+
+
+<script type="text/javascript" id="" charset="">(function(){var b=function(c){return isNaN(c)||Infinity==c||0>c||3E5<c?0:c},a,d;(a=window.performance&&window.performance.timing)&&(d=window.dataLayer)&&0<b(a.loadEventStart-a.navigationStart)&&d.push({timing_navigation_start:a.navigationStart,timing_page_load:b(a.loadEventStart-a.navigationStart),timing_domain_lookup:b(a.domainLookupEnd-a.domainLookupStart),timing_server_connection:b(a.connectEnd-a.connectStart),timing_server_response:b(a.responseStart-a.requestStart),timing_page_download:b(a.responseEnd-
+a.responseStart),timing_redirection:b(a.fetchStart-a.navigationStart),timing_document_interactive:b(a.domInteractive-a.navigationStart),timing_document_content_loaded:b(a.domContentLoadedEventStart-a.navigationStart),event:"timing"})})();</script></body></html>
