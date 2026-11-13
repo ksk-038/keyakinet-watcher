@@ -45,7 +45,7 @@ jobs:
           TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
-        run: node shinjuku/watch.mjs
+        run: node shinjuku/probe.mjs
 
       - name: 通知記録を保存
         if: always()
