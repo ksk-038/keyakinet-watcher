@@ -5,6 +5,9 @@ on:
     branches: [itabashi]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   watch:
     runs-on: ubuntu-latest
@@ -17,6 +20,12 @@ jobs:
       - run: npm install
       - run: npx playwright install --with-deps --only-shell chromium
       - run: node itabashi/probe.mjs
+      - name: 調査結果をブランチに置く
+        if: always()
+        run: |
+          cd debug-itabashi && rm -f *.png && git init -q && git checkout -q -b dbg-itabashi
+          git add -A && git -c user.name=bot -c user.email=bot@example.com commit -qm dbg
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" dbg-itabashi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
