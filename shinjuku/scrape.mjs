@@ -26,6 +26,15 @@ async function idle(page) {
     .catch(() => console.warn('⚠ 画面の読み込み待ちがタイムアウト'));
 }
 
+// 1枚目の「どこで」の選択肢のうち「〜(すべて)」を全部（品川区の地区ごとなど）
+export async function areaOptions(page, top = TOP) {
+  await page.goto(top, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelector('#bname option'), null, { timeout: 30000 });
+  const list = await page.evaluate(() => [...document.querySelectorAll('#bname option')].map((o) => o.text.trim()).filter((t) => /[(（]すべて[)）]$/.test(t.normalize('NFKC'))));
+  console.log(`どこで: ${list.join(' / ')}`);
+  return list;
+}
+
 // 1枚目: 検索 → 2枚目へ。館の一覧と、表に出る日付（最大7日）を返す
 export async function search(page, { top = TOP, area, purpose, start, weekdays }) {
   await page.goto(top, { waitUntil: 'domcontentloaded' });

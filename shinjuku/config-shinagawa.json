@@ -1,0 +1,28 @@
+{
+  "_説明": "品川区（品川区施設予約システム。新宿区と同じ「しせつよやく」）用",
+  "name": "品川区",
+  "ward": "品川区",
+  "site": "shinagawa",
+  "url": "https://www.cm9.eprs.jp/shinagawa/web/index.jsp",
+  "roomsFile": "rooms-shinagawa.json",
+
+  "watch": {
+    "weekdays": ["土"],
+    "monthsAhead": 2,
+    "dates": [],
+    "excludeDates": []
+  },
+
+  "_areasの説明": "\"all\" で「どこで」の「〜(すべて)」を全部見る（地区ごと）",
+  "areas": "all",
+  "purposes": ["ダンス"],
+
+  "roomFilter": {
+    "minArea": 150,
+    "includeUnlabeled": true
+  },
+  "excludeRoomWords": [],
+  "notifyMarks": ["○", "△"],
+
+  "quietHours": { "from": 1, "to": 6 }
+}

@@ -13,6 +13,9 @@ const SITE = process.env.SITE || '';
 const config = JSON.parse(await fs.readFile(new URL(SITE ? `./config-${SITE}.json` : './config.json', import.meta.url), 'utf8'));
 const ROOMS = JSON.parse(await fs.readFile(new URL(`./${config.roomsFile || 'rooms.json'}`, import.meta.url), 'utf8'));
 const NAME = config.name || '新宿区';
+// 区の名前（YANAGIBAとのやりとり用）と、アプリに送るときのサイト名
+const WARD = config.ward || '新宿区';
+const SITE_KEY = config.site || (SITE ? `shinjuku-${SITE}` : 'shinjuku');
 const TOP = config.url || S.TOP;
 const STATE_DIR = SITE ? `state-shinjuku-${SITE}` : 'state-shinjuku';
 const STATE_FILE = `${STATE_DIR}/state.json`;
@@ -116,12 +119,15 @@ async function scan(browser, targets, G) {
   const marks = new Map();
   const open = [];
   try {
+    // どこで: config.area（1つ）か config.areas（"all" で「〜(すべて)」を全部）
+    const areas = config.areas === 'all' ? await S.areaOptions(page, TOP) : config.areas || [config.area];
+    for (const area of areas)
     for (const purpose of config.purposes) {
       let i = 0;
       while (i < targets.length) {
         const start = targets[i];
-        const { buildings, viewDays } = await S.search(page, { top: TOP, area: config.area, purpose, start, weekdays });
-        console.log(`【${purpose}】${start}〜 表示: ${viewDays.map(L.label).join(' ')} / 館 ${buildings.length}`);
+        const { buildings, viewDays } = await S.search(page, { top: TOP, area, purpose, start, weekdays });
+        console.log(`【${area}・${purpose}】${start}〜 表示: ${viewDays.map(L.label).join(' ')} / 館 ${buildings.length}`);
         for (const b of buildings) {
           const rooms = await S.selectBuilding(page, b.value);
           for (const r of rooms) {
@@ -168,7 +174,7 @@ async function main() {
   if (q && hour >= q.from && hour < q.to && process.env.FORCE !== '1') { console.log('深夜のためお休み'); return; }
 
   const today = L.jstToday();
-  const G = await Y.load(config.watch, today, '新宿区');
+  const G = await Y.load(config.watch, today, WARD);
   const cfgDates = new Set(L.targetDates(config.watch, today));
   const dates = [...new Set([...cfgDates, ...G.dates])].sort();
   if (!dates.length) { console.log('見張る日付がありません'); return; }
@@ -193,10 +199,10 @@ async function main() {
   }
 
   const placed = open.map((s) => ({ ...s, place: `${s.building} ${s.room.replace(/\s+/g, ' ')}` }));
-  await Y.report(G, { site: SITE ? `shinjuku-${SITE}` : 'shinjuku', ward: '新宿区', url: TOP }, placed);
+  await Y.report(G, { site: SITE_KEY, ward: WARD, url: TOP }, placed);
   // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
-  open = placed.filter((s) => (cfgDates.has(s.date) || Y.hitsGap(s, G, '新宿区')) && Y.bookable(G, '新宿区', s.place, s.date));
+  open = placed.filter((s) => (cfgDates.has(s.date) || Y.hitsGap(s, G, WARD)) && Y.bookable(G, WARD, s.place, s.date));
   const key = (s) => `${s.date}|${s.building}|${s.room}|${s.time}`;
   const seen = new Set(state.notified);
   const fresh = open.filter((s) => !seen.has(key(s)));
