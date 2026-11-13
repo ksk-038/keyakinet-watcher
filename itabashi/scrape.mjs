@@ -52,6 +52,11 @@ export async function open(page, { category, genre }) {
   await go(page, row(page, category), category);
   await go(page, row(page, genre), genre);
   await page.locator('img[alt^="全て選択する"]').first().click();
+  // チェックが全部つくまで待つ（待たずに「次に進む」を押すと、何も選ばれずに同じ画面に戻ってしまう）
+  await page.waitForFunction(() => {
+    const b = [...document.querySelectorAll('input[name="checkMeisaiUniqKey"]')];
+    return b.length > 0 && b.every((x) => x.checked);
+  }, null, { timeout: 15000 }).catch(() => console.warn('⚠ 「全て選択する」のチェックが確認できません'));
   await page.waitForTimeout(500);
   const n = await page.locator('input[name="checkMeisaiUniqKey"]').count();
   await snap(page, `select-${genre}`);
@@ -67,7 +72,6 @@ export async function show(page, start, weekdays) {
   await page.waitForTimeout(1500);
   const codes = weekdays.map((w) => WD[w]).filter(Boolean);
   const [y, m, d] = start.split('-');
-  console.log('  いまの表示: ' + (await page.evaluate(() => ['optYear', 'optMonth', 'optDay', 'radioshow'].map((id) => { const e = document.getElementById(id); return `${id}=${e?.value}(${e?.options ? [...e.options].map((o) => o.value).slice(0, 3).join(',') + '…' + e.options.length : ''})`; }).join(' ') + ' forms=' + document.forms.length + ' ' + [...document.querySelectorAll('input[type=hidden]')].map((i) => `${i.name}=${i.value}`).slice(0, 12).join(' '))));
   await page.evaluate(({ y, m, d, codes }) => {
     const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
     set('optYear', y); set('optMonth', m); set('optDay', d);
