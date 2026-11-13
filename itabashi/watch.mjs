@@ -56,13 +56,14 @@ function display(building, name) {
   return `${building} ${name}`;
 }
 
-export function areaOf(building, name) {
-  const t = ROOMS[Object.keys(ROOMS).find((k) => L.norm(k) === L.norm(building))] || {};
-  const k = Object.keys(t).find((k) => L.norm(k) === L.norm(name));
-  return k ? t[k] : null;
+// 部屋の広さ(㎡)を rooms.json から（通知に出る部屋名で探す）。わからなければ null
+export function areaOf(label) {
+  const k = Object.keys(ROOMS).find((k) => k !== '_説明' && L.norm(k) === L.norm(label));
+  return k ? ROOMS[k] : null;
 }
 
-// 部屋の条件: 定員100以上は必ず。定員100未満でも rooms.json で150㎡以上なら対象。定員も広さもわからない部屋は対象
+// 部屋の条件: 定員100以上は必ず対象。それ以外は、広さが分かれば150㎡以上、
+// 広さも定員も分からなければ対象。広さ不明で定員100未満は小部屋として外す
 export function roomOk({ cap, area }, f = {}) {
   if (cap != null && cap >= (f.minCapacity ?? 100)) return true;
   if (area != null) return area >= (f.minArea ?? 150);
@@ -81,7 +82,8 @@ export function markOf(raw) {
 function buildMessage(slots, title = `🎉 ${NAME}に空きが出ました`) {
   const byDate = new Map();
   for (const s of slots) {
-    const k = `${s.label}${s.area ? `（${Math.round(s.area)}㎡）` : s.cap ? `（${s.cap}名）` : ''}`;
+    const info = [s.area ? `${Math.round(s.area)}㎡` : '広さ不明', s.cap ? `${s.cap}名` : ''].filter(Boolean).join('・');
+    const k = `${s.label}（${info}）`;
     if (!byDate.has(s.date)) byDate.set(s.date, new Map());
     const m = byDate.get(s.date);
     if (!m.has(k)) m.set(k, []);
@@ -121,7 +123,7 @@ async function scan(browser, targets) {
           const { name, cap } = splitRoom(c.room);
           const label = display(c.building, name);
           if ((config.excludeRoomWords || []).some((w) => L.norm(label).includes(L.norm(w)))) continue;
-          const area = areaOf(c.building, name);
+          const area = areaOf(label);
           const ok = roomOk({ cap, area }, config.roomFilter);
           if (!roomLog.has(label)) roomLog.set(label, `${ok ? '◎' : '　'} ${label}（${cap ?? '定員不明'}${cap ? '名' : ''}${area ? ` ${area}㎡` : ''}）`);
           if (!ok || !tset.has(c.date)) continue;
@@ -179,13 +181,16 @@ async function main() {
   }
 
   const key = (s) => `${s.date}|${s.label}|${s.time}`;
-  const seen = new Set(state.notified);
+  // 初めて動いたとき（通知記録がないとき）は、今ある空きを記録するだけにする（全部が一度に届くのを防ぐ）
+  const first = !state.notified.length && !state.lastErrorAt && !state.started;
+  const seen = new Set(first ? open.map(key) : state.notified);
+  if (first) console.log('初回のため、今ある空きは記録だけします（全部見たいときは notify_all で実行）');
   const fresh = open.filter((s) => !seen.has(key(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
   if (DEBUG && open.length) console.log(`--- 通知文のプレビュー ---\n${buildMessage(open)}`);
   if (process.env.NOTIFY_ALL === '1') await line(open.length ? buildMessage(open, `📋 ${NAME}の今の空き状況（大きい部屋）`) : `📋 ${NAME}: 今は条件に合う空きがありません`);
   else if (fresh.length) await line(buildMessage(fresh));
-  await saveState({ notified: open.map(key), lastErrorAt: state.lastErrorAt });
+  await saveState({ notified: open.map(key), lastErrorAt: state.lastErrorAt, started: true });
 }
 
 await main();

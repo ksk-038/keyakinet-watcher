@@ -18,7 +18,8 @@
     "minArea": 150,
     "includeUnlabeled": true
   },
-  "excludeRoomWords": [],
+  "_excludeRoomWordsの説明": "志村コミュホールは下が図書館のためダンス利用不可（調査シートより）",
+  "excludeRoomWords": ["志村コミュホール"],
   "notifyMarks": ["○", "△"],
 
   "quietHours": { "from": 1, "to": 6 }
