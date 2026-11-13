@@ -8,6 +8,7 @@ import * as L from '../lib.mjs';
 import * as S from './scrape.mjs';
 
 const config = JSON.parse(await fs.readFile(new URL('./config.json', import.meta.url), 'utf8'));
+const ROOMS = JSON.parse(await fs.readFile(new URL('./rooms.json', import.meta.url), 'utf8'));
 const STATE_FILE = 'state-shinjuku/state.json';
 const DEBUG = process.env.DEBUG === '1';
 
@@ -40,6 +41,19 @@ async function saveState(s) {
   await fs.writeFile(STATE_FILE, JSON.stringify(s, null, 2));
 }
 
+// 部屋の広さ(㎡)を rooms.json から探す（全角・半角や空白の違いは無視）。わからなければ null
+export function areaOf(building, room) {
+  const t = ROOMS[Object.keys(ROOMS).find((k) => L.norm(k) === L.norm(building))] || {};
+  const k = Object.keys(t).find((k) => L.norm(k) === L.norm(room));
+  return k ? t[k] : null;
+}
+
+// 部屋の条件: 150㎡以上 or 広さ不明
+function roomOk(area, f = {}) {
+  if (area == null) return f.includeUnlabeled !== false;
+  return !f.minArea || area >= f.minArea;
+}
+
 // 表のアイコン（画像の説明文）: 「空き」「予約あり」など
 export function markOf(raw) {
   const t = L.norm(raw);
@@ -66,7 +80,7 @@ function mergeTimes(times) {
 function buildMessage(slots) {
   const byDate = new Map();
   for (const s of slots) {
-    const k = `${s.building} ${s.room.replace(/\s+/g, ' ')}`;
+    const k = `${s.building} ${s.room.replace(/\s+/g, ' ')}${s.area ? `（${Math.round(s.area)}㎡）` : ''}`;
     if (!byDate.has(s.date)) byDate.set(s.date, new Map());
     const m = byDate.get(s.date);
     if (!m.has(k)) m.set(k, []);
@@ -101,15 +115,17 @@ async function scan(browser, targets) {
           const rooms = await S.selectBuilding(page, b.value);
           for (const r of rooms) {
             if ((config.excludeRoomWords || []).some((w) => L.norm(r.name).includes(L.norm(w)))) continue;
+            const area = areaOf(b.name, r.name);
+            if (!roomOk(area, config.roomFilter)) continue;
             const key = `${start}|${b.value}|${r.value}`;
             if (done.has(key)) continue;
             done.add(key);
             const cells = await S.readRoom(page, r.value);
             const hits = cells.filter((c) => tset.has(c.date) && config.notifyMarks.includes(markOf(c.sym)));
             for (const c of cells) marks.set(c.sym, (marks.get(c.sym) || 0) + 1);
-            console.log(`  ${b.name} ${r.name}: ${cells.length}コマ中 空き${hits.length}`);
+            console.log(`  ${b.name} ${r.name}（${area ?? '広さ不明'}${area ? '㎡' : ''}）: ${cells.length}コマ中 空き${hits.length}`);
             for (const c of hits) {
-              open.push({ building: b.name, room: r.name, date: c.date, time: L.fmtTime(c.time) || L.norm(c.label) });
+              open.push({ building: b.name, room: r.name, area, date: c.date, time: L.fmtTime(c.time) || L.norm(c.label) });
             }
           }
         }
