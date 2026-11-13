@@ -26,6 +26,7 @@ async function go(page, locator, what) {
     const body = L.norm(await page.locator('body').innerText().catch(() => ''));
     throw new Error(`「${what}」が見つかりません（${page.url().split('/').pop()}）${body.slice(0, 100)}`);
   }
+  console.log(`  → ${what}`);
   await Promise.all([page.waitForNavigation({ timeout: 60000 }), el.click()]);
   await page.waitForLoadState('load').catch(() => {});
   await checkError(page);
@@ -35,6 +36,7 @@ async function go(page, locator, what) {
 //（トップの注意書きにも「システムエラー」の文字があるので、文言だけでは判定しない）
 async function checkError(page) {
   const body = L.norm(await page.locator('body').innerText().catch(() => ''));
+  if (/システムエラー/.test(body)) console.log(`  画面(${page.url().split('/').pop()}): ${body.slice(0, 400)}`);
   const m = body.match(/(システムエラー|エラーが発生|時間外|処理を続行).{0,80}/);
   if (m && body.length < 1500) throw new Error(`予約サイトでエラー: ${m[0]}`);
 }
@@ -50,7 +52,9 @@ export async function open(page, { category, genre }) {
   await go(page, row(page, category), category);
   await go(page, row(page, genre), genre);
   await page.locator('img[alt^="全て選択する"]').first().click();
-  await page.waitForTimeout(500);
+  // チェックがつくまで少し待つ（待たずに「次に進む」を押すと、何も選ばれずにシステムエラーになる）
+  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForTimeout(4000);
   const n = await page.locator('input[name="checkMeisaiUniqKey"]').count();
   await snap(page, `select-${genre}`);
   await go(page, page.locator('img[alt^="次に進む"]'), '次に進む');
@@ -59,6 +63,10 @@ export async function open(page, { category, genre }) {
 
 // 表示開始日・曜日を指定して表示し直す
 export async function show(page, start, weekdays) {
+  // 画面の準備ができる前に表示し直すと「システムエラー」になるので、少し待つ
+  //（動作確認モードでは画面の保存で自然に待てていたため、ふだんの実行だけ失敗していた）
+  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForTimeout(1500);
   const codes = weekdays.map((w) => WD[w]).filter(Boolean);
   const [y, m, d] = start.split('-');
   await page.evaluate(({ y, m, d, codes }) => {
@@ -67,6 +75,7 @@ export async function show(page, start, weekdays) {
     set('radioshow', 'week');
     for (const c of ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN', 'HOL']) set(`checkShowDay${c}`, codes.includes(c) ? c : '');
   }, { y, m, d, codes });
+  console.log(`  → 表示（${start}〜 ${codes.join(',')}）`);
   await Promise.all([page.waitForNavigation({ timeout: 90000 }), page.evaluate(() => isSubmitDataSet('Setup'))]);
   await page.waitForLoadState('load').catch(() => {});
   await snap(page, `result-${start}`);
