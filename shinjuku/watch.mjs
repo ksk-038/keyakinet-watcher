@@ -12,13 +12,22 @@ const STATE_FILE = 'state-shinjuku/state.json';
 const DEBUG = process.env.DEBUG === '1';
 
 async function line(text) {
+  // 長い通知は吹き出しを分ける（1回の送信に最大5つ。LINEの通数は1回分）
+  const parts = [];
+  let cur = '';
+  for (const ln of text.split('\n')) {
+    if (cur && cur.length + ln.length + 1 > 4800) { parts.push(cur); cur = ''; }
+    cur = cur ? `${cur}\n${ln}` : ln;
+  }
+  if (cur) parts.push(cur);
+  if (parts.length > 5) parts.splice(4, Infinity, `${parts[4].slice(0, 4700)}\n…（長いので省略しました。サイトで確認してください）`);
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   const to = process.env.LINE_USER_ID;
   if (!token || !to) { console.log(`[LINE未設定のため表示のみ]\n${text}`); return; }
   const r = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ to, messages: [{ type: 'text', text: text.slice(0, 4900) }] }),
+    body: JSON.stringify({ to, messages: parts.map((t) => ({ type: 'text', text: t.slice(0, 4990) })) }),
   });
   if (!r.ok) throw new Error(`LINE送信に失敗 ${r.status}: ${await r.text()}`);
 }
@@ -40,6 +49,20 @@ export function markOf(raw) {
   return t || '?';
 }
 
+// 「9:00〜9:55」「10:00〜10:55」のような続きのコマは「9:00〜10:55」にまとめる
+const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+function mergeTimes(times) {
+  const rs = times.map((t) => t.match(/(\d{1,2}:\d{2})〜(\d{1,2}:\d{2})/)).filter(Boolean).map((m) => [m[1], m[2]])
+    .sort((a, b) => toMin(a[0]) - toMin(b[0]));
+  if (rs.length !== times.length) return times;
+  const out = [];
+  for (const r of rs) {
+    const p = out.at(-1);
+    if (p && toMin(r[0]) - toMin(p[1]) <= 10) { if (toMin(r[1]) > toMin(p[1])) p[1] = r[1]; } else out.push([...r]);
+  }
+  return out.map(([a, b]) => `${a}〜${b}`);
+}
+
 function buildMessage(slots) {
   const byDate = new Map();
   for (const s of slots) {
@@ -52,7 +75,7 @@ function buildMessage(slots) {
   const lines = ['🎉 新宿区の施設に空きが出ました'];
   for (const date of [...byDate.keys()].sort()) {
     lines.push('', `📅 ${L.label(date)}`);
-    for (const [room, times] of byDate.get(date)) lines.push(`・${room}`, `  ${times.join(' / ')}`);
+    for (const [room, times] of byDate.get(date)) lines.push(`・${room}`, `  ${mergeTimes(times).join(' / ')}`);
   }
   lines.push('', `予約: ${S.TOP}`);
   return lines.join('\n');
@@ -86,7 +109,7 @@ async function scan(browser, targets) {
             for (const c of cells) marks.set(c.sym, (marks.get(c.sym) || 0) + 1);
             console.log(`  ${b.name} ${r.name}: ${cells.length}コマ中 空き${hits.length}`);
             for (const c of hits) {
-              open.push({ building: b.name, room: r.name, date: c.date, time: `${L.norm(c.label)} ${L.fmtTime(c.time)}`.trim() });
+              open.push({ building: b.name, room: r.name, date: c.date, time: L.fmtTime(c.time) || L.norm(c.label) });
             }
           }
         }
