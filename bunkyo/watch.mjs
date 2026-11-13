@@ -47,6 +47,8 @@ const areaOf = (facility, room) => L.areaOf(facility, room.replace(/[≪«《].*
 // 部屋の条件: 広さがわかれば150㎡以上。わからなければ 定員80以上 or 定員が書いていない（「学生」などの部屋は除く）
 export function roomOk(c, f) {
   if ((f.excludeRoomWords || []).some((w) => L.norm(c.room).includes(w))) return false;
+  // 特例: 広さや定員に関係なく必ず見張る部屋（「施設名+部屋名」の一部）
+  if ((f.includeRoomWords || []).some((w) => L.norm(c.facility + c.room).includes(L.norm(w)))) return true;
   const area = areaOf(c.facility, c.room);
   if (area != null && f.minArea) return area >= f.minArea;
   if (c.cap == null) return f.includeUnlabeled !== false;

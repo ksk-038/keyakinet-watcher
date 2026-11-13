@@ -62,13 +62,12 @@ export function areaOf(label) {
   return k ? ROOMS[k] : null;
 }
 
-// 部屋の条件: 定員100以上は必ず対象。それ以外は、広さが分かれば150㎡以上、
-// 広さも定員も分からなければ対象。広さ不明で定員100未満は小部屋として外す
+// 部屋の条件: 広さが分かれば150㎡以上。広さ不明なら対象
+//   ただし広さ不明でも、定員が minCapacityIfUnknown（100名）未満なら小部屋として外す
 export function roomOk({ cap, area }, f = {}) {
-  if (cap != null && cap >= (f.minCapacity ?? 100)) return true;
   if (area != null) return area >= (f.minArea ?? 150);
-  if (cap == null) return f.includeUnlabeled !== false;
-  return false;
+  if (cap != null && f.minCapacityIfUnknown && cap < f.minCapacityIfUnknown) return false;
+  return f.includeUnlabeled !== false;
 }
 
 export function markOf(raw) {
