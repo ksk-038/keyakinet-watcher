@@ -181,10 +181,10 @@ async function main() {
     await browser.close();
   }
 
-  await Y.report(G, { site: 'bunkyo', ward: '文京区', url: S.TOP },
-    open.map((s) => ({ ...s, place: `${s.facility} ${s.room.replace(/[«≪《].*$/, '').trim()}`, area: areaOf(s.facility, s.room) })));
+  const placed = open.map((s) => ({ ...s, place: `${s.facility} ${s.room.replace(/[«≪《].*$/, '').trim()}`, area: areaOf(s.facility, s.room) }));
+  await Y.report(G, { site: 'bunkyo', ward: '文京区', url: S.TOP }, placed);
   // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
-  open = open.filter((s) => cfgDates.has(s.date) || Y.hitsGap(s, G));
+  open = placed.filter((s) => cfgDates.has(s.date) || Y.hitsGap(s, G, '文京区'));
   const seen = new Set(state.notified);
   const fresh = open.filter((s) => !seen.has(L.slotKey(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);

@@ -183,9 +183,10 @@ async function main() {
     await browser.close();
   }
 
-  await Y.report(G, { site: 'itabashi', ward: '板橋区', url: S.TOP }, open.map((s) => ({ ...s, place: s.label })));
+  const placed = open.map((s) => ({ ...s, place: s.label }));
+  await Y.report(G, { site: 'itabashi', ward: '板橋区', url: S.TOP }, placed);
   // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
-  open = open.filter((s) => cfgDates.has(s.date) || Y.hitsGap(s, G));
+  open = placed.filter((s) => cfgDates.has(s.date) || Y.hitsGap(s, G, '板橋区'));
   const key = (s) => `${s.date}|${s.label}|${s.time}`;
   // 初めて動いたとき（通知記録がないとき）は、今ある空きを記録するだけにする（全部が一度に届くのを防ぐ）
   const first = !state.notified.length && !state.lastErrorAt && !state.started;

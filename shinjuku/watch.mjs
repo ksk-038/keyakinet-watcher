@@ -192,10 +192,10 @@ async function main() {
     await browser.close();
   }
 
-  await Y.report(G, { site: SITE ? `shinjuku-${SITE}` : 'shinjuku', ward: '新宿区', url: TOP },
-    open.map((s) => ({ ...s, place: `${s.building} ${s.room.replace(/\s+/g, ' ')}` })));
+  const placed = open.map((s) => ({ ...s, place: `${s.building} ${s.room.replace(/\s+/g, ' ')}` }));
+  await Y.report(G, { site: SITE ? `shinjuku-${SITE}` : 'shinjuku', ward: '新宿区', url: TOP }, placed);
   // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
-  open = open.filter((s) => cfgDates.has(s.date) || Y.hitsGap(s, G));
+  open = placed.filter((s) => cfgDates.has(s.date) || Y.hitsGap(s, G, '新宿区'));
   const key = (s) => `${s.date}|${s.building}|${s.room}|${s.time}`;
   const seen = new Set(state.notified);
   const fresh = open.filter((s) => !seen.has(key(s)));
