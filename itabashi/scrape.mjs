@@ -67,6 +67,7 @@ export async function show(page, start, weekdays) {
   await page.waitForTimeout(1500);
   const codes = weekdays.map((w) => WD[w]).filter(Boolean);
   const [y, m, d] = start.split('-');
+  console.log('  いまの表示: ' + (await page.evaluate(() => ['optYear', 'optMonth', 'optDay', 'radioshow'].map((id) => { const e = document.getElementById(id); return `${id}=${e?.value}(${e?.options ? [...e.options].map((o) => o.value).slice(0, 3).join(',') + '…' + e.options.length : ''})`; }).join(' ') + ' forms=' + document.forms.length + ' ' + [...document.querySelectorAll('input[type=hidden]')].map((i) => `${i.name}=${i.value}`).slice(0, 12).join(' '))));
   await page.evaluate(({ y, m, d, codes }) => {
     const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
     set('optYear', y); set('optMonth', m); set('optDay', d);
