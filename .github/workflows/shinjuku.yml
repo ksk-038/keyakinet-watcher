@@ -1,0 +1,26 @@
+name: 新宿区 空き監視
+
+on:
+  push:
+    branches: [shinjuku-watcher]
+  workflow_dispatch:
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npx playwright install --with-deps --only-shell chromium
+      - run: node shinjuku/probe.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-screens-shinjuku
+          path: debug-shinjuku/
+          if-no-files-found: ignore
+          retention-days: 3
