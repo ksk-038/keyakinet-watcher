@@ -27,9 +27,9 @@ export const isRestDay = (d) => ['土', '日'].includes(L.weekday(d)) || Boolean
 export const bigEnough = (area, date) => area != null && area >= (isRestDay(date) ? 150 : 100);
 
 // アプリの「まだ施設が取れていない日」を読む。watch は各区の config.watch（何ヶ月先まで見るか）
-//   → { teams, gaps: [{ team, date, time, title }], dates: Set }。読めなかったら gaps は null
+//   → { teams, gaps: [{ team, date, time, title }], dates: Set, rules }。読めなかったら gaps は null
 export async function load(watch, today) {
-  const empty = { teams: [], gaps: null, dates: new Set() };
+  const empty = { teams: [], gaps: null, dates: new Set(), rules: [] };
   if (!SECRET) return empty;
   try {
     const [y, m] = today.split('-').map(Number);
@@ -43,11 +43,31 @@ export async function load(watch, today) {
     );
     const dates = new Set(gaps.map((g) => g.date));
     console.log(`YANAGIBAのまだ取れていない日: ${[...dates].sort().map(L.label).join(' ') || 'なし'}`);
-    return { teams: list.map((x) => x.team_id), gaps, dates };
+    const rules = list.flatMap((x) => (x.rules || []).map((r) => ({ ...r, team: x.team_id })));
+    return { teams: list.map((x) => x.team_id), gaps, dates, rules };
   } catch (e) {
     console.warn(`⚠ YANAGIBAのまだ取れていない日を読めません: ${e.message}`);
     return empty;
   }
+}
+
+// アプリの「区・施設の予約のきまり」の施設の書き方から、その部屋が当てはまるか（アプリの側と同じ考え方）
+const nf = (x) => (x || '').normalize('NFKC').replace(/\s+/g, '');
+function ruleHits(r, ward, place) {
+  if (nf(r.ward) !== nf(ward)) return false;
+  const p = nf(place);
+  return (r.facility || '').split(/[\n、,，]/).map(nf).filter(Boolean).some((n) => {
+    if (/以外|じゃない|他の/.test(n)) return false;
+    if (/全施設|全部/.test(n)) return true;
+    if (/体育/.test(n)) return /体育館|スポーツ|武道場|競技場|体育/.test(p);
+    const core = n.replace(/(系|など|等|\d+か所)$/, '');
+    return core.length >= 2 && p.includes(core);
+  });
+}
+// 休日用の施設は平日に、平日用の施設は土日祝に使わない
+export function hidden(G, team, ward, place, date) {
+  const rest = isRestDay(date);
+  return (G.rules || []).some((r) => r.team === team && ((r.days === 'rest' && !rest) || (r.days === 'weekday' && rest)) && ruleHits(r, ward, place));
 }
 
 const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
@@ -60,7 +80,7 @@ const range = (s) => {
 
 // 空き（{ date, place, time, area, cap }）と、まだ取れていない日（の練習の時間）を突き合わせる
 //   続きのコマはつなげて考える。練習の時間をまるごと含めば「全部」、一部だけ重なれば「一部」
-export function match(slots, G) {
+export function match(slots, G, ward) {
   const rows = [];
   if (!G.gaps?.length) return rows;
   const groups = new Map();
@@ -73,7 +93,7 @@ export function match(slots, G) {
   for (const g of G.gaps) {
     const gr = range(g.time);
     for (const p of groups.values()) {
-      if (p.date !== g.date) continue;
+      if (p.date !== g.date || hidden(G, g.team, ward, p.place, p.date)) continue;
       const rs = p.times.map(range).filter(Boolean).sort((a, b) => a[0] - b[0]);
       const merged = [];
       for (const r of rs) {
@@ -104,9 +124,11 @@ export function match(slots, G) {
 }
 
 // そのコマが、まだ取れていない日の練習の時間に重なるか（LINEにも送るため）
-export function hitsGap(s, G) {
+//   ward と s.place があれば、休日用・平日用のきまりで外れる部屋は除く
+export function hitsGap(s, G, ward) {
   return (G.gaps || []).some((g) => {
     if (g.date !== s.date) return false;
+    if (ward && s.place && hidden(G, g.team, ward, s.place, s.date)) return false;
     const gr = range(g.time);
     const sr = range(s.time);
     return !gr || !sr || (sr[0] < gr[1] && sr[1] > gr[0]);
@@ -116,7 +138,7 @@ export function hitsGap(s, G) {
 // アプリに送る（その区の分をまるごと。なくなった空きはアプリ側で消える）
 export async function report(G, { site, ward, url }, slots) {
   if (!SECRET || G.gaps == null) return;
-  const rows = match(slots, G);
+  const rows = match(slots, G, ward);
   for (const team of G.teams) {
     const mine = rows
       .filter((r) => r.team === team)
