@@ -26,9 +26,10 @@ export const isRestDay = (d) => ['土', '日'].includes(L.weekday(d)) || Boolean
 // まだ取れていない日に見る部屋の広さ: 土日祝は150㎡以上、平日は100㎡以上（広さ不明の部屋は各区のいつもの条件で）
 export const bigEnough = (area, date) => area != null && area >= (isRestDay(date) ? 150 : 100);
 
-// アプリの「まだ施設が取れていない日」を読む。watch は各区の config.watch（何ヶ月先まで見るか）
-//   → { teams, gaps: [{ team, date, time, title }], dates: Set, rules }。読めなかったら gaps は null
-export async function load(watch, today) {
+// アプリの「まだ施設が取れていない日」を読む。watch は各区の config.watch（何ヶ月先まで見るか）、ward は区の名前
+//   その区を使う拠点（区・施設の予約のきまりの「どこの練習の施設か」）の練習だけ。きまりがない区は東京
+//   → { teams, gaps: [{ team, date, time, title, base }], dates: Set, rules }。読めなかったら gaps は null
+export async function load(watch, today, ward) {
   const empty = { teams: [], gaps: null, dates: new Set(), rules: [] };
   if (!SECRET) return empty;
   try {
@@ -36,14 +37,19 @@ export async function load(watch, today) {
     const t = new Date(Date.UTC(y, m + (watch.monthsAhead ?? 2), 0));
     const end = L.ymd(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate());
     const list = await rpc('facility_watch_gaps', {});
+    const rules = list.flatMap((x) => (x.rules || []).map((r) => ({ ...r, team: x.team_id })));
+    const forBase = (team, base) => {
+      const rs = rules.filter((r) => r.team === team && nf(r.ward) === nf(ward));
+      if (!rs.length) return !base || /東京/.test(base);
+      return rs.some((r) => !r.base || !base || r.base === base);
+    };
     const gaps = list.flatMap((x) =>
       (x.gaps || [])
-        .filter((g) => !g.outdoor && g.date > today && g.date <= end && (!g.base || /東京/.test(g.base)))
-        .map((g) => ({ team: x.team_id, date: g.date, time: g.time || null, title: g.title || g.label || '練習' })),
+        .filter((g) => !g.outdoor && g.date > today && g.date <= end && forBase(x.team_id, g.base || null))
+        .map((g) => ({ team: x.team_id, date: g.date, time: g.time || null, title: g.title || g.label || '練習', base: g.base || null })),
     );
     const dates = new Set(gaps.map((g) => g.date));
     console.log(`YANAGIBAのまだ取れていない日: ${[...dates].sort().map(L.label).join(' ') || 'なし'}`);
-    const rules = list.flatMap((x) => (x.rules || []).map((r) => ({ ...r, team: x.team_id })));
     return { teams: list.map((x) => x.team_id), gaps, dates, rules };
   } catch (e) {
     console.warn(`⚠ YANAGIBAのまだ取れていない日を読めません: ${e.message}`);
@@ -53,21 +59,76 @@ export async function load(watch, today) {
 
 // アプリの「区・施設の予約のきまり」の施設の書き方から、その部屋が当てはまるか（アプリの側と同じ考え方）
 const nf = (x) => (x || '').normalize('NFKC').replace(/\s+/g, '');
+const SPORT = /体育館|スポーツ|武道場|競技場|体育/;
+const lines = (r) => (r.facility || '').split(/[\n、,，]/).map(nf).filter(Boolean);
+const core = (n) => n.replace(/(系|など|等|\d+か所)$/, '');
 function ruleHits(r, ward, place) {
   if (nf(r.ward) !== nf(ward)) return false;
   const p = nf(place);
-  return (r.facility || '').split(/[\n、,，]/).map(nf).filter(Boolean).some((n) => {
+  return lines(r).some((n) => {
     if (/以外|じゃない|他の/.test(n)) return false;
     if (/全施設|全部/.test(n)) return true;
-    if (/体育/.test(n)) return /体育館|スポーツ|武道場|競技場|体育/.test(p);
-    const core = n.replace(/(系|など|等|\d+か所)$/, '');
-    return core.length >= 2 && p.includes(core);
+    if (/体育/.test(n)) return SPORT.test(p);
+    const c = core(n);
+    return c.length >= 2 && p.includes(c);
   });
 }
 // 休日用の施設は平日に、平日用の施設は土日祝に使わない
 export function hidden(G, team, ward, place, date) {
   const rest = isRestDay(date);
   return (G.rules || []).some((r) => r.team === team && ((r.days === 'rest' && !rest) || (r.days === 'weekday' && rest)) && ruleHits(r, ward, place));
+}
+
+// その部屋の先着予約のきまり: 施設名が書いてあるもの → 体育施設 → 「〜以外」 → 「他の施設・全施設」の順に探す
+function ruleFor(G, team, ward, place, base) {
+  const rs = (G.rules || []).filter((r) => r.team === team && nf(r.ward) === nf(ward) && (!r.base || !base || r.base === base));
+  const p = nf(place);
+  const sporty = SPORT.test(p);
+  return (
+    rs.find((r) => lines(r).some((n) => !/以外|じゃない|他の|全施設|全部|体育/.test(n) && core(n).length >= 2 && p.includes(core(n)))) ||
+    (sporty && rs.find((r) => lines(r).some((n) => /体育/.test(n) && !/以外/.test(n)))) ||
+    rs.find((r) => lines(r).some((n) => /以外/.test(n) && (/体育/.test(n) ? !sporty : true))) ||
+    rs.find((r) => lines(r).some((n) => /じゃない|他の|全施設|全部/.test(n))) ||
+    (rs.length === 1 ? rs[0] : null)
+  );
+}
+const addMonths = (s, n) => {
+  const [y, m, d] = s.split('-').map(Number);
+  const last = new Date(Date.UTC(y, m - 1 + n + 1, 0)).getUTCDate();
+  const x = new Date(Date.UTC(y, m - 1 + n, Math.min(d, last)));
+  return L.ymd(x.getUTCFullYear(), x.getUTCMonth() + 1, x.getUTCDate());
+};
+const closed = (s) => isRestDay(s) || /-01-0[123]$/.test(s);
+// 先着予約が始まる日（アプリの firstOpen と同じ）。day: null＝利用日と同じ日にち、0＝第一営業日、31以上＝月末
+function firstOpen(st, date) {
+  if (st.day == null) return addMonths(date, -st.months);
+  const m = addMonths(date.slice(0, 8) + '01', -st.months);
+  const [y, mm] = m.split('-').map(Number);
+  const last = new Date(Date.UTC(y, mm, 0)).getUTCDate();
+  if (st.day !== 0) return L.ymd(y, mm, Math.min(st.day, last));
+  let d = 1;
+  while (closed(L.ymd(y, mm, d))) d++;
+  return L.ymd(y, mm, d);
+}
+// その空きの先着予約が始まる時刻（ISO、日本時間）。きまりがなければ null（始まっているとみなす）
+export function opensAt(G, team, ward, place, date, base) {
+  const r = ruleFor(G, team, ward, place, base);
+  const firsts = (r?.steps || []).filter((st) => st.kind === 'first');
+  if (!firsts.length) return null;
+  const t = firsts
+    .map((st) => {
+      const [h, mi] = (st.time || '9:00').split(':').map(Number);
+      return `${firstOpen(st, date)}T${String(h).padStart(2, '0')}:${String(mi || 0).padStart(2, '0')}:00+09:00`;
+    })
+    .sort()[0];
+  return t;
+}
+// 先着予約がもう始まっているか（LINE用。きまりがなければ始まっているとみなす）
+export function bookable(G, ward, place, date) {
+  const team = G.teams?.[0];
+  if (!team || !place) return true;
+  const t = opensAt(G, team, ward, place, date, null);
+  return !t || Date.parse(t) <= Date.now();
 }
 
 const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
@@ -117,6 +178,7 @@ export function match(slots, G, ward) {
       rows.push({
         team: g.team, date: g.date, place: p.place, area: p.area ?? null, cap: p.cap ?? null, time,
         gap_time: g.time, gap_title: g.title, partial: !full,
+        opens_at: opensAt(G, g.team, ward, p.place, g.date, g.base),
       });
     }
   }
