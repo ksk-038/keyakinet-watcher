@@ -36,10 +36,14 @@ async function saveState(s) {
 const MAX_SELECT = 10;
 
 // YANAGIBAのまだ取れていない平日がある期間だけ、平日用の施設（weekdayFacilities）も見る
+//   施設が多いと表の表示が重くて止まるので、平日用の施設は15施設ずつに分けて見る
 const WD_ONLY = new Set((config.weekdayFacilities || []).filter((f) => !config.facilities.includes(f)));
-function configFor(start, until, G) {
+function facilityGroups(start, until, G) {
   const wd = [...G.dates].some((d) => d >= start && (!until || d < until) && !Y.isRestDay(d));
-  return wd ? { ...config, facilities: [...new Set([...config.facilities, ...(config.weekdayFacilities || [])])] } : config;
+  const groups = [config.facilities];
+  const extra = [...WD_ONLY];
+  if (wd) for (let i = 0; i < extra.length; i += 15) groups.push(extra.slice(i, i + 15));
+  return groups;
 }
 // 平日用だけの施設は、まだ取れていない平日だけ
 const facilityOk = (c, G) => !WD_ONLY.has(c.facility) || (G.dates.has(c.date) && !Y.isRestDay(c.date));
@@ -61,8 +65,8 @@ async function newPage(browser) {
   return { ctx, page };
 }
 
-async function scanWindow(browser, start, until, targets, G) {
-  const cfg = configFor(start, until, G);
+async function scanWindow(browser, start, until, targets, G, facilities = config.facilities) {
+  const cfg = { ...config, facilities };
   let { ctx, page } = await newPage(browser);
   try {
     let cells = await loadGrid(page, start, cfg);
@@ -124,7 +128,7 @@ async function main() {
   let open = [];
   try {
     const starts = L.windows(dates);
-    for (let i = 0; i < starts.length; i++) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets, G)));
+    for (let i = 0; i < starts.length; i++) for (const f of facilityGroups(starts[i], starts[i + 1], G)) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets, G, f)));
     for (const s of open) console.log(`  空き: ${L.label(s.date)} ${s.facility} ${s.room} ${s.time}`);
   } catch (e) {
     console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);
