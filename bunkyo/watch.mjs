@@ -8,6 +8,7 @@ import * as L from '../lib.mjs';
 import * as S from './scrape.mjs';
 
 const config = JSON.parse(await fs.readFile(new URL('./config.json', import.meta.url), 'utf8'));
+const ROOMS = JSON.parse(await fs.readFile(new URL('./rooms.json', import.meta.url), 'utf8'));
 const STATE_FILE = 'state-bunkyo/state.json';
 const MAX_SELECT = 10;
 
@@ -40,9 +41,14 @@ export function markOf(raw) {
   return t || '?';
 }
 
-// 部屋の条件: 定員80以上 or 定員が書いていない（「学生」などの部屋は除く）
+// 部屋の広さ(㎡)。rooms.json にあれば使う。わからなければ null
+const areaOf = (facility, room) => L.areaOf(facility, room.replace(/[≪«《].*$/, ''), ROOMS);
+
+// 部屋の条件: 広さがわかれば150㎡以上。わからなければ 定員80以上 or 定員が書いていない（「学生」などの部屋は除く）
 export function roomOk(c, f) {
   if ((f.excludeRoomWords || []).some((w) => L.norm(c.room).includes(w))) return false;
+  const area = areaOf(c.facility, c.room);
+  if (area != null && f.minArea) return area >= f.minArea;
   if (c.cap == null) return f.includeUnlabeled !== false;
   return c.cap >= f.minCapacity;
 }
@@ -56,7 +62,8 @@ function mdToDate([m, d], start) {
 function buildMessage(slots) {
   const byDate = new Map();
   for (const s of slots) {
-    const k = `${s.facility} ${s.room.replace(/[«≪《].*$/, '').trim()}${s.cap ? `（定員${s.cap}）` : ''}`;
+    const area = areaOf(s.facility, s.room);
+    const k = `${s.facility} ${s.room.replace(/[«≪《].*$/, '').trim()}${area ? `（${Math.round(area)}㎡）` : s.cap ? `（定員${s.cap}）` : ''}`;
     if (!byDate.has(s.date)) byDate.set(s.date, new Map());
     const m = byDate.get(s.date);
     if (!m.has(k)) m.set(k, []);
@@ -102,7 +109,7 @@ async function scanWindow(browser, start, until, targets, cache) {
     picks.sort((a, b) => prio(a) - prio(b));
     const check = picks.slice(0, config.maxCheckPerWindow || MAX_SELECT);
     console.log(`${start}〜: 対象の空き候補 ${picks.length}コマ（今回確認 ${check.length}コマ）`);
-    for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room.slice(0, 20)} 定員${c.cap ?? '表記なし'} ${markOf(c.sym)}${check.includes(c) ? ' ←確認' : ''}`);
+    for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room.slice(0, 20)} ${areaOf(c.facility, c.room) ?? '広さ不明'}㎡ 定員${c.cap ?? '表記なし'} ${markOf(c.sym)}${check.includes(c) ? ' ←確認' : ''}`);
 
     const out = [];
     for (const c of picks.filter((c) => !check.includes(c))) out.push(...(cache[c.key]?.slots || []));
