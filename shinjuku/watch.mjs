@@ -43,7 +43,7 @@ async function line(text) {
 }
 
 async function loadState() {
-  try { return JSON.parse(await fs.readFile(STATE_FILE, 'utf8')); } catch { return { notified: [] }; }
+  try { return JSON.parse(await fs.readFile(STATE_FILE, 'utf8')); } catch { return { notified: [], first: true }; }
 }
 async function saveState(s) {
   await fs.mkdir(STATE_DIR, { recursive: true });
@@ -59,8 +59,8 @@ export function areaOf(building, room) {
 
 // 表の区分（午前・午後・夜間）の時刻。午後1・午後2がある部屋は labelTimes4。館ごとに違うところは labelTimesBy
 function labelTimes(building, cells) {
-  const four = cells.some((c) => /午後[12]/.test(L.norm(c.label)));
-  const by = (config.labelTimesBy || []).find((x) => L.norm(building).includes(L.norm(x.building)));
+  const four = cells.some((c) => /午後(1|2|I|II)$/.test(L.norm(c.label)));
+  const by = (config.labelTimesBy || []).find((x) => new RegExp(x.building).test(L.norm(building)));
   return (four ? by?.times4 || config.labelTimes4 : by?.times) || config.labelTimes || {};
 }
 
@@ -212,7 +212,9 @@ async function main() {
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
   open = placed.filter((s) => (cfgDates.has(s.date) || Y.hitsGap(s, G, WARD)) && Y.bookable(G, WARD, s.place, s.date));
   const key = (s) => `${s.date}|${s.building}|${s.room}|${s.time}`;
-  const seen = new Set(state.notified);
+  // 初めて動いたとき（通知記録がないとき）は、今ある空きを記録するだけ（全部が一度にLINEに届くのを防ぐ）
+  if (state.first) console.log('初回のため、今ある空きは記録だけします（全部見たいときは notify_all で実行）');
+  const seen = new Set(state.first ? open.map(key) : state.notified);
   const fresh = open.filter((s) => !seen.has(key(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
   if (DEBUG && open.length) console.log(`--- 通知文のプレビュー ---\n${buildMessage(open)}`);

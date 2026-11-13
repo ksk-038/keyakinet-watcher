@@ -1,8 +1,6 @@
 name: 品川区 空き監視
 
 on:
-  push:
-    branches: [shinagawa]
   schedule:
     - cron: "9,39 * * * *"   # 30分おき（予備。ふだんは YANAGIBA の Supabase から :09/:39 に動かす）
   workflow_dispatch:
@@ -46,14 +44,14 @@ jobs:
 
       - name: 監視実行
         env:
-          DEBUG: ${{ (github.event_name == 'push' || inputs.debug) && '1' || '0' }}
+          DEBUG: ${{ inputs.debug && '1' || '0' }}
           FORCE: ${{ github.event_name != 'schedule' && '1' || '0' }}
           TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
           SITE: shinagawa
           NOTIFY_ALL: ${{ inputs.notify_all && '1' || '0' }}
-          LINE_CHANNEL_ACCESS_TOKEN: ${{ github.event_name != 'push' && secrets.LINE_CHANNEL_ACCESS_TOKEN || '' }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
-          YANAGIBA_SECRET: ${{ github.event_name != 'push' && secrets.YANAGIBA_SECRET || '' }}
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
         run: node shinjuku/watch.mjs
 
       - name: 通知記録を保存
