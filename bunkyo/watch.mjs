@@ -89,13 +89,22 @@ async function newPage(browser) {
 }
 
 // YANAGIBAのまだ取れていない平日がある期間だけ、平日用の施設（weekdayFacilities）も見る
-const WD_ONLY = new Set((config.weekdayFacilities || []).filter((f) => !config.facilities.includes(f)));
+const WD_ONLY = new Set([...(config.weekdayFacilities || []), ...(config.searchFacilities || [])].filter((f) => !config.facilities.includes(f)));
 function configFor(start, until, G) {
-  const wd = [...G.dates].some((d) => d >= start && (!until || d < until) && !Y.isRestDay(d));
-  return wd ? { ...config, facilities: [...new Set([...config.facilities, ...(config.weekdayFacilities || [])])] } : config;
+  const inWin = (d) => d >= start && (!until || d < until);
+  const wd = [...G.dates].some((d) => inWin(d) && !Y.isRestDay(d)) || [...G.sdates].some(inWin);
+  return wd ? { ...config, facilities: [...new Set([...config.facilities, ...WD_ONLY])] } : config;
 }
 // 平日用だけの施設は、まだ取れていない平日だけ
-const facilityOk = (c, G) => !WD_ONLY.has(c.facility) || (G.dates.has(c.date) && !Y.isRestDay(c.date));
+const facilityOk = (c, G) => !WD_ONLY.has(c.facility) || ((config.weekdayFacilities || []).includes(c.facility) && G.dates.has(c.date) && !Y.isRestDay(c.date));
+// いつもの条件（YANAGIBAのまだ取れていない平日は100㎡以上も）
+const usualOk = (c, G) => facilityOk(c, G) && (roomOk(c, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(areaOf(c.facility, c.room), c.date)));
+// 空き検索の日は、その広さの部屋。100㎡未満の部屋は searchFacilities の施設だけ
+const searchOk = (c, G) => {
+  const a = areaOf(c.facility, c.room);
+  if (!Y.searchHit(G, c.date, a)) return false;
+  return !config.searchFacilities || (a != null && a >= 100) || config.searchFacilities.includes(c.facility);
+};
 
 async function loadGrid(page, start, cfg = config) {
   await S.openFacilityGrid(page, cfg);
@@ -116,9 +125,7 @@ async function scanWindow(browser, start, until, targets, cache, G) {
     const cells = await loadGrid(page, start, cfg);
     const picks = cells.filter(
       (c) => c.date >= start && (!until || c.date < until) && targets.has(c.date) &&
-        config.notifyMarks.includes(markOf(c.sym)) && facilityOk(c, G) &&
-        // いつもの条件。YANAGIBAのまだ取れていない平日は100㎡以上も
-        (roomOk(c, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(areaOf(c.facility, c.room), c.date))),
+        config.notifyMarks.includes(markOf(c.sym)) && (usualOk(c, G) || searchOk(c, G)),
     );
     const prio = (c) => { const h = cache[c.key]; return !h || h.sym !== c.sym ? 0 : Date.parse(h.at); };
     picks.sort((a, b) => prio(a) - prio(b));
@@ -139,6 +146,8 @@ async function scanWindow(browser, start, until, targets, cache, G) {
         const date = L.parseJpDate(r.dateText);
         if (!date || !targets.has(date) || !(config.slotMarks || ['○']).includes(markOf(r.sym))) continue;
         const slot = { facility: r.facility, room: r.room, cap: r.cap, date, time: L.fmtTime(r.time) || '時間帯不明' };
+        slot.usual = usualOk(slot, G);
+        if (!slot.usual && !searchOk(slot, G)) continue;
         out.push(slot);
         // 部屋名の表記が表と時間帯画面で違うので、施設・日付・部屋名の先頭で対応づける
         const c = check.find((c) => c.facility === r.facility && c.date === date && L.norm(r.room).startsWith(L.norm(c.room).replace(/[≪«《].*$/, '')));
@@ -164,7 +173,7 @@ async function main() {
   const today = L.jstToday();
   const G = await Y.load(config.watch, today, '文京区');
   const cfgDates = new Set(L.targetDates(config.watch, today));
-  const dates = [...new Set([...cfgDates, ...G.dates])].sort();
+  const dates = [...new Set([...cfgDates, ...G.dates, ...G.sdates])].sort();
   if (!dates.length) { console.log('見張る日付がありません'); return; }
   console.log(`見張る日付: ${dates.map(L.label).join(' ')}`);
   const targets = new Set(dates);
@@ -195,7 +204,7 @@ async function main() {
   await Y.report(G, { site: 'bunkyo', ward: '文京区', url: S.TOP }, placed);
   // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
-  open = placed.filter((s) => (cfgDates.has(s.date) || Y.hitsGap(s, G, '文京区')) && Y.bookable(G, '文京区', s.place, s.date));
+  open = placed.filter((s) => s.usual !== false && (cfgDates.has(s.date) || Y.hitsGap(s, G, '文京区')) && Y.bookable(G, '文京区', s.place, s.date));
   const seen = new Set(state.notified);
   const fresh = open.filter((s) => !seen.has(L.slotKey(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);

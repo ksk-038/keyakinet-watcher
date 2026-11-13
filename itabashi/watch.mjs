@@ -125,7 +125,9 @@ async function scan(browser, targets, G) {
           if ((config.excludeRoomWords || []).some((w) => L.norm(label).includes(L.norm(w)))) continue;
           const area = areaOf(label);
           // いつもの条件（150㎡以上か広さ不明）。YANAGIBAのまだ取れていない平日は100㎡以上も
-          const ok = roomOk({ cap, area }, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(area, c.date));
+          const usual = roomOk({ cap, area }, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(area, c.date));
+          // 空き検索の日は、その広さの部屋も
+          const ok = usual || Y.searchHit(G, c.date, area);
           if (!roomLog.has(label)) roomLog.set(label, `${ok ? '◎' : '　'} ${label}（${cap ?? '定員不明'}${cap ? '名' : ''}${area ? ` ${area}㎡` : ''}）`);
           if (!ok || !tset.has(c.date)) continue;
           const time = L.fmtTime(c.time);
@@ -134,7 +136,7 @@ async function scan(browser, targets, G) {
           seenCell.add(k);
           const mk = markOf(c.sym);
           marks.set(c.sym, (marks.get(c.sym) || 0) + 1);
-          if (config.notifyMarks.includes(mk)) open.push({ label, cap, area, date: c.date, time });
+          if (config.notifyMarks.includes(mk)) open.push({ label, cap, area, date: c.date, time, usual });
         }
         const last = dates.at(-1);
         start = targets.find((d) => d > last);
@@ -161,7 +163,7 @@ async function main() {
   const today = L.jstToday();
   const G = await Y.load(config.watch, today, '板橋区');
   const cfgDates = new Set(L.targetDates(config.watch, today));
-  const dates = [...new Set([...cfgDates, ...G.dates])].sort();
+  const dates = [...new Set([...cfgDates, ...G.dates, ...G.sdates])].sort();
   if (!dates.length) { console.log('見張る日付がありません'); return; }
   console.log(`見張る日付: ${dates.map(L.label).join(' ')}`);
 
@@ -187,7 +189,7 @@ async function main() {
   await Y.report(G, { site: 'itabashi', ward: '板橋区', url: S.TOP }, placed);
   // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
-  open = placed.filter((s) => (cfgDates.has(s.date) || Y.hitsGap(s, G, '板橋区')) && Y.bookable(G, '板橋区', s.place, s.date));
+  open = placed.filter((s) => s.usual !== false && (cfgDates.has(s.date) || Y.hitsGap(s, G, '板橋区')) && Y.bookable(G, '板橋区', s.place, s.date));
   const key = (s) => `${s.date}|${s.label}|${s.time}`;
   // 初めて動いたとき（通知記録がないとき）は、今ある空きを記録するだけにする（全部が一度に届くのを防ぐ）
   const first = !state.notified.length && !state.lastErrorAt && !state.started;
