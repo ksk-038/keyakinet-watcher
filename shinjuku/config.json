@@ -1,0 +1,18 @@
+{
+  "_説明": "新宿区（しせつよやく）用。ここを書き換えると見張る条件が変わります",
+
+  "watch": {
+    "weekdays": ["土"],
+    "monthsAhead": 2,
+    "dates": [],
+    "excludeDates": []
+  },
+
+  "area": "新宿区全域(すべて)",
+  "purposes": ["ダンス（社交ダンス以外）", "ダンス・健康体操"],
+
+  "excludeRoomWords": [],
+  "notifyMarks": ["○", "△"],
+
+  "quietHours": { "from": 1, "to": 6 }
+}
