@@ -77,7 +77,7 @@ function mergeTimes(times) {
   return out.map(([a, b]) => `${a}〜${b}`);
 }
 
-function buildMessage(slots) {
+function buildMessage(slots, title = '🎉 新宿区の施設に空きが出ました') {
   const byDate = new Map();
   for (const s of slots) {
     const k = `${s.building} ${s.room.replace(/\s+/g, ' ')}${s.area ? `（${Math.round(s.area)}㎡）` : ''}`;
@@ -86,7 +86,7 @@ function buildMessage(slots) {
     if (!m.has(k)) m.set(k, []);
     if (!m.get(k).includes(s.time)) m.get(k).push(s.time);
   }
-  const lines = ['🎉 新宿区の施設に空きが出ました'];
+  const lines = [title];
   for (const date of [...byDate.keys()].sort()) {
     lines.push('', `📅 ${L.label(date)}`);
     for (const [room, times] of byDate.get(date)) lines.push(`・${room}`, `  ${mergeTimes(times).join(' / ')}`);
@@ -181,7 +181,8 @@ async function main() {
   const fresh = open.filter((s) => !seen.has(key(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
   if (DEBUG && open.length) console.log(`--- 通知文のプレビュー ---\n${buildMessage(open)}`);
-  if (fresh.length) await line(buildMessage(fresh));
+  if (process.env.NOTIFY_ALL === '1') await line(open.length ? buildMessage(open, '📋 新宿区の今の空き状況（大きい部屋）') : '📋 新宿区: 今は条件に合う空きがありません');
+  else if (fresh.length) await line(buildMessage(fresh));
   await saveState({ notified: open.map(key), lastErrorAt: state.lastErrorAt });
 }
 
