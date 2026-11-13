@@ -223,7 +223,12 @@ export async function report(G, { site, ward, url }, slots) {
       .filter((r) => r.team === team)
       .map(({ team: _, ...r }) => ({ ...r, key: `${site}|${r.search_id ? `s:${r.search_id}|` : ''}${r.date}|${r.place}|${r.gap_time || ''}`, url }));
     try {
-      const r = await rpc('facility_watch_report', { p_team: team, p_site: site, p_ward: ward, p_rows: mine });
+      // 調べた日（空きが0件でも「調べた」とアプリでわかるように）
+      const checked = [
+        ...(G.gaps || []).filter((g) => g.team === team).map((g) => `${g.date}|${g.time || ''}`),
+        ...(G.searches || []).filter((q) => q.team === team).map((q) => `s:${q.id}`),
+      ];
+      const r = await rpc('facility_watch_report', { p_team: team, p_site: site, p_ward: ward, p_rows: mine, p_checked: [...new Set(checked)] });
       console.log(`YANAGIBAへ送信: ${mine.length}件（新しい空き ${r.new}件・なくなった空き ${r.removed}件）`);
     } catch (e) {
       console.warn(`⚠ YANAGIBAへ送れません: ${e.message}`);
