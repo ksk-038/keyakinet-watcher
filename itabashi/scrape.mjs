@@ -52,12 +52,9 @@ export async function open(page, { category, genre }) {
   await go(page, row(page, category), category);
   await go(page, row(page, genre), genre);
   await page.locator('img[alt^="全て選択する"]').first().click();
-  // チェックが全部つくまで待つ（待たずに「次に進む」を押すと、何も選ばれずに同じ画面に戻ってしまう）
-  await page.waitForFunction(() => {
-    const b = [...document.querySelectorAll('input[type="checkbox"]')];
-    return b.length > 0 && b.filter((x) => x.checked).length >= b.length / 2;
-  }, null, { timeout: 15000 }).catch(() => console.warn('⚠ 「全て選択する」のチェックが確認できません'));
-  await page.waitForTimeout(500);
+  // チェックがつくまで少し待つ（待たずに「次に進む」を押すと、何も選ばれずにシステムエラーになる）
+  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForTimeout(4000);
   const n = await page.locator('input[name="checkMeisaiUniqKey"]').count();
   await snap(page, `select-${genre}`);
   await go(page, page.locator('img[alt^="次に進む"]'), '次に進む');
