@@ -225,7 +225,7 @@ export async function report(G, { site, ward, url }, slots) {
     try {
       // 調べた日（空きが0件でも「調べた」とアプリでわかるように）
       const checked = [
-        ...(G.gaps || []).filter((g) => g.team === team).map((g) => `${g.date}|${g.time || ''}`),
+        ...(G.gaps || []).filter((g) => g.team === team).map((g) => `${g.date}|${g.time || ''}|${g.base || ''}`),
         ...(G.searches || []).filter((q) => q.team === team).map((q) => `s:${q.id}`),
       ];
       const r = await rpc('facility_watch_report', { p_team: team, p_site: site, p_ward: ward, p_rows: mine, p_checked: [...new Set(checked)] });
