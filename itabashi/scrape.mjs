@@ -31,11 +31,12 @@ async function go(page, locator, what) {
   await checkError(page);
 }
 
+// 次の画面に進めなかったときは、画面の文言をエラーとして出す
+//（トップの注意書きにも「システムエラー」の文字があるので、文言だけでは判定しない）
 async function checkError(page) {
   const body = L.norm(await page.locator('body').innerText().catch(() => ''));
-  if (/システムエラー|エラーが発生しました|サービス時間外|時間外/.test(body) && !/施設別空き状況/.test(body)) {
-    throw new Error(`予約サイトでエラー: ${body.slice(0, 150)}`);
-  }
+  const m = body.match(/(システムエラー|エラーが発生|時間外|処理を続行).{0,80}/);
+  if (m && body.length < 1500) throw new Error(`予約サイトでエラー: ${m[0]}`);
 }
 
 const row = (page, text) => page.locator('td').filter({ hasText: new RegExp(`^\\s*${text.replace(/[()（）]/g, '.')}\\s*$`) });
@@ -43,7 +44,6 @@ const row = (page, text) => page.locator('td').filter({ hasText: new RegExp(`^\\
 // 検索して「施設別空き状況照会」を開く
 export async function open(page, { category, genre }) {
   await page.goto(TOP, { waitUntil: 'load' });
-  await checkError(page);
   await go(page, page.locator('img[alt^="空き照会のみ"]'), '空き照会のみのかたはこちら');
   await go(page, page.getByText('空き照会・予約', { exact: true }), '空き照会・予約');
   await go(page, row(page, '利用目的から絞り込む'), '利用目的から絞り込む');
@@ -69,8 +69,12 @@ export async function show(page, start, weekdays) {
   }, { y, m, d, codes });
   await Promise.all([page.waitForNavigation({ timeout: 90000 }), page.evaluate(() => isSubmitDataSet('Setup'))]);
   await page.waitForLoadState('load').catch(() => {});
-  await checkError(page);
   await snap(page, `result-${start}`);
+  if (!(await page.locator('#facilitiesbox').count())) {
+    await checkError(page);
+    const body = L.norm(await page.locator('body').innerText().catch(() => ''));
+    throw new Error(`空き状況の表が出ません: ${body.slice(0, 150)}`);
+  }
 }
 
 // 表を読む: [{ building, room, date, time, sym }]
