@@ -45,6 +45,7 @@ jobs:
           TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
         run: node bunkyo/watch.mjs
 
       - name: 通知記録を保存

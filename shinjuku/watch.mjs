@@ -6,6 +6,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import * as L from '../lib.mjs';
 import * as S from './scrape.mjs';
+import * as Y from '../yanagiba.mjs';
 
 // SITE=chiiki で地域センター版（config-chiiki.json）。指定なしは「しせつよやく」（config.json）
 const SITE = process.env.SITE || '';
@@ -105,7 +106,7 @@ function buildMessage(slots, title = `🎉 ${NAME}に空きが出ました`) {
   return lines.join('\n');
 }
 
-async function scan(browser, targets) {
+async function scan(browser, targets, G) {
   const ctx = await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo', viewport: { width: 1280, height: 900 } });
   const page = await ctx.newPage();
   page.on('dialog', async (d) => { console.warn(`ダイアログ: ${d.message()}`); await d.accept().catch(() => {}); });
@@ -126,12 +127,15 @@ async function scan(browser, targets) {
           for (const r of rooms) {
             if ((config.excludeRoomWords || []).some((w) => L.norm(r.name).includes(L.norm(w)))) continue;
             const area = areaOf(b.name, r.name);
-            if (!roomOk(area, config.roomFilter, r.name)) continue;
+            // いつもの条件。YANAGIBAのまだ取れていない平日は100㎡以上も
+            const usual = roomOk(area, config.roomFilter, r.name);
+            if (!usual && !(G.dates.size && area != null && area >= 100)) continue;
             const key = `${start}|${b.value}|${r.value}`;
             if (done.has(key)) continue;
             done.add(key);
             const cells = await S.readRoom(page, r.value);
-            const hits = cells.filter((c) => tset.has(c.date) && config.notifyMarks.includes(markOf(c.sym)));
+            const hits = cells.filter((c) => tset.has(c.date) && config.notifyMarks.includes(markOf(c.sym)) &&
+              (usual || (G.dates.has(c.date) && Y.bigEnough(area, c.date))));
             for (const c of cells) marks.set(c.sym, (marks.get(c.sym) || 0) + 1);
             console.log(`  ${b.name} ${r.name}（${area ?? '広さ不明'}${area ? '㎡' : ''}）: ${cells.length}コマ中 空き${hits.length}`);
             for (const c of hits) {
@@ -164,7 +168,9 @@ async function main() {
   if (q && hour >= q.from && hour < q.to && process.env.FORCE !== '1') { console.log('深夜のためお休み'); return; }
 
   const today = L.jstToday();
-  const dates = L.targetDates(config.watch, today);
+  const G = await Y.load(config.watch, today);
+  const cfgDates = new Set(L.targetDates(config.watch, today));
+  const dates = [...new Set([...cfgDates, ...G.dates])].sort();
   if (!dates.length) { console.log('見張る日付がありません'); return; }
   console.log(`見張る日付: ${dates.map(L.label).join(' ')}`);
 
@@ -172,7 +178,7 @@ async function main() {
   const browser = await chromium.launch();
   let open;
   try {
-    open = await scan(browser, dates);
+    open = await scan(browser, dates, G);
   } catch (e) {
     console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);
     const last = state.lastErrorAt ? Date.parse(state.lastErrorAt) : 0;
@@ -186,6 +192,10 @@ async function main() {
     await browser.close();
   }
 
+  await Y.report(G, { site: SITE ? `shinjuku-${SITE}` : 'shinjuku', ward: '新宿区', url: TOP },
+    open.map((s) => ({ ...s, place: `${s.building} ${s.room.replace(/\s+/g, ' ')}` })));
+  // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
+  open = open.filter((s) => cfgDates.has(s.date) || Y.hitsGap(s, G));
   const key = (s) => `${s.date}|${s.building}|${s.room}|${s.time}`;
   const seen = new Set(state.notified);
   const fresh = open.filter((s) => !seen.has(key(s)));

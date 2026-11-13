@@ -6,6 +6,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import * as L from './lib.mjs';
 import * as S from './scrape.mjs';
+import * as Y from './yanagiba.mjs';
 
 const config = JSON.parse(await fs.readFile(new URL('./config.json', import.meta.url), 'utf8'));
 const rooms = JSON.parse(await fs.readFile(new URL('./rooms.json', import.meta.url), 'utf8'));
@@ -51,13 +52,15 @@ async function newPage(browser) {
   return { ctx, page };
 }
 
-async function scanWindow(browser, start, until, targets) {
+async function scanWindow(browser, start, until, targets, G) {
   let { ctx, page } = await newPage(browser);
   try {
     let cells = await loadGrid(page, start);
     const picks = cells.filter(
       (c) => c.date >= start && (!until || c.date < until) && targets.has(c.date) &&
-        config.notifyMarks.includes(L.markOf(c.sym)) && L.roomOk(c.room, config.roomFilter),
+        config.notifyMarks.includes(L.markOf(c.sym)) &&
+        // いつもの条件。YANAGIBAのまだ取れていない平日は100㎡以上も
+        (L.roomOk(c.room, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(L.areaOf(c.facility, c.room, rooms), c.date))),
     );
     console.log(`${start}〜: 対象の空き候補 ${picks.length}コマ`);
     for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room} ${L.markOf(c.sym)}`);
@@ -99,7 +102,9 @@ async function main() {
   if (q && hour >= q.from && hour < q.to && process.env.FORCE !== '1') { console.log('深夜のためお休み'); return; }
 
   const today = L.jstToday();
-  const dates = L.targetDates(config.watch, today);
+  const G = await Y.load(config.watch, today);
+  const cfgDates = new Set(L.targetDates(config.watch, today));
+  const dates = [...new Set([...cfgDates, ...G.dates])].sort();
   if (!dates.length) { console.log('見張る日付がありません'); return; }
   console.log(`見張る日付: ${dates.map(L.label).join(' ')}`);
   const targets = new Set(dates);
@@ -109,7 +114,7 @@ async function main() {
   let open = [];
   try {
     const starts = L.windows(dates);
-    for (let i = 0; i < starts.length; i++) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets)));
+    for (let i = 0; i < starts.length; i++) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets, G)));
     for (const s of open) console.log(`  空き: ${L.label(s.date)} ${s.facility} ${s.room} ${s.time}`);
   } catch (e) {
     console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);
@@ -124,6 +129,10 @@ async function main() {
     await browser.close();
   }
 
+  await Y.report(G, { site: 'setagaya', ward: '世田谷区', url: 'https://setagaya.keyakinet.net/Web/Home/WgR_ModeSelect' },
+    open.map((s) => ({ ...s, place: `${s.facility} ${s.room.replace(/[(（]定員\d+[)）]/, '').trim()}` })));
+  // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
+  open = open.filter((s) => cfgDates.has(s.date) || Y.hitsGap(s, G));
   const seen = new Set(state.notified);
   const fresh = open.filter((s) => !seen.has(L.slotKey(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
