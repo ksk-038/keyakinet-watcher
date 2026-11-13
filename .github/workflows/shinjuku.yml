@@ -9,6 +9,10 @@ on:
         description: "読み取った中身をログに出す（動作確認用）"
         type: boolean
         default: true
+      notify_all:
+        description: "今の空きを（通知済みの分も含めて）全部LINEに送る"
+        type: boolean
+        default: false
       test_notify:
         description: "LINEにテスト通知だけ送る"
         type: boolean
@@ -43,6 +47,7 @@ jobs:
           DEBUG: ${{ inputs.debug && '1' || '0' }}
           FORCE: ${{ github.event_name != 'schedule' && '1' || '0' }}
           TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
+          NOTIFY_ALL: ${{ inputs.notify_all && '1' || '0' }}
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
         run: node shinjuku/watch.mjs

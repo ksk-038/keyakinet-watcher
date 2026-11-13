@@ -7,9 +7,14 @@ import fs from 'node:fs/promises';
 import * as L from '../lib.mjs';
 import * as S from './scrape.mjs';
 
-const config = JSON.parse(await fs.readFile(new URL('./config.json', import.meta.url), 'utf8'));
-const ROOMS = JSON.parse(await fs.readFile(new URL('./rooms.json', import.meta.url), 'utf8'));
-const STATE_FILE = 'state-shinjuku/state.json';
+// SITE=chiiki で地域センター版（config-chiiki.json）。指定なしは「しせつよやく」（config.json）
+const SITE = process.env.SITE || '';
+const config = JSON.parse(await fs.readFile(new URL(SITE ? `./config-${SITE}.json` : './config.json', import.meta.url), 'utf8'));
+const ROOMS = JSON.parse(await fs.readFile(new URL(`./${config.roomsFile || 'rooms.json'}`, import.meta.url), 'utf8'));
+const NAME = config.name || '新宿区';
+const TOP = config.url || S.TOP;
+const STATE_DIR = SITE ? `state-shinjuku-${SITE}` : 'state-shinjuku';
+const STATE_FILE = `${STATE_DIR}/state.json`;
 const DEBUG = process.env.DEBUG === '1';
 
 async function line(text) {
@@ -37,7 +42,7 @@ async function loadState() {
   try { return JSON.parse(await fs.readFile(STATE_FILE, 'utf8')); } catch { return { notified: [] }; }
 }
 async function saveState(s) {
-  await fs.mkdir('state-shinjuku', { recursive: true });
+  await fs.mkdir(STATE_DIR, { recursive: true });
   await fs.writeFile(STATE_FILE, JSON.stringify(s, null, 2));
 }
 
@@ -49,8 +54,13 @@ export function areaOf(building, room) {
 }
 
 // 部屋の条件: 150㎡以上 or 広さ不明
-function roomOk(area, f = {}) {
-  if (area == null) return f.includeUnlabeled !== false;
+//   広さ不明でも、部屋名に「（２４）」のような定員があり minCapacityIfUnknown 未満なら小部屋として外す
+function roomOk(area, f = {}, room = '') {
+  if (area == null) {
+    const cap = L.norm(room).match(/\((\d+)\)$/);
+    if (cap && f.minCapacityIfUnknown && Number(cap[1]) < f.minCapacityIfUnknown) return false;
+    return f.includeUnlabeled !== false;
+  }
   return !f.minArea || area >= f.minArea;
 }
 
@@ -72,12 +82,12 @@ function mergeTimes(times) {
   const out = [];
   for (const r of rs) {
     const p = out.at(-1);
-    if (p && toMin(r[0]) - toMin(p[1]) <= 10) { if (toMin(r[1]) > toMin(p[1])) p[1] = r[1]; } else out.push([...r]);
+    if (p && toMin(r[0]) - toMin(p[1]) <= 15) { if (toMin(r[1]) > toMin(p[1])) p[1] = r[1]; } else out.push([...r]);
   }
   return out.map(([a, b]) => `${a}〜${b}`);
 }
 
-function buildMessage(slots) {
+function buildMessage(slots, title = `🎉 ${NAME}に空きが出ました`) {
   const byDate = new Map();
   for (const s of slots) {
     const k = `${s.building} ${s.room.replace(/\s+/g, ' ')}${s.area ? `（${Math.round(s.area)}㎡）` : ''}`;
@@ -86,12 +96,12 @@ function buildMessage(slots) {
     if (!m.has(k)) m.set(k, []);
     if (!m.get(k).includes(s.time)) m.get(k).push(s.time);
   }
-  const lines = ['🎉 新宿区の施設に空きが出ました'];
+  const lines = [title];
   for (const date of [...byDate.keys()].sort()) {
     lines.push('', `📅 ${L.label(date)}`);
     for (const [room, times] of byDate.get(date)) lines.push(`・${room}`, `  ${mergeTimes(times).join(' / ')}`);
   }
-  lines.push('', `予約: ${S.TOP}`);
+  lines.push('', `予約: ${TOP}`);
   return lines.join('\n');
 }
 
@@ -109,14 +119,14 @@ async function scan(browser, targets) {
       let i = 0;
       while (i < targets.length) {
         const start = targets[i];
-        const { buildings, viewDays } = await S.search(page, { area: config.area, purpose, start, weekdays });
+        const { buildings, viewDays } = await S.search(page, { top: TOP, area: config.area, purpose, start, weekdays });
         console.log(`【${purpose}】${start}〜 表示: ${viewDays.map(L.label).join(' ')} / 館 ${buildings.length}`);
         for (const b of buildings) {
           const rooms = await S.selectBuilding(page, b.value);
           for (const r of rooms) {
             if ((config.excludeRoomWords || []).some((w) => L.norm(r.name).includes(L.norm(w)))) continue;
             const area = areaOf(b.name, r.name);
-            if (!roomOk(area, config.roomFilter)) continue;
+            if (!roomOk(area, config.roomFilter, r.name)) continue;
             const key = `${start}|${b.value}|${r.value}`;
             if (done.has(key)) continue;
             done.add(key);
@@ -125,7 +135,7 @@ async function scan(browser, targets) {
             for (const c of cells) marks.set(c.sym, (marks.get(c.sym) || 0) + 1);
             console.log(`  ${b.name} ${r.name}（${area ?? '広さ不明'}${area ? '㎡' : ''}）: ${cells.length}コマ中 空き${hits.length}`);
             for (const c of hits) {
-              open.push({ building: b.name, room: r.name, area, date: c.date, time: L.fmtTime(c.time) || L.norm(c.label) });
+              open.push({ building: b.name, room: r.name, area, date: c.date, time: L.fmtTime(c.time) || config.labelTimes?.[L.norm(c.label)] || L.norm(c.label) });
             }
           }
         }
@@ -147,7 +157,7 @@ async function scan(browser, targets) {
 }
 
 async function main() {
-  if (process.env.TEST_NOTIFY === '1') { await line('✅ 新宿区 空き監視のテスト通知です'); return; }
+  if (process.env.TEST_NOTIFY === '1') { await line(`✅ ${NAME} 空き監視のテスト通知です`); return; }
 
   const hour = L.jstHour();
   const q = config.quietHours;
@@ -167,7 +177,7 @@ async function main() {
     console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);
     const last = state.lastErrorAt ? Date.parse(state.lastErrorAt) : 0;
     if (Date.now() - last > 12 * 3600e3) {
-      await line(`⚠️ 新宿区 空き監視でエラー\n${e.message.slice(0, 300)}\n（12時間に1回だけお知らせします）`).catch(() => {});
+      await line(`⚠️ ${NAME} 空き監視でエラー\n${e.message.slice(0, 300)}\n（12時間に1回だけお知らせします）`).catch(() => {});
       await saveState({ ...state, lastErrorAt: new Date().toISOString() });
     }
     process.exitCode = 1;
@@ -181,7 +191,8 @@ async function main() {
   const fresh = open.filter((s) => !seen.has(key(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
   if (DEBUG && open.length) console.log(`--- 通知文のプレビュー ---\n${buildMessage(open)}`);
-  if (fresh.length) await line(buildMessage(fresh));
+  if (process.env.NOTIFY_ALL === '1') await line(open.length ? buildMessage(open, `📋 ${NAME}の今の空き状況（大きい部屋）`) : `📋 ${NAME}: 今は条件に合う空きがありません`);
+  else if (fresh.length) await line(buildMessage(fresh));
   await saveState({ notified: open.map(key), lastErrorAt: state.lastErrorAt });
 }
 
