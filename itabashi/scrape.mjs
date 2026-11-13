@@ -59,6 +59,10 @@ export async function open(page, { category, genre }) {
 
 // 表示開始日・曜日を指定して表示し直す
 export async function show(page, start, weekdays) {
+  // 画面の準備ができる前に表示し直すと「システムエラー」になるので、少し待つ
+  //（動作確認モードでは画面の保存で自然に待てていたため、ふだんの実行だけ失敗していた）
+  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForTimeout(1500);
   const codes = weekdays.map((w) => WD[w]).filter(Boolean);
   const [y, m, d] = start.split('-');
   await page.evaluate(({ y, m, d, codes }) => {
