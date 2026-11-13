@@ -1,0 +1,25 @@
+name: 板橋区 空き監視
+
+on:
+  push:
+    branches: [itabashi]
+  workflow_dispatch:
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npx playwright install --with-deps --only-shell chromium
+      - run: node itabashi/probe.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: debug-screens-itabashi
+          path: debug-itabashi/
+          retention-days: 3
