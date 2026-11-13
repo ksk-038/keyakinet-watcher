@@ -35,10 +35,23 @@ async function saveState(s) {
 // 1ヶ月分の表示ぶん: 候補セルを選んで時間帯の空きを返す（選べるのは1回10件まで）
 const MAX_SELECT = 10;
 
-async function loadGrid(page, start) {
-  await S.openFacilityGrid(page, config);
+// YANAGIBAのまだ取れていない平日がある期間だけ、平日用の施設（weekdayFacilities）も見る
+//   施設が多いと表の表示が重くて止まるので、平日用の施設は15施設ずつに分けて見る
+const WD_ONLY = new Set((config.weekdayFacilities || []).filter((f) => !config.facilities.includes(f)));
+function facilityGroups(start, until, G) {
+  const wd = [...G.dates].some((d) => d >= start && (!until || d < until) && !Y.isRestDay(d));
+  const groups = [config.facilities];
+  const extra = [...WD_ONLY];
+  if (wd) for (let i = 0; i < extra.length; i += 15) groups.push(extra.slice(i, i + 15));
+  return groups;
+}
+// 平日用だけの施設は、まだ取れていない平日だけ
+const facilityOk = (c, G) => !WD_ONLY.has(c.facility) || (G.dates.has(c.date) && !Y.isRestDay(c.date));
+
+async function loadGrid(page, start, cfg = config) {
+  await S.openFacilityGrid(page, cfg);
   await S.showMonthFrom(page, start);
-  const { tables, cells } = await S.readGrid(page, config.facilities);
+  const { tables, cells } = await S.readGrid(page, cfg.facilities);
   if (!tables.length) throw new Error('施設別空き状況の表が読み取れません');
   const tdates = tables.map((t) => L.datesFromDays(t.monthLabel, t.days, start));
   if (!tdates[0].includes(start)) console.warn(`⚠ 表示開始日 ${start} が表に出ていません（${tdates[0][0]}〜）`);
@@ -52,13 +65,14 @@ async function newPage(browser) {
   return { ctx, page };
 }
 
-async function scanWindow(browser, start, until, targets, G) {
+async function scanWindow(browser, start, until, targets, G, facilities = config.facilities) {
+  const cfg = { ...config, facilities };
   let { ctx, page } = await newPage(browser);
   try {
-    let cells = await loadGrid(page, start);
+    let cells = await loadGrid(page, start, cfg);
     const picks = cells.filter(
       (c) => c.date >= start && (!until || c.date < until) && targets.has(c.date) &&
-        config.notifyMarks.includes(L.markOf(c.sym)) &&
+        config.notifyMarks.includes(L.markOf(c.sym)) && facilityOk(c, G) &&
         // いつもの条件。YANAGIBAのまだ取れていない平日は100㎡以上も
         (L.roomOk(c.room, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(L.areaOf(c.facility, c.room, rooms), c.date))),
     );
@@ -72,11 +86,11 @@ async function scanWindow(browser, start, until, targets, G) {
         // 2組目以降は新しいブラウザ画面で最初からやり直す（途中から戻ると弾かれるため）
         await ctx.close();
         ({ ctx, page } = await newPage(browser));
-        cells = await loadGrid(page, start);
+        cells = await loadGrid(page, start, cfg);
       }
       const ids = cells.filter((c) => keys.has(c.key)).map((c) => c.id);
       await S.selectCells(page, ids);
-      const raw = await S.readSlots(page, config.facilities);
+      const raw = await S.readSlots(page, cfg.facilities);
       const slots = raw
         .filter((s) => L.markOf(s.sym) === '○')
         .map((s) => ({ facility: s.facility, room: s.room, date: L.parseJpDate(s.dateText), time: L.fmtTime(s.time), area: L.areaOf(s.facility, s.room, rooms) }))
@@ -114,7 +128,7 @@ async function main() {
   let open = [];
   try {
     const starts = L.windows(dates);
-    for (let i = 0; i < starts.length; i++) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets, G)));
+    for (let i = 0; i < starts.length; i++) for (const f of facilityGroups(starts[i], starts[i + 1], G)) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets, G, f)));
     for (const s of open) console.log(`  空き: ${L.label(s.date)} ${s.facility} ${s.room} ${s.time}`);
   } catch (e) {
     console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);

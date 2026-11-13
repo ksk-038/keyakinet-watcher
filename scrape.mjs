@@ -153,11 +153,12 @@ export async function showMonthFrom(page, date) {
     }, `${y}/${m}/${d}`);
 
   await page
-    .waitForFunction(() => document.body?.innerText.includes('表示開始日'), null, { timeout: 30000 })
+    .waitForFunction(() => document.body?.innerText.includes('表示開始日'), null, { timeout: 120000 })
     .catch(() => {});
   await settle(page);
   if ((await setDate()) === null) {
     console.log(`URL: ${page.url()}`);
+    console.log('画面の文字: ' + (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 600));
     console.log('入力欄: ' + (await page.evaluate(() => [...document.querySelectorAll('input,select')].map((i) => `${i.tagName}[type=${i.type},id=${i.id},name=${i.name},value=${i.value}]`).slice(0, 30).join(' '))));
     console.log('日付まわり: ' + (await page.evaluate(() => { const e = [...document.querySelectorAll('*')].find((x) => x.children.length === 0 && x.textContent.includes('表示開始日')); let p = e; for (let i = 0; i < 4 && p?.parentElement; i++) p = p.parentElement; return p ? p.outerHTML.replace(/\s+/g, ' ').slice(0, 1500) : 'なし'; })));
     throw new Error('表示開始日の入力欄が見つかりません');

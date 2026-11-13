@@ -88,10 +88,19 @@ async function newPage(browser) {
   return { ctx, page };
 }
 
-async function loadGrid(page, start) {
-  await S.openFacilityGrid(page, config);
+// YANAGIBAのまだ取れていない平日がある期間だけ、平日用の施設（weekdayFacilities）も見る
+const WD_ONLY = new Set((config.weekdayFacilities || []).filter((f) => !config.facilities.includes(f)));
+function configFor(start, until, G) {
+  const wd = [...G.dates].some((d) => d >= start && (!until || d < until) && !Y.isRestDay(d));
+  return wd ? { ...config, facilities: [...new Set([...config.facilities, ...(config.weekdayFacilities || [])])] } : config;
+}
+// 平日用だけの施設は、まだ取れていない平日だけ
+const facilityOk = (c, G) => !WD_ONLY.has(c.facility) || (G.dates.has(c.date) && !Y.isRestDay(c.date));
+
+async function loadGrid(page, start, cfg = config) {
+  await S.openFacilityGrid(page, cfg);
   await S.showMonthFrom(page, start);
-  const { tables, cells } = await S.readGrid(page, config.facilities);
+  const { tables, cells } = await S.readGrid(page, cfg.facilities);
   if (!tables.length) throw new Error('施設別空き状況の表が読み取れません');
   const tdates = tables.map((t) => t.mds.map((md) => mdToDate(md, start)));
   console.log(`表 ${tables.length}個（${tdates[0][0]}〜${tdates[0].at(-1)}）`);
@@ -101,12 +110,13 @@ async function loadGrid(page, start) {
 // 1ヶ月分の表を読み、○△のコマのうち最大 maxCheckPerWindow 件を時間帯画面で確認する
 //   前回から記号が変わったコマ → 確認してから時間が経ったコマ の順。確認しなかったコマは前回の結果を使う
 async function scanWindow(browser, start, until, targets, cache, G) {
+  const cfg = configFor(start, until, G);
   const { ctx, page } = await newPage(browser);
   try {
-    const cells = await loadGrid(page, start);
+    const cells = await loadGrid(page, start, cfg);
     const picks = cells.filter(
       (c) => c.date >= start && (!until || c.date < until) && targets.has(c.date) &&
-        config.notifyMarks.includes(markOf(c.sym)) &&
+        config.notifyMarks.includes(markOf(c.sym)) && facilityOk(c, G) &&
         // いつもの条件。YANAGIBAのまだ取れていない平日は100㎡以上も
         (roomOk(c, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(areaOf(c.facility, c.room), c.date))),
     );
@@ -120,7 +130,7 @@ async function scanWindow(browser, start, until, targets, cache, G) {
     for (const c of picks.filter((c) => !check.includes(c))) out.push(...(cache[c.key]?.slots || []));
     if (check.length) {
       await S.selectCells(page, check.map((c) => c.id));
-      const raw = await S.readSlots(page, config.facilities);
+      const raw = await S.readSlots(page, cfg.facilities);
       console.log(`  時間帯 ${raw.length}コマ`);
       if (process.env.DEBUG === '1') for (const r of raw) console.log(`    ${r.dateText} ${r.facility} ${r.room.slice(0, 12)} ${r.time} [${r.sym}]`);
       const now = new Date().toISOString();
