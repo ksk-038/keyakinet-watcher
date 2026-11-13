@@ -3,7 +3,26 @@ name: 板橋区 空き監視
 on:
   push:
     branches: [itabashi]
+  schedule:
+    - cron: "5-59/15 * * * *"   # 15分おき（他と重ならないよう5分ずらし）
   workflow_dispatch:
+    inputs:
+      debug:
+        description: "読み取った中身をログに出す（動作確認用）"
+        type: boolean
+        default: true
+      notify_all:
+        description: "今の空きを（通知済みの分も含めて）全部LINEに送る"
+        type: boolean
+        default: false
+      test_notify:
+        description: "LINEにテスト通知だけ送る"
+        type: boolean
+        default: false
+
+concurrency:
+  group: itabashi-watch
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -17,18 +36,46 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
       - run: npm install
       - run: npx playwright install --with-deps --only-shell chromium
-      - run: node itabashi/probe.mjs
+
+      - name: 前回の通知記録を復元
+        uses: actions/cache/restore@v4
+        with:
+          path: state-itabashi
+          key: itabashi-state-${{ github.run_id }}
+          restore-keys: itabashi-state-
+
+      - name: 監視実行
+        env:
+          DEBUG: ${{ (github.event_name == 'push' || inputs.debug) && '1' || '0' }}
+          FORCE: ${{ github.event_name != 'schedule' && '1' || '0' }}
+          TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
+          NOTIFY_ALL: ${{ inputs.notify_all && '1' || '0' }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ github.event_name != 'push' && secrets.LINE_CHANNEL_ACCESS_TOKEN || '' }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: node itabashi/watch.mjs
+
       - name: 調査結果をブランチに置く
-        if: always()
+        if: always() && github.event_name == 'push'
         run: |
           cd debug-itabashi && rm -f *.png && git init -q && git checkout -q -b dbg-itabashi
           git add -A && git -c user.name=bot -c user.email=bot@example.com commit -qm dbg
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" dbg-itabashi
-      - uses: actions/upload-artifact@v4
+
+      - name: 通知記録を保存
+        if: always() && github.event_name != 'push'
+        uses: actions/cache/save@v4
+        with:
+          path: state-itabashi
+          key: itabashi-state-${{ github.run_id }}
+
+      - name: スクショをアップロード
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: debug-screens-itabashi
           path: debug-itabashi/
+          if-no-files-found: ignore
           retention-days: 3
