@@ -1,0 +1,25 @@
+{
+  "_説明": "板橋区（ITAリザーブ）用。ここを書き換えると見張る条件が変わります",
+
+  "watch": {
+    "weekdays": ["土"],
+    "monthsAhead": 2,
+    "dates": [],
+    "excludeDates": []
+  },
+
+  "searches": [
+    { "category": "芸術・文化・趣味・教養", "genre": "ダンス・バレエ等" },
+    { "category": "スポーツ（屋内）", "genre": "ダンス・バレエ等" }
+  ],
+
+  "roomFilter": {
+    "minArea": 150,
+    "minCapacityIfUnknown": 100,
+    "includeUnlabeled": true
+  },
+  "excludeRoomWords": [],
+  "notifyMarks": ["○", "△"],
+
+  "quietHours": { "from": 1, "to": 6 }
+}

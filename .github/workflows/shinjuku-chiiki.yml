@@ -2,7 +2,7 @@ name: 新宿区 地域センター 空き監視
 
 on:
   schedule:
-    - cron: "3-59/15 * * * *"   # 15分おき（他と重ならないよう3分ずらし）
+    - cron: "6,36 * * * *"   # 30分おき（他と重ならないよう6分ずらし）
   workflow_dispatch:
     inputs:
       debug:

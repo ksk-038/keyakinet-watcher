@@ -2,7 +2,7 @@ name: 文京区 空き監視
 
 on:
   schedule:
-    - cron: "7-59/15 * * * *"   # 15分おき（世田谷と重ならないよう7分ずらし）
+    - cron: "18,48 * * * *"   # 30分おき（他と重ならないよう18分ずらし）
   workflow_dispatch:
     inputs:
       debug:
