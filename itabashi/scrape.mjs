@@ -54,8 +54,8 @@ export async function open(page, { category, genre }) {
   await page.locator('img[alt^="全て選択する"]').first().click();
   // チェックが全部つくまで待つ（待たずに「次に進む」を押すと、何も選ばれずに同じ画面に戻ってしまう）
   await page.waitForFunction(() => {
-    const b = [...document.querySelectorAll('input[name="checkMeisaiUniqKey"]')];
-    return b.length > 0 && b.every((x) => x.checked);
+    const b = [...document.querySelectorAll('input[type="checkbox"]')];
+    return b.length > 0 && b.filter((x) => x.checked).length >= b.length / 2;
   }, null, { timeout: 15000 }).catch(() => console.warn('⚠ 「全て選択する」のチェックが確認できません'));
   await page.waitForTimeout(500);
   const n = await page.locator('input[name="checkMeisaiUniqKey"]').count();
