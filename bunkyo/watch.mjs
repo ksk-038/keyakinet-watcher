@@ -94,6 +94,11 @@ async function scanWindow(browser, start, until, targets, cache) {
   const { ctx, page } = await newPage(browser);
   try {
     const cells = await loadGrid(page, start);
+    if (process.env.LIST_ROOMS === '1') {
+      const seen = new Set();
+      for (const c of cells) { const k = `${c.facility}｜${c.room}｜${c.cap ?? '表記なし'}`; if (!seen.has(k)) { seen.add(k); console.log(`ROOM ${k}`); } }
+      return [];
+    }
     const picks = cells.filter(
       (c) => c.date >= start && (!until || c.date < until) && targets.has(c.date) &&
         config.notifyMarks.includes(markOf(c.sym)) && roomOk(c, config.roomFilter),

@@ -1,6 +1,8 @@
 name: 文京区 空き監視
 
 on:
+  push:
+    branches: [bunkyo-area]
   schedule:
     - cron: "7-59/15 * * * *"   # 15分おき（世田谷と重ならないよう7分ずらし）
   workflow_dispatch:
@@ -17,6 +19,7 @@ on:
 concurrency:
   group: bunkyo-watch
   cancel-in-progress: false
+# (dev)
 
 jobs:
   watch:
@@ -42,13 +45,14 @@ jobs:
         env:
           DEBUG: ${{ (github.event_name == 'push' || inputs.debug) && '1' || '0' }}
           FORCE: ${{ github.event_name != 'schedule' && '1' || '0' }}
+          LIST_ROOMS: ${{ github.event_name == 'push' && '1' || '0' }}
           TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
-          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ github.event_name != 'push' && secrets.LINE_CHANNEL_ACCESS_TOKEN || '' }}
+          LINE_USER_ID: ${{ github.event_name != 'push' && secrets.LINE_USER_ID || '' }}
         run: node bunkyo/watch.mjs
 
       - name: 通知記録を保存
-        if: always()
+        if: always() && github.event_name != 'push'
         uses: actions/cache/save@v4
         with:
           path: state-bunkyo
