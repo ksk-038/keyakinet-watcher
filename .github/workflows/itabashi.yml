@@ -1,8 +1,6 @@
 name: 板橋区 空き監視
 
 on:
-  push:
-    branches: [itabashi]
   schedule:
     - cron: "5-59/15 * * * *"   # 15分おき（他と重ならないよう5分ずらし）
   workflow_dispatch:
@@ -23,9 +21,6 @@ on:
 concurrency:
   group: itabashi-watch
   cancel-in-progress: false
-
-permissions:
-  contents: write
 
 jobs:
   watch:
@@ -49,23 +44,16 @@ jobs:
 
       - name: 監視実行
         env:
-          DEBUG: ${{ (github.event_name == 'push' || inputs.debug) && '1' || '0' }}
+          DEBUG: ${{ inputs.debug && '1' || '0' }}
           FORCE: ${{ github.event_name != 'schedule' && '1' || '0' }}
           TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
           NOTIFY_ALL: ${{ inputs.notify_all && '1' || '0' }}
-          LINE_CHANNEL_ACCESS_TOKEN: ${{ github.event_name != 'push' && secrets.LINE_CHANNEL_ACCESS_TOKEN || '' }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
         run: node itabashi/watch.mjs
 
-      - name: 調査結果をブランチに置く
-        if: always() && github.event_name == 'push'
-        run: |
-          cd debug-itabashi && rm -f *.png && git init -q && git checkout -q -b dbg-itabashi
-          git add -A && git -c user.name=bot -c user.email=bot@example.com commit -qm dbg
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" dbg-itabashi
-
       - name: 通知記録を保存
-        if: always() && github.event_name != 'push'
+        if: always()
         uses: actions/cache/save@v4
         with:
           path: state-itabashi
