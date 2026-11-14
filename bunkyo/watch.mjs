@@ -189,11 +189,13 @@ async function main() {
   } catch (e) {
     console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);
     const last = state.lastErrorAt ? Date.parse(state.lastErrorAt) : 0;
-    if (Date.now() - last > 12 * 3600e3) {
+    // 1回だけのエラー（サイトが一時的に重い・つながりにくいなど）はお知らせしない。2回続けて失敗したらお知らせ
+    const fails = (state.fails || 0) + 1;
+    if (fails >= 2 && Date.now() - last > 12 * 3600e3) {
       await line(`⚠️ 文京区 空き監視でエラー\n${e.message.slice(0, 300)}\n（12時間に1回だけお知らせします）`).catch(() => {});
-      await saveState({ ...state, cells: cache, lastErrorAt: new Date().toISOString() });
+      await saveState({ ...state, cells: cache, lastErrorAt: new Date().toISOString(), fails });
     }
-    if (Date.now() - last <= 12 * 3600e3) await saveState({ ...state, cells: cache });
+    else await saveState({ ...state, cells: cache, fails });
     process.exitCode = 1;
     return;
   } finally {
