@@ -188,8 +188,8 @@ async function main() {
 
   const today = L.jstToday();
   const G = await Y.load(config.watch, today, WARD);
-  const cfgDates = new Set(L.targetDates(config.watch, today));
-  const dates = [...new Set([...cfgDates, ...G.dates, ...G.sdates])].sort();
+  // 見張るのは、YANAGIBAのまだ取れていない日と、空き検索の日だけ（LINEもアプリと同じ範囲）
+  const dates = [...new Set([...G.dates, ...G.sdates])].sort();
   if (!dates.length) { console.log('見張る日付がありません'); return; }
   console.log(`見張る日付: ${dates.map(L.label).join(' ')}`);
 
@@ -213,9 +213,9 @@ async function main() {
 
   const placed = open.map((s) => ({ ...s, place: `${s.building} ${s.room.replace(/\s+/g, ' ')}` }));
   await Y.report(G, { site: SITE_KEY, ward: WARD, url: TOP }, placed);
-  // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
+  // LINE: アプリのお知らせと同じ範囲（まだ取れていない日の練習の時間に重なる空き・空き検索に当てはまる空き）
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
-  open = placed.filter((s) => s.usual !== false && (cfgDates.has(s.date) || Y.hitsGap(s, G, WARD)) && Y.bookable(G, WARD, s.place, s.date));
+  open = placed.filter((s) => Y.lineOk(s, G, WARD));
   const key = (s) => `${s.date}|${s.building}|${s.room}|${s.time}`;
   // 初めて動いたとき（通知記録がないとき）は、今ある空きを記録するだけ（全部が一度にLINEに届くのを防ぐ）
   if (state.first) console.log('初回のため、今ある空きは記録だけします（全部見たいときは notify_all で実行）');
