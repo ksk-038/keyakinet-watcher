@@ -172,8 +172,8 @@ async function main() {
 
   const today = L.jstToday();
   const G = await Y.load(config.watch, today, '文京区');
-  const cfgDates = new Set(L.targetDates(config.watch, today));
-  const dates = [...new Set([...cfgDates, ...G.dates, ...G.sdates])].sort();
+  // 見張るのは、YANAGIBAのまだ取れていない日と、空き検索の日だけ（LINEもアプリと同じ範囲）
+  const dates = [...new Set([...G.dates, ...G.sdates])].sort();
   if (!dates.length) { console.log('見張る日付がありません'); return; }
   console.log(`見張る日付: ${dates.map(L.label).join(' ')}`);
   const targets = new Set(dates);
@@ -202,9 +202,9 @@ async function main() {
 
   const placed = open.map((s) => ({ ...s, place: `${s.facility} ${s.room.replace(/[«≪《].*$/, '').trim()}`, area: areaOf(s.facility, s.room) }));
   await Y.report(G, { site: 'bunkyo', ward: '文京区', url: S.TOP }, placed);
-  // LINE: いつもの日（土曜）の空きと、YANAGIBAのまだ取れていない日の練習の時間に重なる空き
+  // LINE: アプリのお知らせと同じ範囲（まだ取れていない日の練習の時間に重なる空き・空き検索に当てはまる空き）
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
-  open = placed.filter((s) => s.usual !== false && (cfgDates.has(s.date) || Y.hitsGap(s, G, '文京区')) && Y.bookable(G, '文京区', s.place, s.date));
+  open = placed.filter((s) => Y.lineOk(s, G, '文京区'));
   const seen = new Set(state.notified);
   const fresh = open.filter((s) => !seen.has(L.slotKey(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);

@@ -214,6 +214,20 @@ export function hitsGap(s, G, ward) {
   });
 }
 
+// LINEに送る空き：アプリのお知らせと同じ範囲だけ
+//   ・まだ取れていない日の練習の時間に重なる空き（いつもの条件の部屋・先着予約が始まっているもの）
+//   ・空き検索の日の、その広さ・時間に重なる空き
+export function lineOk(s, G, ward) {
+  if (s.usual !== false && hitsGap(s, G, ward) && bookable(G, ward, s.place, s.date)) return true;
+  const sr = range(s.time);
+  return (G.searches || []).some((q) => {
+    if (q.date !== s.date || !inRange(s.area ?? null, q)) return false;
+    if (ward && s.place && hidden(G, q.team, ward, s.place, s.date)) return false;
+    const qr = range(q.time);
+    return !qr || !sr || (sr[0] < qr[1] && sr[1] > qr[0]);
+  });
+}
+
 // アプリに送る（その区の分をまるごと。なくなった空きはアプリ側で消える）
 export async function report(G, { site, ward, url }, slots) {
   if (!SECRET || G.gaps == null) return;
