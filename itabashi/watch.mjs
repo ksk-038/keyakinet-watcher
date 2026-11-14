@@ -171,14 +171,21 @@ async function main() {
   const browser = await chromium.launch();
   let open;
   try {
-    open = await scan(browser, dates, G);
+    // サイトが一時的に重くて止まったときは、30秒待ってもう一度だけやり直す
+    open = await scan(browser, dates, G).catch(async (e) => {
+      console.log(`1回目は失敗（${e.message.split('\n')[0]}）。30秒後にもう一度やってみます`);
+      await new Promise((r) => setTimeout(r, 30000));
+      return scan(browser, dates, G);
+    });
   } catch (e) {
     console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);
     const last = state.lastErrorAt ? Date.parse(state.lastErrorAt) : 0;
-    if (Date.now() - last > 12 * 3600e3) {
+    // 1回だけのエラー（サイトが一時的に重い・つながりにくいなど）はお知らせしない。2回続けて失敗したらお知らせ
+    const fails = (state.fails || 0) + 1;
+    if (fails >= 2 && Date.now() - last > 12 * 3600e3) {
       await line(`⚠️ ${NAME} 空き監視でエラー\n${e.message.slice(0, 300)}\n（12時間に1回だけお知らせします）`).catch(() => {});
-      await saveState({ ...state, lastErrorAt: new Date().toISOString() });
-    }
+      await saveState({ ...state, lastErrorAt: new Date().toISOString(), fails });
+    } else await saveState({ ...state, fails });
     process.exitCode = 1;
     return;
   } finally {
