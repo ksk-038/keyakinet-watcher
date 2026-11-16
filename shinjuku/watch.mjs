@@ -88,18 +88,6 @@ export function markOf(raw) {
 
 // 「9:00〜9:55」「10:00〜10:55」のような続きのコマは「9:00〜10:55」にまとめる
 const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-function mergeTimes(times) {
-  const rs = times.map((t) => t.match(/(\d{1,2}:\d{2})〜(\d{1,2}:\d{2})/)).filter(Boolean).map((m) => [m[1], m[2]])
-    .sort((a, b) => toMin(a[0]) - toMin(b[0]));
-  if (rs.length !== times.length) return times;
-  const out = [];
-  for (const r of rs) {
-    const p = out.at(-1);
-    if (p && toMin(r[0]) - toMin(p[1]) <= 15) { if (toMin(r[1]) > toMin(p[1])) p[1] = r[1]; } else out.push([...r]);
-  }
-  return out.map(([a, b]) => `${a}〜${b}`);
-}
-
 function buildMessage(slots, title = `🎉 ${NAME}に空きが出ました`) {
   const byDate = new Map();
   for (const s of slots) {
@@ -112,7 +100,7 @@ function buildMessage(slots, title = `🎉 ${NAME}に空きが出ました`) {
   const lines = [title];
   for (const date of [...byDate.keys()].sort()) {
     lines.push('', `📅 ${L.label(date)}`);
-    for (const [room, times] of byDate.get(date)) lines.push(`・${room}`, `  ${mergeTimes(times).join(' / ')}`);
+    for (const [room, times] of byDate.get(date)) lines.push(`・${room}`, `  ${L.joinTimes(times)}`);
   }
   lines.push('', `予約: ${TOP}`);
   return lines.join('\n');
@@ -231,7 +219,8 @@ async function main() {
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
   if (DEBUG && open.length) console.log(`--- 通知文のプレビュー ---\n${buildMessage(open)}`);
   if (process.env.NOTIFY_ALL === '1') await line(open.length ? buildMessage(open, `📋 ${NAME}の今の空き状況（大きい部屋）`) : `📋 ${NAME}: 今は条件に合う空きがありません`);
-  else if (fresh.length) await line(buildMessage(fresh));
+  // 新しく空いたコマに、つながる今の空きも足して「13:00〜17:30」のように送る
+  else if (fresh.length) await line(buildMessage(L.widen(fresh, open)));
   await saveState({ notified: open.map(key), lastErrorAt: state.lastErrorAt });
 }
 

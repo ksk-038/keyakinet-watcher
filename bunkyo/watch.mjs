@@ -75,7 +75,7 @@ function buildMessage(slots) {
   const lines = ['🎉 文京区の施設に空きが出ました'];
   for (const date of [...byDate.keys()].sort()) {
     lines.push('', `📅 ${L.label(date)}`);
-    for (const [room, times] of byDate.get(date)) lines.push(`・${room}`, `  ${times.join(' / ')}`);
+    for (const [room, times] of byDate.get(date)) lines.push(`・${room}`, `  ${L.joinTimes(times)}`);
   }
   lines.push('', `予約: ${S.TOP}`);
   return lines.join('\n');
@@ -211,7 +211,8 @@ async function main() {
   const fresh = open.filter((s) => !seen.has(L.slotKey(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
   if (process.env.DEBUG === '1' && open.length) console.log(`--- 通知文のプレビュー ---\n${buildMessage(open)}`);
-  if (fresh.length) await line(buildMessage(fresh));
+  // 新しく空いたコマに、つながる今の空きも足して「13:00〜17:30」のように送る
+  if (fresh.length) await line(buildMessage(L.widen(fresh, open)));
   const cells = Object.fromEntries(Object.entries(cache).filter(([k]) => k.split('|').at(-1) > today));
   await saveState({ notified: open.map(L.slotKey), cells, lastErrorAt: state.lastErrorAt });
 }
