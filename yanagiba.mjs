@@ -175,7 +175,8 @@ export function match(slots, G, ward) {
       const merged = [];
       for (const r of rs) {
         const last = merged.at(-1);
-        if (last && r[0] - last[1] <= 15) last[1] = Math.max(last[1], r[1]);
+        // 間が1時間以内なら続けて使える（13:00〜15:00 と 15:30〜17:30 → 13:00〜17:30 で「全部」）
+        if (last && r[0] - last[1] <= L.JOIN_GAP) last[1] = Math.max(last[1], r[1]);
         else merged.push([...r]);
       }
       let full = false;

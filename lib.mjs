@@ -124,8 +124,48 @@ export function buildMessage(slots) {
   const lines = ['🎉 けやきネットに空きが出ました'];
   for (const date of [...byDate.keys()].sort()) {
     lines.push('', `📅 ${label(date)}`);
-    for (const [room, times] of byDate.get(date)) lines.push(`・${room}`, `  ${times.join(' / ')}`);
+    for (const [room, times] of byDate.get(date)) lines.push(`・${room}`, `  ${joinTimes(times)}`);
   }
   lines.push('', '予約: https://setagaya.keyakinet.net/Web/Home/WgR_ModeSelect');
   return lines.join('\n');
+}
+
+// ---- 続けて使える空きをつなげる ----
+// コマとコマの間が1時間以内なら、続けて使えるとみなす（例：13:00〜15:00 と 15:30〜17:30 → 13:00〜17:30）
+export const JOIN_GAP = 60;
+const tMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const tStr = (n) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
+const spanOf = (t) => { const m = norm(t || '').match(/(\d{1,2}:\d{2})\D{1,3}(\d{1,2}:\d{2})/); return m ? [tMin(m[1]), tMin(m[2])] : null; };
+
+// 時間の一覧を、続けて使える分ごとにまとめる（時間が読めないものはそのまま）
+export function joinTimes(times) {
+  const uniq = [...new Set(times)];
+  const rs = uniq.map(spanOf);
+  const out = [];
+  for (const r of rs.filter(Boolean).sort((a, b) => a[0] - b[0])) {
+    const p = out.at(-1);
+    if (p && r[0] - p[1] <= JOIN_GAP) p[1] = Math.max(p[1], r[1]);
+    else out.push([...r]);
+  }
+  return [...out.map(([a, b]) => `${tStr(a)}〜${tStr(b)}`), ...uniq.filter((_, i) => !rs[i])].join(' / ');
+}
+
+// 新しく空いたコマに、同じ部屋・同じ日でつながる今の空きを足す
+//   （前から 13:00〜15:00 が空いていて、今回 15:30〜17:30 が空いたら、両方を送って「13:00〜17:30」と出す）
+export function widen(fresh, open) {
+  const key = (s) => [s.date, s.place, s.facility, s.building, s.label, s.room].join('|');
+  const out = new Set(fresh);
+  for (const f of fresh) {
+    const same = open.filter((s) => key(s) === key(f) && spanOf(s.time)).sort((a, b) => spanOf(a.time)[0] - spanOf(b.time)[0]);
+    // つながっているかたまりを作り、新しいコマが入っているかたまりを全部足す
+    let chain = [];
+    let end = -1;
+    for (const s of same) {
+      const [a, b] = spanOf(s.time);
+      if (chain.length && a - end > JOIN_GAP) { if (chain.includes(f)) break; chain = []; }
+      chain.push(s); end = Math.max(end, b);
+    }
+    if (chain.includes(f)) for (const s of chain) out.add(s);
+  }
+  return [...out];
 }
