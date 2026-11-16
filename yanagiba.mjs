@@ -224,6 +224,8 @@ export function match(slots, G, ward) {
         gap_time: g.time, gap_title: g.title, partial: !full,
         opens_at: opensAt(G, g.team, ward, p.place, g.date, g.base),
         search_id: g.search ? g.id : null,
+        // アプリでグレーにした手続きの日の空き：画面には出すが、お知らせはしない（グレーを戻せば、まだ空いていれば知らせる）
+        muted: !g.search && muted(G, g.team, ward, p.place, g.date, g.base),
       });
     }
   }
