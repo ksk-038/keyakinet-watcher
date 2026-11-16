@@ -14,7 +14,7 @@
   "roomFilter": {
     "minArea": 150,
     "includeUnlabeled": true,
-    "minCapacityIfUnknown": 100
+    "minCapacityIfUnknown": 80
   },
   "excludeRoomWords": [],
   "notifyMarks": ["○", "△"],

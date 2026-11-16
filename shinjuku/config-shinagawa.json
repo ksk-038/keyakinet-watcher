@@ -20,7 +20,7 @@
   "roomFilter": {
     "minArea": 150,
     "includeUnlabeled": true,
-    "minCapacityIfUnknown": 100
+    "minCapacityIfUnknown": 80
   },
   "excludeRoomWords": ["託児室"],
   "_excludeBuildingWordsの説明": "館の名前にこの言葉が入る館は見ない",

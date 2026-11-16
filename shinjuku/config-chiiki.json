@@ -17,7 +17,7 @@
   "roomFilter": {
     "minArea": 150,
     "includeUnlabeled": true,
-    "minCapacityIfUnknown": 100
+    "minCapacityIfUnknown": 80
   },
   "excludeRoomWords": [],
   "_区分の時間": "地域センター共通の利用区分（区のサイトより）。通知に時刻を出すのに使います",
