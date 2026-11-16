@@ -38,7 +38,7 @@ export const bigEnough = (area, date, cap = null) => area != null ? area >= (isR
 //   その区を使う拠点（区・施設の予約のきまりの「どこの練習の施設か」）の練習だけ。きまりがない区は東京
 //   → { teams, gaps: [{ team, date, time, title, base }], dates: Set, rules }。読めなかったら gaps は null
 export async function load(watch, today, ward) {
-  const empty = { teams: [], gaps: null, dates: new Set(), rules: [], searches: [], sdates: new Set() };
+  const empty = { teams: [], gaps: null, dates: new Set(), rules: [], searches: [], sdates: new Set(), skips: new Map() };
   if (!SECRET) return empty;
   try {
     const [y, m] = today.split('-').map(Number);
@@ -66,7 +66,11 @@ export async function load(watch, today, ward) {
     );
     const sdates = new Set(searches.map((q) => q.date));
     if (searches.length) console.log(`空き検索: ${searches.map((q) => `${L.label(q.date)} ${q.time || '終日'} ${q.min ?? 0}〜${q.max ?? ''}㎡`).join(' / ')}`);
-    return { teams: list.map((x) => x.team_id), gaps, dates, rules, searches, sdates };
+    // アプリの施設予約で、左スワイプでグレーにした手続き（チームごと）。その手続きの日の空きは LINE に送らない
+    const skips = new Map(list.map((x) => [x.team_id, new Set(x.skips || [])]));
+    const nSkip = [...skips.values()].reduce((n, x) => n + x.size, 0);
+    if (nSkip) console.log(`グレーにした手続き: ${nSkip}件`);
+    return { teams: list.map((x) => x.team_id), gaps, dates, rules, searches, sdates, skips };
   } catch (e) {
     console.warn(`⚠ YANAGIBAのまだ取れていない日を読めません: ${e.message}`);
     return empty;
@@ -139,6 +143,26 @@ export function opensAt(G, team, ward, place, date, base) {
     .sort()[0];
   return t;
 }
+// アプリの施設予約で、その部屋・その日の先着予約の手続きをグレーにしているか（LINE用）
+//   アプリの印（きまりのid|手続きの番号|手続きの日）と同じ考え方：
+//   ・「いま取りかかれる、まだ取れていない日」の行（…|open）をグレー → 先着予約が始まっている日
+//   ・先着予約の日の行（…|その日）をグレー → その手続きの日
+//   ・抽選締切・抽選結果発表をグレーにして止めた月（month|きまりのid|年-月）
+//   グレーを戻せば（印が消えれば）、また送る
+export function muted(G, team, ward, place, date, base = null) {
+  const sk = G.skips?.get(team);
+  if (!sk?.size || !place) return false;
+  const r = ruleFor(G, team, ward, place, base);
+  if (!r?.id) return false;
+  if (sk.has(`month|${r.id}|${date.slice(0, 7)}`)) return true;
+  const today = L.jstToday();
+  return (r.steps || []).some((st, si) => {
+    if (st.kind !== 'first') return false;
+    const day = firstOpen(st, date);
+    return sk.has(`${r.id}|${si}|${day}`) || (day < today && sk.has(`${r.id}|${si}|open`));
+  });
+}
+
 // 先着予約がもう始まっているか（LINE用。きまりがなければ始まっているとみなす）
 export function bookable(G, ward, place, date) {
   const team = G.teams?.[0];
@@ -208,10 +232,12 @@ export function match(slots, G, ward) {
 
 // そのコマが、まだ取れていない日の練習の時間に重なるか（LINEにも送るため）
 //   ward と s.place があれば、休日用・平日用のきまりで外れる部屋は除く
-export function hitsGap(s, G, ward) {
+//   line: true のときは、アプリでグレーにした手続きの日（muted）も除く
+export function hitsGap(s, G, ward, line = false) {
   return (G.gaps || []).some((g) => {
     if (g.date !== s.date) return false;
     if (ward && s.place && hidden(G, g.team, ward, s.place, s.date)) return false;
+    if (line && ward && muted(G, g.team, ward, s.place, s.date, g.base)) return false;
     const gr = range(g.time);
     const sr = range(s.time);
     return !gr || !sr || (sr[0] < gr[1] && sr[1] > gr[0]);
@@ -219,10 +245,10 @@ export function hitsGap(s, G, ward) {
 }
 
 // LINEに送る空き：アプリのお知らせと同じ範囲だけ
-//   ・まだ取れていない日の練習の時間に重なる空き（いつもの条件の部屋・先着予約が始まっているもの）
+//   ・まだ取れていない日の練習の時間に重なる空き（いつもの条件の部屋・先着予約が始まっているもの・アプリでグレーにしていないもの）
 //   ・空き検索の日の、その広さ・時間に重なる空き
 export function lineOk(s, G, ward) {
-  if (s.usual !== false && hitsGap(s, G, ward) && bookable(G, ward, s.place, s.date)) return true;
+  if (s.usual !== false && hitsGap(s, G, ward, true) && bookable(G, ward, s.place, s.date)) return true;
   const sr = range(s.time);
   return (G.searches || []).some((q) => {
     if (q.date !== s.date || !inRange(s.area ?? null, q, s.cap ?? null)) return false;
