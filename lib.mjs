@@ -97,16 +97,20 @@ export function areaOf(facility, room, table = {}) {
   if (t) return Number(t[1]);
   const r = nf(room).replace(/定員\d+/, '');
   const f = nf(facility);
-  let best = null;
-  let len = 0;
-  for (const [fac, rooms] of Object.entries(table)) {
-    if (typeof rooms !== 'object' || !nf(fac).startsWith(f)) continue;
-    for (const [name, area] of Object.entries(rooms)) {
-      const k = nf(name);
-      if (r.startsWith(k) && k.length > len) { best = area; len = k.length; }
+  // 施設名がぴったり同じものを先に見る（「経堂地区会館」と「経堂地区会館別館」をまちがえないように）
+  const facs = Object.entries(table).filter(([fac, rooms]) => typeof rooms === 'object' && nf(fac).startsWith(f));
+  for (const list of [facs.filter(([fac]) => nf(fac) === f), facs]) {
+    let best = null;
+    let len = 0;
+    for (const [, rooms] of list) {
+      for (const [name, area] of Object.entries(rooms)) {
+        const k = nf(name);
+        if (r.startsWith(k) && k.length > len) { best = area; len = k.length; }
+      }
     }
+    if (best != null) return best;
   }
-  return best;
+  return null;
 }
 
 export const fmtTime = (s) => norm(s).replace(/[~～〜-]/, '〜');
