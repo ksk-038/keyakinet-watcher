@@ -53,7 +53,9 @@ async function saveState(s) {
 // 部屋の広さ(㎡)を rooms.json から探す（全角・半角や空白の違いは無視）。わからなければ null
 export function areaOf(building, room) {
   const t = ROOMS[Object.keys(ROOMS).find((k) => L.norm(k) === L.norm(building))] || {};
-  const k = Object.keys(t).find((k) => L.norm(k) === L.norm(room));
+  // 部屋名の後ろの定員（例：「集会室１（４２）」の（４２））はあってもなくても同じ部屋として見る
+  const bare = (s) => L.norm(s).replace(/\(\d+\)$/, '');
+  const k = Object.keys(t).find((k) => L.norm(k) === L.norm(room)) ?? Object.keys(t).find((k) => bare(k) === bare(room));
   return k ? t[k] : null;
 }
 
