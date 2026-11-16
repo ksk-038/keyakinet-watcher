@@ -9,7 +9,7 @@
   },
 
   "roomFilter": {
-    "minCapacity": 100,
+    "minCapacity": 80,
     "minArea": 150,
     "includeUnlabeled": true
   },

@@ -23,13 +23,16 @@ async function rpc(fn, body) {
 // 土日祝か
 export const isRestDay = (d) => ['土', '日'].includes(L.weekday(d)) || Boolean(holidayJp.holidays[d]);
 
-// 空き検索の広さに入るか（広さ不明の部屋もふくむ）
-const inRange = (area, q) => area == null || (area >= (q.min ?? 0) && (q.max == null || area <= q.max));
+// 広さが書いていなくて定員だけある部屋：150㎡以上を探すときは定員80名以上、100㎡以上を探すときは定員40名以上だけ
+export const capOk = (cap, minArea) => cap == null || minArea < 100 || cap >= (minArea >= 150 ? 80 : 40);
+// 空き検索の広さに入るか（広さ不明の部屋もふくむ。定員だけ書いてあれば定員で判断）
+const inRange = (area, q, cap = null) => area == null ? capOk(cap, q.min ?? 0) : (area >= (q.min ?? 0) && (q.max == null || area <= q.max));
 // その日のどれかの空き検索に入る部屋か
-export const searchHit = (G, date, area) => (G.searches || []).some((q) => q.date === date && inRange(area, q));
+export const searchHit = (G, date, area, cap = null) => (G.searches || []).some((q) => q.date === date && inRange(area, q, cap));
 
-// まだ取れていない日に見る部屋の広さ: 土日祝は150㎡以上、平日は100㎡以上（広さ不明の部屋は各区のいつもの条件で）
-export const bigEnough = (area, date) => area != null && area >= (isRestDay(date) ? 150 : 100);
+// まだ取れていない日に見る部屋の広さ: 土日祝は150㎡以上、平日は100㎡以上
+//   広さ不明で定員だけある部屋は、土日祝は定員80名以上、平日は定員40名以上（どちらもない部屋は各区のいつもの条件で）
+export const bigEnough = (area, date, cap = null) => area != null ? area >= (isRestDay(date) ? 150 : 100) : cap != null && capOk(cap, isRestDay(date) ? 150 : 100);
 
 // アプリの「まだ施設が取れていない日」を読む。watch は各区の config.watch（何ヶ月先まで見るか）、ward は区の名前
 //   その区を使う拠点（区・施設の予約のきまりの「どこの練習の施設か」）の練習だけ。きまりがない区は東京
@@ -170,7 +173,7 @@ export function match(slots, G, ward) {
     for (const p of groups.values()) {
       if (p.date !== g.date || hidden(G, g.team, ward, p.place, p.date)) continue;
       // まだ取れていない日は、いつもの条件の部屋だけ。空き検索は、その広さの部屋だけ
-      if (g.search ? !inRange(p.area ?? null, g) : p.usual === false) continue;
+      if (g.search ? !inRange(p.area ?? null, g, p.cap ?? null) : p.usual === false) continue;
       const rs = p.times.map(range).filter(Boolean).sort((a, b) => a[0] - b[0]);
       const merged = [];
       for (const r of rs) {
@@ -221,7 +224,7 @@ export function lineOk(s, G, ward) {
   if (s.usual !== false && hitsGap(s, G, ward) && bookable(G, ward, s.place, s.date)) return true;
   const sr = range(s.time);
   return (G.searches || []).some((q) => {
-    if (q.date !== s.date || !inRange(s.area ?? null, q)) return false;
+    if (q.date !== s.date || !inRange(s.area ?? null, q, s.cap ?? null)) return false;
     if (ward && s.place && hidden(G, q.team, ward, s.place, s.date)) return false;
     const qr = range(q.time);
     return !qr || !sr || (sr[0] < qr[1] && sr[1] > qr[0]);

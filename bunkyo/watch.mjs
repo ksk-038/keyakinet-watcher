@@ -98,11 +98,11 @@ function configFor(start, until, G) {
 // 平日用だけの施設は、まだ取れていない平日だけ
 const facilityOk = (c, G) => !WD_ONLY.has(c.facility) || ((config.weekdayFacilities || []).includes(c.facility) && G.dates.has(c.date) && !Y.isRestDay(c.date));
 // いつもの条件（YANAGIBAのまだ取れていない平日は100㎡以上も）
-const usualOk = (c, G) => facilityOk(c, G) && (roomOk(c, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(areaOf(c.facility, c.room), c.date)));
+const usualOk = (c, G) => facilityOk(c, G) && (roomOk(c, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(areaOf(c.facility, c.room), c.date, c.cap ?? null)));
 // 空き検索の日は、その広さの部屋。100㎡未満の部屋は searchFacilities の施設だけ
 const searchOk = (c, G) => {
   const a = areaOf(c.facility, c.room);
-  if (!Y.searchHit(G, c.date, a)) return false;
+  if (!Y.searchHit(G, c.date, a, c.cap ?? null)) return false;
   return !config.searchFacilities || (a != null && a >= 100) || config.searchFacilities.includes(c.facility);
 };
 
