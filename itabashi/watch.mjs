@@ -125,9 +125,9 @@ async function scan(browser, targets, G) {
           if ((config.excludeRoomWords || []).some((w) => L.norm(label).includes(L.norm(w)))) continue;
           const area = areaOf(label);
           // いつもの条件（150㎡以上か広さ不明）。YANAGIBAのまだ取れていない平日は100㎡以上も
-          const usual = roomOk({ cap, area }, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(area, c.date));
+          const usual = roomOk({ cap, area }, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(area, c.date, cap ?? null));
           // 空き検索の日は、その広さの部屋も
-          const ok = usual || Y.searchHit(G, c.date, area);
+          const ok = usual || Y.searchHit(G, c.date, area, cap ?? null);
           if (!roomLog.has(label)) roomLog.set(label, `${ok ? '◎' : '　'} ${label}（${cap ?? '定員不明'}${cap ? '名' : ''}${area ? ` ${area}㎡` : ''}）`);
           if (!ok || !tset.has(c.date)) continue;
           const time = L.fmtTime(c.time);

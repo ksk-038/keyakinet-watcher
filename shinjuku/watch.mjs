@@ -142,23 +142,26 @@ async function scan(browser, targets, G) {
           for (const r of rooms) {
             if ((config.excludeRoomWords || []).some((w) => L.norm(r.name).includes(L.norm(w)))) continue;
             const area = areaOf(b.name, r.name);
+            // 部屋名の後ろに書いてある定員（例：「集会室(60)」）
+            const capM = L.norm(r.name).match(/\((\d+)\)$/);
+            const cap = capM ? Number(capM[1]) : null;
             // いつもの条件。YANAGIBAのまだ取れていない平日は100㎡以上も
             const usual = roomOk(area, config.roomFilter, r.name);
             // 空き検索の日は、その広さの部屋も
-            const srch = (G.sdates?.size || 0) > 0 && [...G.sdates].some((d) => Y.searchHit(G, d, area));
-            if (!usual && !srch && !(G.dates.size && area != null && area >= 100)) continue;
+            const srch = (G.sdates?.size || 0) > 0 && [...G.sdates].some((d) => Y.searchHit(G, d, area, cap));
+            if (!usual && !srch && !(G.dates.size && (area != null ? area >= 100 : cap != null && cap >= 40))) continue;
             const key = `${start}|${b.value}|${r.value}`;
             if (done.has(key)) continue;
             done.add(key);
             const cells = await S.readRoom(page, r.value);
-            const isUsual = (c) => usual || (G.dates.has(c.date) && Y.bigEnough(area, c.date));
+            const isUsual = (c) => usual || (G.dates.has(c.date) && Y.bigEnough(area, c.date, cap));
             const hits = cells.filter((c) => tset.has(c.date) && config.notifyMarks.includes(markOf(c.sym)) &&
-              (isUsual(c) || Y.searchHit(G, c.date, area)));
+              (isUsual(c) || Y.searchHit(G, c.date, area, cap)));
             for (const c of cells) marks.set(c.sym, (marks.get(c.sym) || 0) + 1);
             console.log(`  ${b.name} ${r.name}（${area ?? '広さ不明'}${area ? '㎡' : ''}）: ${cells.length}コマ中 空き${hits.length}`);
             const lt = labelTimes(b.name, cells);
             for (const c of hits) {
-              open.push({ building: b.name, room: r.name, area, date: c.date, time: L.fmtTime(c.time) || lt[L.norm(c.label)] || L.norm(c.label), usual: isUsual(c) });
+              open.push({ building: b.name, room: r.name, area, cap, date: c.date, time: L.fmtTime(c.time) || lt[L.norm(c.label)] || L.norm(c.label), usual: isUsual(c) });
             }
           }
         }

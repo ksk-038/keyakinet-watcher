@@ -10,7 +10,7 @@
 
   "roomFilter": {
     "minArea": 150,
-    "minCapacity": 80,
+    "minCapacity": 100,
     "includeUnlabeled": true,
     "excludeRoomWords": ["学生"],
     "includeRoomWords": ["大塚地域活動センター多目的室A+B"]
