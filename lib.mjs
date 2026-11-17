@@ -154,7 +154,7 @@ export function joinTimes(times) {
   return [...out.map(([a, b]) => `${tStr(a)}〜${tStr(b)}`), ...uniq.filter((_, i) => !rs[i])].join(' / ');
 }
 
-// 新しく空いたコマに、同じ部屋・同じ日でつながる今の空きを足す
+// 新しく空いたコマに、同じ部屋・同じ日でつながる今の空きを足す（open には、練習の時間の外でもつながる空きを含めて渡す）
 //   （前から 13:00〜15:00 が空いていて、今回 15:30〜17:30 が空いたら、両方を送って「13:00〜17:30」と出す）
 export function widen(fresh, open) {
   const key = (s) => [s.date, s.place, s.facility, s.building, s.label, s.room].join('|');

@@ -212,7 +212,7 @@ async function main() {
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
   if (process.env.DEBUG === '1' && open.length) console.log(`--- 通知文のプレビュー ---\n${buildMessage(open)}`);
   // 新しく空いたコマに、つながる今の空きも足して「13:00〜17:30」のように送る
-  if (fresh.length) await line(buildMessage(L.widen(fresh, open)));
+  if (fresh.length) await line(buildMessage(L.widen(fresh, placed)));
   const cells = Object.fromEntries(Object.entries(cache).filter(([k]) => k.split('|').at(-1) > today));
   await saveState({ notified: open.map(L.slotKey), cells, lastErrorAt: state.lastErrorAt });
 }

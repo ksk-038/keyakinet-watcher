@@ -161,8 +161,8 @@ async function main() {
   const fresh = open.filter((s) => !seen.has(L.slotKey(s)));
   console.log(`空き ${open.length}コマ（新しく見つかった分 ${fresh.length}コマ）`);
   if (process.env.DEBUG === '1' && open.length) console.log(`--- 通知文のプレビュー ---\n${L.buildMessage(open)}`);
-  // 新しく空いたコマに、つながる今の空きも足して「13:00〜17:30」のように送る
-  if (fresh.length) await line(L.buildMessage(L.widen(fresh, open)));
+  // 新しく空いたコマに、つながる今の空きも足して「13:00〜17:30」のように送る（練習の時間の外まで続く空きも足す。アプリの表示と同じ）
+  if (fresh.length) await line(L.buildMessage(L.widen(fresh, placed)));
   // いま空いているコマだけ記録 → 埋まってまた空いたら再通知される
   await saveState({ notified: open.map(L.slotKey), lastErrorAt: state.lastErrorAt });
 }

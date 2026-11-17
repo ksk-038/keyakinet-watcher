@@ -207,7 +207,7 @@ async function main() {
   if (DEBUG && open.length) console.log(`--- 通知文のプレビュー ---\n${buildMessage(open)}`);
   if (process.env.NOTIFY_ALL === '1') await line(open.length ? buildMessage(open, `📋 ${NAME}の今の空き状況（大きい部屋）`) : `📋 ${NAME}: 今は条件に合う空きがありません`);
   // 新しく空いたコマに、つながる今の空きも足して「13:00〜17:30」のように送る
-  else if (fresh.length) await line(buildMessage(L.widen(fresh, open)));
+  else if (fresh.length) await line(buildMessage(L.widen(fresh, placed)));
   await saveState({ notified: open.map(key), lastErrorAt: state.lastErrorAt, started: true });
 }
 
