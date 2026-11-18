@@ -246,17 +246,40 @@ export function hitsGap(s, G, ward, line = false) {
   });
 }
 
-// LINEに送る空き：アプリのお知らせと同じ範囲だけ
-//   ・まだ取れていない日の練習の時間に重なる空き（いつもの条件の部屋・先着予約が始まっているもの・アプリでグレーにしていないもの）
-//   ・空き検索の日の、その広さ・時間に重なる空き
-export function lineOk(s, G, ward) {
-  if (s.usual !== false && hitsGap(s, G, ward, true) && bookable(G, ward, s.place, s.date)) return true;
+// 同じ部屋・同じ日で、間が1時間以内につながる空きをまとめた時間（そのコマが入るかたまり）
+function chainSpan(s, all) {
   const sr = range(s.time);
+  if (!sr || !all) return sr;
+  const key = (x) => [x.date, x.place, x.facility, x.building, x.label, x.room].join('|');
+  const rs = all.filter((x) => key(x) === key(s)).map((x) => range(x.time)).filter(Boolean).sort((a, b) => a[0] - b[0]);
+  const has = (c) => c && c[0] <= sr[0] && c[1] >= sr[1];
+  let cur = null;
+  for (const r of rs) {
+    if (cur && r[0] - cur[1] <= L.JOIN_GAP) cur[1] = Math.max(cur[1], r[1]);
+    else { if (has(cur)) return cur; cur = [...r]; }
+  }
+  return has(cur) ? cur : sr;
+}
+// 練習（検索）の時間をまるごと使えるか：つながる空きも足して、時間全体をふくめば◯
+const covers = (span, gr) => !gr || (!!span && span[0] <= gr[0] && span[1] >= gr[1]);
+
+// LINEに送る空き：練習の時間がまるごと空いたときだけ（一部だけの空きはアプリにだけ出す。LINEの無料枠を節約）
+//   ・まだ取れていない日の練習の時間をまるごと使える空き（いつもの条件の部屋・先着予約が始まっているもの・アプリでグレーにしていないもの）
+//   ・空き検索の日の、その広さで、検索した時間をまるごと使える空き
+//   all：同じ区の空き全部（前後のコマとつながるかを見るため）
+export function lineOk(s, G, ward, all = null) {
+  const span = chainSpan(s, all);
+  const full = s.usual !== false && bookable(G, ward, s.place, s.date) && (G.gaps || []).some((g) => {
+    if (g.date !== s.date) return false;
+    if (ward && s.place && hidden(G, g.team, ward, s.place, s.date)) return false;
+    if (ward && muted(G, g.team, ward, s.place, s.date, g.base)) return false;
+    return covers(span, range(g.time));
+  });
+  if (full) return true;
   return (G.searches || []).some((q) => {
     if (q.date !== s.date || !inRange(s.area ?? null, q, s.cap ?? null)) return false;
     if (ward && s.place && hidden(G, q.team, ward, s.place, s.date)) return false;
-    const qr = range(q.time);
-    return !qr || !sr || (sr[0] < qr[1] && sr[1] > qr[0]);
+    return covers(span, range(q.time));
   });
 }
 
