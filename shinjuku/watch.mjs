@@ -210,7 +210,7 @@ async function main() {
   await Y.report(G, { site: SITE_KEY, ward: WARD, url: TOP }, placed);
   // LINE: アプリのお知らせと同じ範囲（まだ取れていない日の練習の時間に重なる空き・空き検索に当てはまる空き）
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
-  open = placed.filter((s) => Y.lineOk(s, G, WARD));
+  open = placed.filter((s) => Y.lineOk(s, G, WARD, placed));
   const key = (s) => `${s.date}|${s.building}|${s.room}|${s.time}`;
   // 初めて動いたとき（通知記録がないとき）は、今ある空きを記録するだけ（全部が一度にLINEに届くのを防ぐ）
   if (state.first) console.log('初回のため、今ある空きは記録だけします（全部見たいときは notify_all で実行）');

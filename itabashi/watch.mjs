@@ -196,7 +196,7 @@ async function main() {
   await Y.report(G, { site: 'itabashi', ward: '板橋区', url: S.TOP }, placed);
   // LINE: アプリのお知らせと同じ範囲（まだ取れていない日の練習の時間に重なる空き・空き検索に当てはまる空き）
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
-  open = placed.filter((s) => Y.lineOk(s, G, '板橋区'));
+  open = placed.filter((s) => Y.lineOk(s, G, '板橋区', placed));
   const key = (s) => `${s.date}|${s.label}|${s.time}`;
   // 初めて動いたとき（通知記録がないとき）は、今ある空きを記録するだけにする（全部が一度に届くのを防ぐ）
   const first = !state.notified.length && !state.lastErrorAt && !state.started;
