@@ -115,12 +115,18 @@ export function facLabel(name) {
   return (paren ? paren[1] : n).replace(/^大阪市立|^大阪市/, '');
 }
 const SHEET = new Map(Object.entries(ROOMS).filter(([k]) => k !== '_説明').map(([k, v]) => [facKey(k), v]));
-function sheetRoom(fac, room) {
+function sheetRoom(fac, room, area = null) {
   const rooms = SHEET.get(facKey(fac));
   if (!rooms) return null;
   const r = L.norm(room);
-  const k = Object.keys(rooms).find((x) => L.norm(x) === r);
-  return k ? { area: rooms[k][0], cap: rooms[k][1], ok: rooms[k][2] } : null;
+  const ks = Object.keys(rooms);
+  const digits = (x) => (L.norm(x).match(/\d{3,}/) || [])[0];
+  // 名前がぴったり → 片方がもう片方をふくむ（「ホール」と「リゲッタIKUNOホール」）→ 3けたの部屋番号が同じ（「102」と「102会議室」）→ 広さが同じ
+  const k = ks.find((x) => L.norm(x) === r)
+    || ks.find((x) => r.length >= 2 && (L.norm(x).includes(r) || r.includes(L.norm(x))))
+    || (digits(r) && ks.find((x) => digits(x) === digits(r)))
+    || (area != null && ks.filter((x) => Math.abs((rooms[x][0] ?? -99) - area) <= 1).length === 1 ? ks.find((x) => Math.abs((rooms[x][0] ?? -99) - area) <= 1) : null);
+  return k ? { area: rooms[k][0], cap: rooms[k][1], ok: rooms[k][2], as: k } : null;
 }
 const num = (s) => { const m = L.norm(s || '').match(/([\d.]+)/); return m ? Number(m[1]) : null; };
 
@@ -130,7 +136,7 @@ export function slotsOf(facName, scd, rooms, want) {
   const out = [];
   for (const rm of rooms) {
     if (SKIP_KINDS.includes(rm.roomkindCd)) continue;
-    const sh = sheetRoom(facName, rm.roomName);
+    const sh = sheetRoom(facName, rm.roomName, num(rm.hirosa));
     // ダンスができる部屋だけ：練習場所調査シート(大阪市)で「利用可」が「可」の部屋。シートにない部屋は外す（ログに出すので、シートに足せば見張る）
     if (!sh) { MISSING.add(`${facLabel(facName)} ${L.norm(rm.roomName)}（${rm.hirosa || '広さ不明'}）`); continue; }
     if (sh.ok === false) continue;

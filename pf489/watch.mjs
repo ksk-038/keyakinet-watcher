@@ -72,9 +72,10 @@ const pickFacility = (idx, date) => {
 const facilitiesOf = (body) => [...(body || '').matchAll(/name="slShisetsu" value="(\d+)">([^<]+)/g)].map((m) => ({ idx: m[1], name: L.norm(m[2]) }));
 // 部屋の一覧の画面 → [{ code, name, mark }]
 const roomsOf = (body) => [...(body || '').matchAll(/Wm_JikanSentaku\.aspx\?SJCode=(\w+)&(?:amp;)?UseDate=\d+"[^>]*>([^<]+)</g)].map((m) => {
-  const t = L.norm(text(m[2])).replace(/^・/, '');
-  const mk = (t.match(/^\((.)\)/) || [])[1] || '';
-  return { code: m[1], name: t.replace(/^\(.\)/, '').trim(), mark: mk };
+  // 「・ (△)会議室１」「・ (&#215;)剣道場」「・ (休館日)大体育室」→ 部屋の名前と、その日の印
+  const t = L.norm(text(m[2]).replace(/&#215;/g, '×')).replace(/^・/, '');
+  const mk = (t.match(/^\(([^)]*)\)/) || [])[1] || '';
+  return { code: m[1], name: t.replace(/^\([^)]*\)/, '').trim(), mark: mk };
 });
 // 時間を選ぶ画面 → 空いている時間 ["9:00〜9:30", …]（抽選の受付中は先着で取れないので数えない）
 function timesOf(body) {
