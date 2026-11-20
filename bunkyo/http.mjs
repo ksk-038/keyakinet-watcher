@@ -107,17 +107,24 @@ const parse = (txt, what) => { try { return JSON.parse(txt); } catch { throw new
 
 // 1日分の空き状況 → [{ facility, facilityCode, room, cap, status, row, cell }]
 export async function day(site, date) {
-  if (!site.model) {
-    // 画面を開いたときと同じ最初の読み込み（1日表示で）
+  const search = async () => {
+    const j = parse(await site.req('AvailabilityCheckApplySelectDays/SearchCondition', site.form([...cond(date), ...lists(), ...flat(site.model || [])])), '日ごとの空き状況');
+    if (j?.[0]?.Result === 'Error') return j[0].Information;
+    site.model = j?.[1]?.AvailabilitySelectDays;
+    return site.model ? null : `中身が空（${JSON.stringify(j).slice(0, 80)}）`;
+  };
+  // まずはそのまま見たい日を読む。だめなら、画面を開き直したときと同じ最初の読み込みをしてから
+  let err = await search();
+  if (err) {
+    if (DEBUG) console.log(`      そのままでは読めないので開き直します（${err}）`);
+    await site.req('AvailabilityCheckApplySelectDays');
     const j = parse(await site.req('AvailabilityCheckApplySelectDays/GetAvailability', site.form([...cond(date), ...lists()])), '最初の空き状況');
     site.model = j?.[0]?.AvailabilitySelectDays;
     if (!site.model) throw new Error(`最初の空き状況が空です（${JSON.stringify(j).slice(0, 120)}）`);
-  }
-  if (!site.model.some((f) => (f.Rows || []).some((r) => (r.Cells || []).some((c) => c.UseDate?.slice(0, 10) === date)))) {
-    const j = parse(await site.req('AvailabilityCheckApplySelectDays/SearchCondition', site.form([...cond(date), ...lists(), ...flat(site.model)])), '日ごとの空き状況');
-    if (j?.[0]?.Result === 'Error') throw new Error(`日ごとの空き状況でエラー ${j[0].Information}（${date}）`);
-    site.model = j?.[1]?.AvailabilitySelectDays;
-    if (!site.model) throw new Error(`日ごとの空き状況が空です（${JSON.stringify(j).slice(0, 120)}）`);
+    if (!site.model.some((f) => (f.Rows || []).some((r) => (r.Cells || []).some((c) => c.UseDate?.slice(0, 10) === date)))) {
+      err = await search();
+      if (err) throw new Error(`日ごとの空き状況でエラー ${err}（${date}）`);
+    }
   }
   const out = [];
   for (const f of site.model) for (const row of f.Rows || []) for (const cell of row.Cells || []) {
@@ -141,9 +148,6 @@ export async function times(site, date, picks) {
   for (const f of d.AvailabilityTime?.FacilityList || []) for (const t of f.Tables || []) for (const p of t.Places || []) for (const c of p.Cells || []) {
     out.push({ facility: f.FacilityName, room: (p.ObjectName || '').trim(), cap: p.Capacity || null, date: t.UseDate.slice(0, 10), time: [L.norm(c.FrameName || ''), `${hm(c.TimeFrom)}〜${hm(c.TimeTo)}`].filter(Boolean).join(' '), status: c.Status });
   }
-  // 次の日を見るために、日ごとの空き状況の画面に戻る（戻ると最初の読み込みからやり直し）
-  await site.req('AvailabilityCheckApplySelectDays');
-  site.model = null;
   return out;
 }
 
