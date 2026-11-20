@@ -62,7 +62,7 @@ export async function load(watch, today, ward) {
     const searches = list.flatMap((x) =>
       (x.searches || [])
         .filter((q) => q.date > today && q.date <= end && forBase(x.team_id, q.base || null))
-        .map((q) => ({ team: x.team_id, id: q.id, date: q.date, time: q.time || null, title: '空き検索', min: q.min_area ?? null, max: q.max_area ?? null })),
+        .map((q) => ({ team: x.team_id, id: q.id, date: q.date, time: q.time || null, title: '空き検索', min: q.min_area ?? null, max: q.max_area ?? null, line: q.line === true })),
     );
     const sdates = new Set(searches.map((q) => q.date));
     if (searches.length) console.log(`空き検索: ${searches.map((q) => `${L.label(q.date)} ${q.time || '終日'} ${q.min ?? 0}〜${q.max ?? ''}㎡`).join(' / ')}`);
@@ -276,7 +276,8 @@ export function lineOk(s, G, ward, all = null) {
     return covers(span, range(g.time));
   });
   if (full) return true;
-  return (G.searches || []).some((q) => {
+  // 空き検索は、LINEを受け取る人（アプリの設定の line_user）が足した検索だけ LINE に送る。ほかの人の検索はアプリの結果だけ
+  return (G.searches || []).filter((q) => q.line).some((q) => {
     if (q.date !== s.date || !inRange(s.area ?? null, q, s.cap ?? null)) return false;
     if (ward && s.place && hidden(G, q.team, ward, s.place, s.date)) return false;
     return covers(span, range(q.time));
