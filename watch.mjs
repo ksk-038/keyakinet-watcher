@@ -73,11 +73,10 @@ async function newPage(browser) {
   return { ctx, page };
 }
 
-// 見張る日を、1週間ごとのまとまりに分ける（1日だけなら「1日」表示）。1ヶ月の表は重いので使わない
+// 見張る日を、1週間ごとのまとまりに分ける（このサイトは「1日」の表示がない）。1ヶ月の表は重いので使わない
 function spans(dates) {
   return L.windows(dates, 7).map((start, i, all) => {
-    const ds = dates.filter((d) => d >= start && (!all[i + 1] || d < all[i + 1]));
-    return { start, until: all[i + 1], span: ds.length === 1 ? '1日' : '1週間' };
+    return { start, until: all[i + 1], span: '1週間' };
   });
 }
 
@@ -106,13 +105,15 @@ async function readGrids(browser, wins, facilities, targets, G) {
   }
 }
 
-// ② 記号が変わったコマ・しばらく確かめていないコマだけ、時間帯の画面で確かめる（初めて見るコマ・記号が変わったコマは全部。ほかは合わせて MAX_SELECT コマまで）
+// ② 記号が変わったコマ・しばらく確かめていないコマだけ、時間帯の画面で確かめる（初めて見るコマ・記号が変わったコマは全部。6時間以上前に確かめたコマも少しずつ）
 //   確かめなかったコマは、前回確かめた結果を使う
 async function checkSlots(browser, w, cache, targets, G) {
   const prio = (c) => { const h = cache[c.key]; return !h || h.sym !== c.sym ? 0 : Date.parse(h.at); };
   const picks = [...w.picks].sort((a, b) => prio(a) - prio(b));
   const fresh = picks.filter((c) => prio(c) === 0);
-  const check = fresh.length >= MAX_SELECT ? fresh : picks.slice(0, MAX_SELECT);
+  // 記号が同じでも6時間以上確かめていないコマは、確かめ直す（合わせて MAX_SELECT コマまで）
+  const stale = picks.filter((c) => prio(c) !== 0 && Date.now() - prio(c) > 6 * 3600e3);
+  const check = [...fresh, ...stale.slice(0, Math.max(0, MAX_SELECT - fresh.length))];
   for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room} ${L.markOf(c.sym)}${check.includes(c) ? ' ←確認' : ''}`);
   const out = [];
   for (const c of picks.filter((c) => !check.includes(c))) out.push(...(cache[c.key]?.slots || []));

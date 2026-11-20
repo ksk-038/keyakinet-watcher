@@ -43,8 +43,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: state
-          key: state-${{ github.run_id }}
-          restore-keys: state-
+          key: state-test-${{ github.run_id }}
+          restore-keys: state-test-
 
       - name: 監視実行
         env:
@@ -54,3 +54,9 @@ jobs:
           YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
         run: time node watch.mjs
 
+      - name: 通知記録を保存（テスト用）
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state
+          key: state-test-${{ github.run_id }}
