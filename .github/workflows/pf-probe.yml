@@ -1,0 +1,13 @@
+name: 守口・寝屋川 画面確認（作るとき用）
+on:
+  push:
+    branches: [pf-probe]
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node probe-pf.mjs
+        env: { YANAGIBA_SECRET: "${{ secrets.YANAGIBA_SECRET }}" }
