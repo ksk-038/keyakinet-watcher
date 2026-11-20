@@ -3,6 +3,8 @@ on:
   push:
     branches: [osaka-probe]
     paths: [probe/**, .github/workflows/probe.yml]
+permissions:
+  contents: write
 jobs:
   probe:
     runs-on: ubuntu-latest
@@ -15,7 +17,9 @@ jobs:
       - run: npx playwright install --with-deps --only-shell chromium
       - run: node probe/probe.mjs
         env:
-          URLS: ${{ '["https://www.shisetsu-osaka.jp/shisetsu-nw/akijokyo.html?scd=26","https://www.shisetsu-osaka.jp/shisetu-nw/fusetsu.html","https://www4.pf489.com/moriguchi/web/","https://www4.pf489.com/Neyagawa/Web","https://shisetsu-yoyaku.jp/kadoma/"]' }}
-      - uses: actions/upload-artifact@v4
+          URLS: ${{ '["https://www.shisetsu-osaka.jp/shisetsu-nw/fusetsu.html","https://www.shisetsu-osaka.jp/","https://www4.pf489.com/moriguchi/web/Wg_ModeSelect.aspx","https://www4.pf489.com/Neyagawa/Web/","https://shisetsu-yoyaku.jp/kadoma/menu/Welcome.cgi","https://www.google.com/"]' }}
+      - name: 結果をブランチに置く
         if: always()
-        with: { name: probe-out, path: probe-out/, retention-days: 1 }
+        run: |
+          git config user.name Claude && git config user.email noreply@anthropic.com
+          git add -f probe-out && git commit -qm "画面確認の結果" && git push -q

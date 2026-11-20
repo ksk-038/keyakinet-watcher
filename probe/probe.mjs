@@ -11,9 +11,9 @@ for (const u of urls) {
   i++;
   const p = await ctx.newPage();
   try {
-    const r = await p.goto(u, { waitUntil: 'networkidle', timeout: 60000 });
+    const r = await p.goto(u, { waitUntil: 'domcontentloaded', timeout: 90000 });
     console.log(`#${i} ${u} -> ${r?.status()} ${p.url()}`);
-    await p.waitForTimeout(2000);
+    await p.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
     await p.screenshot({ path: `${out}/${i}.png`, fullPage: true });
     let j = 0;
     for (const f of p.frames()) {
