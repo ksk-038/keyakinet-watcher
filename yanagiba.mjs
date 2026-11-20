@@ -224,6 +224,7 @@ export function match(slots, G, ward) {
         gap_time: g.time, gap_title: g.title, partial: !full,
         opens_at: opensAt(G, g.team, ward, p.place, g.date, g.base),
         search_id: g.search ? g.id : null,
+        url: p.url ?? null,
         // アプリでグレーにした手続きの日の空き：画面には出すが、お知らせはしない（グレーを戻せば、まだ空いていれば知らせる）
         muted: !g.search && muted(G, g.team, ward, p.place, g.date, g.base),
       });
@@ -291,7 +292,7 @@ export async function report(G, { site, ward, url }, slots) {
   for (const team of G.teams) {
     const mine = rows
       .filter((r) => r.team === team)
-      .map(({ team: _, ...r }) => ({ ...r, key: `${site}|${r.search_id ? `s:${r.search_id}|` : ''}${r.date}|${r.place}|${r.gap_time || ''}`, url }));
+      .map(({ team: _, ...r }) => ({ ...r, key: `${site}|${r.search_id ? `s:${r.search_id}|` : ''}${r.date}|${r.place}|${r.gap_time || ''}`, url: r.url || url }));
     try {
       // 調べた日（空きが0件でも「調べた」とアプリでわかるように）
       const checked = [
