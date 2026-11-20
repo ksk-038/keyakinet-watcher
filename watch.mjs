@@ -135,7 +135,15 @@ async function main() {
   let open = [];
   try {
     const starts = L.windows(dates);
-    for (let i = 0; i < starts.length; i++) for (const f of facilityGroups(starts[i], starts[i + 1], G)) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets, G, f)));
+    for (let i = 0; i < starts.length; i++) for (const f of facilityGroups(starts[i], starts[i + 1], G)) {
+      // サイトが一時的に重くて止まったときは、30秒待ってもう一度だけやり直す
+      const run = () => scanWindow(browser, starts[i], starts[i + 1], targets, G, f);
+      open.push(...(await run().catch(async (e) => {
+        console.log(`1回目は失敗（${e.message.split('\n')[0]}）。30秒後にもう一度やってみます`);
+        await new Promise((r) => setTimeout(r, 30000));
+        return run();
+      })));
+    }
     for (const s of open) console.log(`  空き: ${L.label(s.date)} ${s.facility} ${s.room} ${s.time}`);
   } catch (e) {
     console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);

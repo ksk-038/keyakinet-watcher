@@ -51,7 +51,8 @@ async function clickText(page, text, { last = false } = {}) {
     console.log(`画面上のボタン類: ${names}`);
     throw new Error(`「${text}」が画面に見つかりません（${page.url()}）`);
   }
-  await (last ? loc.last() : loc.first()).click();
+  // サイトが重いと、押したあとの画面の切りかえに30秒以上かかることがあるので、長めに待つ
+  await (last ? loc.last() : loc.first()).click({ timeout: 120000 });
   await settle(page);
 }
 
@@ -78,7 +79,7 @@ async function assertNoError(page) {
 
 // 1〜2枚目: 使用目的で検索 → 施設を選んで次へ
 export async function openFacilityGrid(page, config) {
-  await page.goto(TOP, { waitUntil: 'domcontentloaded' });
+  await page.goto(TOP, { waitUntil: 'domcontentloaded', timeout: 90000 });
   await settle(page);
   await snap(page, 'top');
   await clickText(page, '使用目的から探す');
