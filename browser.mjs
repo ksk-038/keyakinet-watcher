@@ -11,5 +11,19 @@ export async function light(ctx, { images = false } = {}) {
     if (t === 'font' || t === 'media' || (t === 'image' && !images)) return route.abort();
     return route.continue();
   });
+  if (process.env.NETLOG) netlog(ctx);
   return ctx;
+}
+
+// 作るとき用：画面の裏でやりとりしている中身を netlog.json に書き出す（NETLOG=1 のときだけ）
+const LOG = [];
+function netlog(ctx) {
+  ctx.on('response', async (r) => {
+    const q = r.request();
+    if (!['document', 'xhr', 'fetch'].includes(q.resourceType())) return;
+    let body = '';
+    try { body = await r.text(); } catch { /* 読めない */ }
+    LOG.push({ t: q.resourceType(), m: q.method(), url: q.url(), post: (q.postData() || '').slice(0, 20000), reqh: q.headers(), status: r.status(), ct: r.headers()['content-type'], size: body.length, body: body.slice(0, 200000) });
+    await import('node:fs/promises').then((fs) => fs.writeFile('netlog.json', JSON.stringify(LOG)));
+  });
 }
