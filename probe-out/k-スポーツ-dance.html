@@ -1,0 +1,1136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja"><head>
+
+
+
+<!-- HTTPヘッダ制御 -->
+<meta http-equiv="Content-Type" content="text/html; charset=shift_jis">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<!-- キャッシュ対策(2行) -->
+<meta http-equiv="Expire" content="0">
+<meta http-equiv="Pragma" content="no-cache">
+<!-- ページの説明とキーワード -->
+<meta name="description" content="公共施設予約システム">
+<meta name="keywords" content="公共,施設予約">
+<!-- タイトル -->
+<title>公共施設予約システム（施設絞り込み（場所選択））</title>
+
+
+
+
+
+<!-- CSS、IMGのデフォルトパスの設定 -->
+
+<!-- 共通スタイルシート -->
+<link rel="stylesheet" type="text/css" href="/kadoma/css/kadoma/common.css?var=20200707">
+<link rel="SHORTCUT ICON" href="/kadoma/img/kadoma/icon/favicon.ico">
+
+<!-- Google Tag Manager -->
+<script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-KM41Y742PW&amp;cx=c&amp;_slc=1"></script><script type="text/javascript" async="" src="https://www.google-analytics.com/analytics.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-24QKYEPRGJ&amp;cx=c&amp;gtm=4e6bh1"></script><script async="" src="https://www.googletagmanager.com/gtm.js?id=GTM-TQRLG77"></script><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TQRLG77');</script>
+<!-- End Google Tag Manager -->
+<!-- 共通スクリプト -->
+<script type="text/javascript" src="/kadoma/js/CommonFunctions.js?var=20200707"></script>
+<script type="text/javascript" src="/kadoma/js/jquery.js?var=20200707"></script>
+<script type="text/javascript" src="/kadoma/js/jquery-ui-personalized.js?var=20200707"></script>
+<script type="text/javascript" src="/kadoma/js/meca.js?var=20200707"></script>
+<!--[if IE 6]>
+	<script type="text/javascript" src="/kadoma/js/DD_belatedPNG-min.js"></script>
+	<script type="text/javascript">
+		DD_belatedPNG.fix('.pngbg');
+	</script>
+<![endif]-->
+
+<!-- 共通変数の設定 -->
+
+
+
+
+<script type="text/javascript">
+
+function setInitImages() {
+
+	var obj_K;
+	var obj_R;
+	
+	/* チェックボックス画像セット */
+	
+		
+		obj_K = document.getElementById('k_record0');
+		obj_R = document.getElementById('r_record0');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record0',obj_R.value,'','i_record0','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record1');
+		obj_R = document.getElementById('r_record1');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record1',obj_R.value,'','i_record1','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record2');
+		obj_R = document.getElementById('r_record2');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record2',obj_R.value,'','i_record2','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record3');
+		obj_R = document.getElementById('r_record3');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record3',obj_R.value,'','i_record3','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record4');
+		obj_R = document.getElementById('r_record4');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record4',obj_R.value,'','i_record4','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record5');
+		obj_R = document.getElementById('r_record5');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record5',obj_R.value,'','i_record5','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record6');
+		obj_R = document.getElementById('r_record6');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record6',obj_R.value,'','i_record6','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record7');
+		obj_R = document.getElementById('r_record7');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record7',obj_R.value,'','i_record7','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record8');
+		obj_R = document.getElementById('r_record8');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record8',obj_R.value,'','i_record8','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record9');
+		obj_R = document.getElementById('r_record9');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record9',obj_R.value,'','i_record9','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record10');
+		obj_R = document.getElementById('r_record10');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record10',obj_R.value,'','i_record10','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record11');
+		obj_R = document.getElementById('r_record11');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record11',obj_R.value,'','i_record11','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record12');
+		obj_R = document.getElementById('r_record12');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record12',obj_R.value,'','i_record12','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record13');
+		obj_R = document.getElementById('r_record13');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record13',obj_R.value,'','i_record13','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record14');
+		obj_R = document.getElementById('r_record14');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record14',obj_R.value,'','i_record14','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record15');
+		obj_R = document.getElementById('r_record15');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record15',obj_R.value,'','i_record15','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record16');
+		obj_R = document.getElementById('r_record16');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record16',obj_R.value,'','i_record16','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record17');
+		obj_R = document.getElementById('r_record17');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record17',obj_R.value,'','i_record17','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record18');
+		obj_R = document.getElementById('r_record18');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record18',obj_R.value,'','i_record18','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record19');
+		obj_R = document.getElementById('r_record19');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record19',obj_R.value,'','i_record19','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record20');
+		obj_R = document.getElementById('r_record20');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record20',obj_R.value,'','i_record20','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record21');
+		obj_R = document.getElementById('r_record21');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record21',obj_R.value,'','i_record21','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record22');
+		obj_R = document.getElementById('r_record22');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record22',obj_R.value,'','i_record22','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record23');
+		obj_R = document.getElementById('r_record23');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record23',obj_R.value,'','i_record23','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record24');
+		obj_R = document.getElementById('r_record24');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record24',obj_R.value,'','i_record24','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record25');
+		obj_R = document.getElementById('r_record25');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record25',obj_R.value,'','i_record25','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record26');
+		obj_R = document.getElementById('r_record26');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record26',obj_R.value,'','i_record26','/kadoma/img/kadoma/');
+		}
+		
+	
+		
+		obj_K = document.getElementById('k_record27');
+		obj_R = document.getElementById('r_record27');
+		
+		/* 選択済のリストに含まれる施設は、チェックボックスをＯＮに変更 */
+		if (obj_K.value != "" && obj_R.value == "") {
+			obj_R.value = obj_K.value;
+			obj_K.value = "";
+		}
+		
+		if (obj_R.value != ""){
+			chng_chkboxImage('r_record27',obj_R.value,'','i_record27','/kadoma/img/kadoma/');
+		}
+		
+	
+	
+}
+
+</script>
+
+</head>
+<body onload="setInitImages();" onpagehide="ignoreTrue();">
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TQRLG77"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<div id="header">
+	
+	
+
+
+
+
+<form name="menu.Menu.Form" method="post" action="/kadoma/menu/MenuLookup.cgi" onsubmit="return false;" id="formMenuMain">
+
+<input type="hidden" name="txtProcId" value="/menu/Menu">
+<input type="hidden" name="txtFunctionCode" value="" id="txtFunctionCode">
+
+<div id="sidecolumn">
+	<h1 class="logo"><img src="/kadoma/img/kadoma/side/logo.png" alt="公共施設予約システム" title="公共施設予約システム" class="pngfix"></h1>
+	<div class="loginMessage">ゲストログイン中です。</div>
+	<div id="gnavi">
+		<ul>
+			
+			
+			
+				
+					<li class="vis"><a href="#" onclick="isNextFuncCodeSet('Yoyaku')">空き照会・予約</a></li>
+				
+				
+				
+				
+
+				
+				
+				
+			
+			
+			
+				
+			
+			
+			
+
+			
+			
+				
+				
+				
+					<li><a href="#" onclick="isNextFuncCodeSet('TodayInfo')">本日のお知らせ</a></li>
+				
+			
+			
+
+			<li class="return">
+				<a href="#" onclick="isNextFuncCodeSet('MainMenu')">処理選択に戻る</a>
+			</li>
+			<li class="logout">
+				<a href="#" onclick="isNextFuncCodeSet('Logout')">ログアウト</a>
+			</li>
+		</ul>
+	</div>
+
+	
+	</div>
+</form>
+	
+	<form name="yoyaku.ShisetsuMultiSelect.Form" method="post" action="/kadoma/yoyaku/ShisetsuMultiSelect.cgi" onsubmit="return false;" id="formMain">
+	
+	<input type="hidden" name="action" value="" id="action">
+	<input type="hidden" name="txtProcId" value="/yoyaku/ShisetsuMultiSelect" id="txtProcId">
+	
+
+	
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[0]" value="" id="k_record0">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[1]" value="" id="k_record1">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[2]" value="" id="k_record2">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[3]" value="" id="k_record3">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[4]" value="" id="k_record4">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[5]" value="" id="k_record5">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[6]" value="" id="k_record6">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[7]" value="" id="k_record7">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[8]" value="" id="k_record8">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[9]" value="" id="k_record9">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[10]" value="" id="k_record10">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[11]" value="" id="k_record11">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[12]" value="" id="k_record12">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[13]" value="" id="k_record13">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[14]" value="" id="k_record14">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[15]" value="" id="k_record15">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[16]" value="" id="k_record16">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[17]" value="" id="k_record17">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[18]" value="" id="k_record18">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[19]" value="" id="k_record19">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[20]" value="" id="k_record20">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[21]" value="" id="k_record21">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[22]" value="" id="k_record22">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[23]" value="" id="k_record23">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[24]" value="" id="k_record24">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[25]" value="" id="k_record25">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[26]" value="" id="k_record26">
+	
+		<input type="hidden" name="checkMeisaiUniqKey2[27]" value="" id="k_record27">
+	
+	
+	<div id="errcolumn">
+		<noscript><p class="jserr">JavaScriptが無効になっているため使用できません。<br />ブラウザ設定でJavaScriptを有効にしてください。</p></noscript>
+		
+	</div>
+	
+	<div id="hmaincolumn" class="pngbg">
+		<div id="reservation_flow" class="pngbg">
+			<ul>
+				<li>照会方法選択</li>
+				<li class="flowon"><p><strong><span>施設選択</span></strong></p></li>
+				<li>空き照会</li>
+				
+			</ul>
+		</div>
+		<h2>施設絞り込み（場所選択）
+			<span class="pager">
+				<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('Back');return false;"><img src="/kadoma/img/kadoma/common/btn_return.png" width="122" height="37" alt="前に戻るボタン" title="前に戻るボタン" class="pngfix btn"></a>
+				<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('Enter');return false;"><img src="/kadoma/img/kadoma/common/btn_next.png" width="122" height="37" alt="次に進むボタン" title="次に進むボタン" class="pngfix btn"></a>
+			</span>
+		</h2>
+	</div>
+
+	<div id="mmaincolumn">
+
+		<p>空き状況を照会する施設を一つ以上選択し、［次に進むボタン］を押してください。</p>
+		
+			
+			
+				<div class="tablebox">
+					<table border="0" cellspacing="1" cellpadding="0" summary="照会する施設を選択するための表">
+						<tbody><tr>
+							<th scope="col">会館</th>
+							<th scope="col">施設</th>
+						</tr>
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record0','272230_001_01_01_01','','i_record0','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record0" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record0">
+									門真市民プラザ体育館
+								</td>
+								<td>
+									体育室全面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record1','272230_001_01_01_02','','i_record1','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record1" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record1">
+									門真市民プラザ体育館
+								</td>
+								<td>
+									体育室半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record2','272230_001_01_02_01','','i_record2','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record2" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record2">
+									門真市民プラザ体育館
+								</td>
+								<td>
+									剣道場
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record3','272230_001_01_03_01','','i_record3','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record3" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record3">
+									門真市民プラザ体育館
+								</td>
+								<td>
+									柔道場
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record4','272230_001_01_04_01','','i_record4','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record4" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record4">
+									門真市民プラザ体育館
+								</td>
+								<td>
+									相撲場
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record5','272230_001_04_01_01','','i_record5','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record5" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record5">
+									門真市民プラザグラウンド
+								</td>
+								<td>
+									グラウンド【平日予約】　※平日に使用する場合はこちら
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record6','272230_001_04_02_01','','i_record6','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record6" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record6">
+									門真市民プラザグラウンド
+								</td>
+								<td>
+									グラウンド【土日祝予約】　※土日祝日に使用する場合はこちら
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record7','272230_001_05_01_01','','i_record7','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record7" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record7">
+									旧第六中学校運動広場グラウンド
+								</td>
+								<td>
+									グラウンド
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record8','272230_001_06_01_01','','i_record8','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record8" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record8">
+									青少年運動広場
+								</td>
+								<td>
+									グラウンド【平日予約】　※平日に使用する場合はこちら
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record9','272230_001_06_02_01','','i_record9','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record9" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record9">
+									青少年運動広場
+								</td>
+								<td>
+									グラウンド【土日祝予約】　※土日祝日に使用する場合はこちら
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record10','272230_001_09_01_01','','i_record10','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record10" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record10">
+									中学校体育施設グラウンド
+								</td>
+								<td>
+									門真市立第二中学校グラウンド
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record11','272230_001_09_02_01','','i_record11','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record11" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record11">
+									中学校体育施設グラウンド
+								</td>
+								<td>
+									門真市立第三中学校グラウンド
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record12','272230_001_09_03_01','','i_record12','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record12" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record12">
+									中学校体育施設グラウンド
+								</td>
+								<td>
+									門真市立第四中学校グラウンド
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record13','272230_001_09_04_01','','i_record13','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record13" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record13">
+									中学校体育施設グラウンド
+								</td>
+								<td>
+									門真市立第五中学校グラウンド
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record14','272230_001_09_05_01','','i_record14','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record14" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record14">
+									中学校体育施設グラウンド
+								</td>
+								<td>
+									門真市立第七中学校グラウンド
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record15','272230_001_10_01_01','','i_record15','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record15" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record15">
+									総合体育館
+								</td>
+								<td>
+									メインアリーナ全面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record16','272230_001_10_01_02','','i_record16','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record16" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record16">
+									総合体育館
+								</td>
+								<td>
+									メインアリーナ半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record17','272230_001_10_01_03','','i_record17','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record17" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record17">
+									総合体育館
+								</td>
+								<td>
+									メインアリーナ１／３面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record18','272230_001_10_02_01','','i_record18','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record18" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record18">
+									総合体育館
+								</td>
+								<td>
+									サブアリーナ全面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record19','272230_001_10_02_02','','i_record19','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record19" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record19">
+									総合体育館
+								</td>
+								<td>
+									サブアリーナ半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record20','272230_001_10_03_01','','i_record20','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record20" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record20">
+									総合体育館
+								</td>
+								<td>
+									多目的スタジオ全面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record21','272230_001_10_03_02','','i_record21','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record21" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record21">
+									総合体育館
+								</td>
+								<td>
+									多目的スタジオ半面
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record22','272230_001_10_04_01','','i_record22','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record22" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record22">
+									総合体育館
+								</td>
+								<td>
+									会議室１
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record23','272230_001_10_05_01','','i_record23','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record23" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record23">
+									総合体育館
+								</td>
+								<td>
+									会議室２
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record24','272230_001_10_06_01','','i_record24','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record24" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record24">
+									総合体育館
+								</td>
+								<td>
+									クラブハウス
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record25','272230_001_10_07_01','','i_record25','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record25" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record25">
+									総合体育館
+								</td>
+								<td>
+									武道場（全面）
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record26','272230_001_10_07_02','','i_record26','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record26" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record26">
+									総合体育館
+								</td>
+								<td>
+									武道場（半面）
+								</td>
+							</tr>
+						
+						
+						
+						
+							<tr class="" onmouseover="reportOver(this);" onmouseout="reportOut(this,'');" onclick="chng_chkboxImage('r_record27','272230_001_10_08_01','','i_record27','/kadoma/img/kadoma/');">
+								<td>
+									<a href="#" onclick="return false;">
+									<img id="i_record27" src="/kadoma/img/kadoma/common/btn_check.png" width="42" height="42" alt="未選択" title="未選択">
+									</a>
+									<input type="hidden" name="checkMeisaiUniqKey" value="" id="r_record27">
+									総合体育館
+								</td>
+								<td>
+									研修室
+								</td>
+							</tr>
+						
+						
+						<tr class="tr2">
+							<td colspan="2">
+								<p class="btnright">
+									<a href="#header">
+										<img src="/kadoma/img/kadoma/common/btn_pagetop.png" alt="ページの先頭へボタン" title="ページの先頭へボタン" class="pngfix btn">
+									</a>
+								</p>
+							</td>
+						</tr>
+					</tbody></table>
+				</div>
+
+				
+				<p class="btncenter">
+					<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('AllSelect');return false;"><img src="/kadoma/img/kadoma/common/btn_allselect.png" alt="全て選択するボタン" title="全て選択するボタン" class="pngfix btn"></a>
+					<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('AllClear');return false;"><img src="/kadoma/img/kadoma/common/btn_reset.png" alt="選択を全てやめるボタン" title="選択を全てやめるボタン" class="pngfix btn"></a>
+				</p>
+			
+		
+	</div>
+	</form>
+
+	<div id="fmaincolumn">	
+		<div id="pagerbox">
+			<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('Back');return false;"><img src="/kadoma/img/kadoma/common/btn_return.png" width="122" height="37" alt="前に戻るボタン" title="前に戻るボタン" class="pngfix btn"></a>
+			<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('Enter');return false;"><img src="/kadoma/img/kadoma/common/btn_next.png" width="122" height="37" alt="次に進むボタン" title="次に進むボタン" class="pngfix btn"></a>
+		</div>
+		<div id="footer" class="pngbg"><address class="pngbg">&nbsp;</address></div>
+	</div>
+
+</div>
+
+
+
+</body></html>
