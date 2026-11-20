@@ -83,6 +83,14 @@ function timesOf(body) {
   if (/抽選/.test(text(b)) && !/予約申込ができます/.test(b)) return [];
   return [...b.matchAll(/name="slTime" value="\d+">\s*(\d{1,2}:\d{2})\s*[～~〜-]\s*(\d{1,2}:\d{2})/g)].map((m) => `${m[1]}〜${m[2]}`);
 }
+// 「面」の選択肢（全面以外）→ [{ v, label, part(全面に対する広さの割合) }]
+function menOf(body) {
+  const sel = (body || '').match(/<select name="slMen">([\s\S]*?)<\/select>/);
+  if (!sel) return [];
+  return [...sel[1].matchAll(/<option value="(\d+)"[^>]*>([^<]+)/g)].map((m) => ({ v: m[1], label: L.norm(m[2]).trim() }))
+    .filter((m) => m.v !== '0' && !/全面/.test(m.label))
+    .map((m) => { const f = m.label.match(/(\d)\/(\d)/); return { ...m, part: f ? Number(f[1]) / Number(f[2]) : 0.5 }; });
+}
 // 続いている30分ごとのコマをつなげる
 function joinSlots(ts) {
   const toM = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
@@ -144,12 +152,28 @@ async function scanCity(city, dates, G, refresh = false) {
         const pages = p2.slice(-part.length);
         // 覚えていた一覧がずれている（時間の画面が出ない）ときは、一覧を読み直してもう一度
         if (!refresh && pages.every((pg) => !/JikanSentaku/.test(pg?.body || ''))) throw Object.assign(new Error('一覧が古いようです'), { stale: true });
+        const halves = [];
         part.forEach((t, j) => {
           seen.add(`${f.name}|${t.r.name}|${t.d}`);
           for (const time of joinSlots(timesOf(pages[j]?.body))) {
             out.push({ date: t.d, facility: f.name, room: t.r.name, area: t.area, cap: null, time, place: `${f.name} ${t.r.name}`, url: city.top });
           }
+          // 体育室など「面」を分けて貸す部屋は、全面だけでなく半面などの空きも見る（広さは面の分だけ小さくする）
+          const men = menOf(pages[j]?.body);
+          if (men.length) halves.push({ ...t, men });
         });
+        for (const h of halves) {
+          const steps = [...pre, ...pickFacility(f.idx, dates[0]), { get: `${root}Wm_JikanSentaku.aspx?SJCode=${h.r.code}&UseDate=${ymd8(h.d)}` },
+            ...h.men.map((m) => ({ submit: [['slMen', m.v], ['cmdChangeMen', '切替']], keep: true }))];
+          const pm = (await relay(city.base, steps)).slice(-h.men.length);
+          h.men.forEach((m, j) => {
+            const area = h.area != null ? Math.round(h.area * m.part) : null;
+            if (!want(area, h.d)) return;
+            for (const time of joinSlots(timesOf(pm[j]?.body))) {
+              out.push({ date: h.d, facility: f.name, room: `${h.r.name}（${m.label}）`, area, cap: null, time, place: `${f.name} ${h.r.name}（${m.label}）`, url: city.top });
+            }
+          });
+        }
       }
     }
   }
