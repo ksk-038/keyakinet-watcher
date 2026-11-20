@@ -1,0 +1,530 @@
+<!-- https://shisetsu-yoyaku.jp/kadoma/menu/Welcome.cgi -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja"><head>
+
+
+
+<!-- HTTPヘッダ制御 -->
+<meta http-equiv="Content-Type" content="text/html; charset=shift_jis">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<!-- キャッシュ対策(2行) -->
+<meta http-equiv="Expire" content="0">
+<meta http-equiv="Pragma" content="no-cache">
+<!-- ページの説明とキーワード -->
+<meta name="description" content="公共施設予約システム">
+<meta name="keywords" content="公共,施設予約">
+<!-- タイトル -->
+<title>公共施設予約システム（ログイン）</title>
+
+
+
+
+
+<!-- CSS、IMGのデフォルトパスの設定 -->
+
+<!-- 共通スタイルシート -->
+<link rel="stylesheet" type="text/css" href="/kadoma/css/kadoma/common.css?var=20200707">
+<link rel="SHORTCUT ICON" href="/kadoma/img/kadoma/icon/favicon.ico">
+
+<!-- Google Tag Manager -->
+<script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-KM41Y742PW&amp;cx=c&amp;_slc=1"></script><script type="text/javascript" async="" src="https://www.google-analytics.com/analytics.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-24QKYEPRGJ&amp;cx=c&amp;gtm=4e6bi0h2"></script><script async="" src="https://www.googletagmanager.com/gtm.js?id=GTM-TQRLG77"></script><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TQRLG77');</script>
+<!-- End Google Tag Manager -->
+<!-- 共通スクリプト -->
+<script type="text/javascript" src="/kadoma/js/CommonFunctions.js?var=20200707"></script>
+<script type="text/javascript" src="/kadoma/js/jquery.js?var=20200707"></script>
+<script type="text/javascript" src="/kadoma/js/jquery-ui-personalized.js?var=20200707"></script>
+<script type="text/javascript" src="/kadoma/js/meca.js?var=20200707"></script>
+<!--[if IE 6]>
+	<script type="text/javascript" src="/kadoma/js/DD_belatedPNG-min.js"></script>
+	<script type="text/javascript">
+		DD_belatedPNG.fix('.pngbg');
+	</script>
+<![endif]-->
+
+<!-- 共通変数の設定 -->
+
+
+
+
+<link rel="stylesheet" type="text/css" href="/kadoma/css/kadoma/softwarekeyboardstyle.css?var=20200707 ">
+</head>
+<body id="login" onpagehide="ignoreTrue();">
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TQRLG77"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+
+
+<div id="containerUPain">
+	<div class="loginlogo">
+		<h1 class="logo"><img src="/kadoma/img/kadoma/side/logo_login.png" alt="公共施設予約システム" title="公共施設予約システム" class="pngfix"></h1>
+		<noscript><p class="jserr">JavaScriptが無効になっているため使用できません。<br />ブラウザ設定でJavaScriptを有効にしてください。</p></noscript>
+	</div>
+	
+</div>
+
+<div id="container">
+
+	<form name="menu.Login.Form" method="post" action="/kadoma/menu/Login.cgi" onsubmit="return false;" id="formMain">
+	
+	<input type="hidden" name="action" value="" id="action" style="">
+	<input type="hidden" name="txtProcId" value="/menu/Login" id="txtProcId" style="">
+	
+
+	
+	
+	
+	<div class="newslistheader clearfix">
+		<div class="title"><span style="text-align:center;"><strong>お　知　ら　せ</strong></span></div>
+		<div class="top_pagerbox">
+			<a href="#footer"><img src="/kadoma/img/kadoma/common/btn_pageunder.png" width="132" height="32" alt="ページの最終へボタン" title="ページの最終へボタン" class="pngfix btn"></a>
+		</div>
+	</div>
+
+	<div id="newslist">
+		<ul>
+			
+			
+				<li class="clfix">
+					<div class="news_title">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tr.gif" class="corner_tr" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tl.gif" class="corner_tl" alt="">
+
+						<div style="padding-left:10px;">
+							
+								<img src="/kadoma/img/kadoma/common/new.gif" alt="新着情報" style="vertical-align:middle;">
+							
+							
+								<span style="vertical-align:middle;">市立テニスコート【Ｅコート】人工芝張替について</span>
+							
+							
+						</div>
+					</div>
+					<div class="news_detail">
+						<pre style="text-align:left; padding-left:10px; font-size: 16px; word-wrap: break-word;" wrap="">テニスコートＥコートの人工芝張替修繕を実施するため、下記の期間中、Ｃ・Ｄ・Ｅコートはご利用いただけません。
+【修繕期間】
+令和８年１２月７日（月）～１２月１８日（金）
+
+利用者の皆様には、ご不便、ご迷惑をおかけいたしますが、ご理解とご協力を賜りますようお願いいたします。なお、修繕が完了次第、利用可能となったコートを順次一般開放いたします。また、令和９年１月４日（月）から１月１５日（金）までの予備日につきましては、１１月１７日（火）１７時頃を目途に開放いたします。</pre>
+						<img src="/kadoma/img/kadoma/under/newslist_kado_br.gif" class="corner_br" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_bl.gif" class="corner_bl" alt="">
+					</div>
+				</li>
+			
+			
+			
+				<li class="clfix">
+					<div class="news_title">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tr.gif" class="corner_tr" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tl.gif" class="corner_tl" alt="">
+
+						<div style="padding-left:10px;">
+							
+							
+								<span style="vertical-align:middle;">１１月２３日から２４日８時５９分まで公共施設予約システム端末の一時停止について</span>
+							
+							
+						</div>
+					</div>
+					<div class="news_detail">
+						<pre style="text-align:left; padding-left:10px; font-size: 16px; word-wrap: break-word;" wrap="">市役所の非常用発電機設置工事に伴う停電により、各施設に設置している利用者用端末の使用ができなくなります。利用者の皆さまにはご不便をおかけしまして申し訳ございませんが、ご理解の程よろしくお願いいたします。
+１予約システム停止期間：令和８年１１月２３日（月）終日から２４日（火）８時５９分まで
+なお、２４日（火）は午前９時からは利用再開予定
+２対象施設
+総合体育館、青少年運動広場、テニスコート、旧第六中学校運動広場、門真市民プラザ体育館、門真市　民プラザグラウンド、市民プラザ、公民館、文化会館ルミエールホール、文化創造図書館ＫＡＤＯＭＡ　ＤＯ、かどま歴史ミュージアム
+注意：施設ごとに対応内容が異なる場合がございます。詳細は各施設までお問い合わせください。</pre>
+						<img src="/kadoma/img/kadoma/under/newslist_kado_br.gif" class="corner_br" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_bl.gif" class="corner_bl" alt="">
+					</div>
+				</li>
+			
+			
+			
+				<li class="clfix">
+					<div class="news_title">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tr.gif" class="corner_tr" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tl.gif" class="corner_tl" alt="">
+
+						<div style="padding-left:10px;">
+							
+							
+								<span style="vertical-align:middle;">青少年運動広場の一部利用停止について</span>
+							
+							
+						</div>
+					</div>
+					<div class="news_detail">
+						<pre style="text-align:left; padding-left:10px; font-size: 16px; word-wrap: break-word;" wrap="">【修繕期間】２０２７年１月１２日（火）～１月２２日（金）
+※上記期間内は青少年運動広場利用不可
+上記日程において、青少年運動広場夜間照明ＬＥＤ化修繕（１塔分）に伴い、利用不可となります。
+利用者の皆様におかれましてはご迷惑をおかけいたしますが、ご理解ご協力のほどよろしくお願いいたします。修繕が終了次第、上記日程から利用可能日を一般開放させていただきますので、ご確認のほど宜しくお願い致します。</pre>
+						<img src="/kadoma/img/kadoma/under/newslist_kado_br.gif" class="corner_br" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_bl.gif" class="corner_bl" alt="">
+					</div>
+				</li>
+			
+			
+			
+				<li class="clfix">
+					<div class="news_title">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tr.gif" class="corner_tr" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tl.gif" class="corner_tl" alt="">
+
+						<div style="padding-left:10px;">
+							
+								<img src="/kadoma/img/kadoma/common/new.gif" alt="新着情報" style="vertical-align:middle;">
+							
+							
+								<span style="vertical-align:middle;">かどま歴史ミュージアム研修室を利用される団体は、新たに利用者登録が必要になります</span>
+							
+							
+						</div>
+					</div>
+					<div class="news_detail">
+						<pre style="text-align:left; padding-left:10px; font-size: 16px; word-wrap: break-word;" wrap=""></pre>
+						<img src="/kadoma/img/kadoma/under/newslist_kado_br.gif" class="corner_br" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_bl.gif" class="corner_bl" alt="">
+					</div>
+				</li>
+			
+			
+			
+				<li class="clfix">
+					<div class="news_title">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tr.gif" class="corner_tr" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tl.gif" class="corner_tl" alt="">
+
+						<div style="padding-left:10px;">
+							
+							
+								<span style="vertical-align:middle;">熱中症にご注意ください</span>
+							
+							
+						</div>
+					</div>
+					<div class="news_detail">
+						<pre style="text-align:left; padding-left:10px; font-size: 16px; word-wrap: break-word;" wrap="">気温や湿度が高い日が続いています。熱中症予防のため、次の点にご注意ください。
+
+・こまめに水分・塩分を補給する。
+・屋外では適宜休憩する。
+・帽子や日傘を活用する。
+・体調が優れない場合は無理をせず、活動を控える。
+
+体調に異変を感じた場合は、速やかに涼しい場所へ移動し、必要に応じて医療機関を受診してください。
+また、重症化のおそれがある場合は、直ちに救急要請（１１９番）を行ってください。</pre>
+						<img src="/kadoma/img/kadoma/under/newslist_kado_br.gif" class="corner_br" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_bl.gif" class="corner_bl" alt="">
+					</div>
+				</li>
+			
+			
+			
+				<li class="clfix">
+					<div class="news_title">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tr.gif" class="corner_tr" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tl.gif" class="corner_tl" alt="">
+
+						<div style="padding-left:10px;">
+							
+							
+								<span style="vertical-align:middle;">門真市立テニスコート及び青少年運動広場の開場時間変更について</span>
+							
+							
+						</div>
+					</div>
+					<div class="news_detail">
+						<pre style="text-align:left; padding-left:10px; font-size: 16px; word-wrap: break-word;" wrap="">平素より、門真市立テニスコート及び青少年運動広場をご利用いただき、誠にありがとうございます。
+
+令和８年度より、利用者の利便性向上を目的として、下記のとおり開場時間を一部変更いたします。
+
+■変更内容
+青少年運動広場
+・１２月～２月における開場時間を午後９時まで延長いたします。
+
+テニスコート及び青少年運動広場
+・９月の土日祝における開場時間を午前７時から開始いたします。
+
+今後とも、皆様に快適にご利用いただける施設運営に努めてまいりますので、何卒ご理解とご協力のほどよろしくお願い申し上げます。</pre>
+						<img src="/kadoma/img/kadoma/under/newslist_kado_br.gif" class="corner_br" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_bl.gif" class="corner_bl" alt="">
+					</div>
+				</li>
+			
+			
+			
+				<li class="clfix">
+					<div class="news_title">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tr.gif" class="corner_tr" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tl.gif" class="corner_tl" alt="">
+
+						<div style="padding-left:10px;">
+							
+							
+								<span style="vertical-align:middle;">令和８年度公共施設予約システム（利用者登録カード）のログイン権限の更新について</span>
+							
+							
+						</div>
+					</div>
+					<div class="news_detail">
+						<pre style="text-align:left; padding-left:10px; font-size: 16px; word-wrap: break-word;" wrap="">令和７年度３月末有効期限の登録カードをお持ちの方で、令和８年４月以降もご利用を希望される場合、以下の施設にて更新が必要となりますので、お手元の登録カード（有効期限等）をご確認ください。
+①複数のスポーツ施設予約の権限が付与されたカード→門真市生涯学習課スポーツ振興Ｇ（門真市役所別館３階）
+②単一のスポーツ施設予約の権限が付与されたカード→付与されている施設の窓口
+ただし、中学校グラウンドのみ、旧第六中学校運動広場のみ、青少年運動広場のみの権限が付与されたカードについては門真市生涯学習課スポーツ振興Ｇにて対応します。
+
+なお、更新を希望する際の提出書類については、市ホームページ及び窓口にて提供する「社会体育施設使用団体・個人登録申請書（新規登録時同様の様式）」となります。
+提出いただいた権限の更新申請については、令和８年３月１３日（金曜日）以降に新たなカードを窓口にてお渡ししますので、申請された窓口への来庁・来場をお願いします（１３日以降の提出は即日更新作業を開始します）。</pre>
+						<img src="/kadoma/img/kadoma/under/newslist_kado_br.gif" class="corner_br" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_bl.gif" class="corner_bl" alt="">
+					</div>
+				</li>
+			
+			
+			
+				<li class="clfix">
+					<div class="news_title">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tr.gif" class="corner_tr" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tl.gif" class="corner_tl" alt="">
+
+						<div style="padding-left:10px;">
+							
+							
+								<span style="vertical-align:middle;">グラウンド利用時におけるボールの飛び出しにかかる注意事項について</span>
+							
+							
+						</div>
+					</div>
+					<div class="news_detail">
+						<pre style="text-align:left; padding-left:10px; font-size: 16px; word-wrap: break-word;" wrap="">ボールの飛び出し等が原因で事故等が発生した場合は、利用団体に責任をもって対応していただきます。ご注意ください。</pre>
+						<img src="/kadoma/img/kadoma/under/newslist_kado_br.gif" class="corner_br" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_bl.gif" class="corner_bl" alt="">
+					</div>
+				</li>
+			
+			
+			
+				<li class="clfix">
+					<div class="news_title">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tr.gif" class="corner_tr" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_tl.gif" class="corner_tl" alt="">
+
+						<div style="padding-left:10px;">
+							
+							
+								<span style="vertical-align:middle;">【重要】総合体育館利用に関する注意事項について</span>
+							
+							
+						</div>
+					</div>
+					<div class="news_detail">
+						<pre style="text-align:left; padding-left:10px; font-size: 16px; word-wrap: break-word;" wrap="">標記の件について、本市が緊急と認める場合（緊急の選挙、工事等）は、予約の有無に関わらず利用を停止することがありますので、ご理解ご協力をお願いします。</pre>
+						<img src="/kadoma/img/kadoma/under/newslist_kado_br.gif" class="corner_br" alt="">
+						<img src="/kadoma/img/kadoma/under/newslist_kado_bl.gif" class="corner_bl" alt="">
+					</div>
+				</li>
+			
+			
+		</ul>
+	</div>
+	
+	
+
+	<div class="loginboxl">
+		<div class="inbox">
+			<div class="formcontent">
+				<p>利用者番号<br>
+					<label><input type="text" name="txtRiyoshaCode" maxlength="10" size="12" value="" style="" class="riyoshacd" id="txtRiyoshaCode"></label>
+					<a href="#" id="showkeyboard_number" title="">
+						<img src="/kadoma/img/kadoma/softwarekeyboad/keyboad_123.png" alt="利用者番号入力用のソフトウェアキーボードを表示します" title="利用者番号入力用のソフトウェアキーボードを表示します" class="pngfix">
+					</a>
+				</p>
+				<p>パスワード<br>
+					<label><input type="password" name="txtPassWord" maxlength="12" size="14" value="" style="" class="password" id="txtPassWord"></label>
+					<a href="#" id="showkeyboard_alphabet" title="">
+						<img src="/kadoma/img/kadoma/softwarekeyboad/keyboad_abc.png" alt="パスワード入力用のソフトウェアキーボードを表示します" title="パスワード入力用のソフトウェアキーボードを表示します" class="pngfix">
+					</a>
+				</p>
+			</div>
+			<p class="loginbtn">
+				<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('Enter');return false;"><img src="/kadoma/img/kadoma/login/loginbtn.png" alt="ログインボタン" title="ログインボタン" class="pngfix btn"></a>
+			</p>
+			<p>利用者番号（半角数字）とパスワード（半角英数字）を<br>入力後、［ログインボタン］を押してください。</p>
+		</div>
+	</div>
+
+	<div class="loginboxr">
+		<div class="inbox">
+			<div class="formcontent">
+				<a href="javascript:void(0)" onclick="javascript:isSubmitDataSet('Guest');return false;"><img src="/kadoma/img/kadoma/login/guestloginbtn.png" alt="空き照会のみのかたはこちら…ボタン" title="空き照会のみのかたはこちら…ボタン" class="pngfix btn"></a>
+			</div>
+			<p>利用者登録をせずに施設の空き状況を確認する場合は<br>［空き照会のみのかたはこちら…ボタン］を押してください。</p>
+		</div>
+	</div>
+	</form>
+</div>
+
+
+<!-- 20150812「ページの最終へ」ボタン対策 -->
+
+	<div id="footer" style="margin-top:8px;"></div>
+
+
+
+<br>
+
+<div id="securedseal">
+	<form action="https://sitesealinfo.pubcert.jprs.jp/SiteSealReference" name="SiteSealReference" method="post" target="_blank"><!--お客様の証明ページを別ウィンドウにて開きます。--><input type="image" name="Sticker" src="/kadoma/img/kadoma/jprs_siteseal_120x50_DV.png" alt="クリックして証明書の内容をご確認ください。" oncontextmenu="return false;" style=""><!--ダウンロードしたサイトシール画像のパス名を指定します。--><input type="hidden" name="certificateCn" value="shisetsu-yoyaku.jp" style=""><input type="hidden" name="certificateClass" value="DV" style=""><!--証明書のコモンネーム及び証明書種別（DVもしくはOV）を指定します。--></form><br>
+</div>
+
+
+
+
+
+
+<div id="keyboard_number" class="keyboard_number ui-draggable">
+	<span class="skb_title">[利用者番号]<br>を入力してください。</span><br>
+	<center><input type="text" id="txtUseNumeric" size="12" maxlength="10" class="number_box" style=""><br><br></center>
+	
+
+
+
+<div id="rowN0" class="rowN0">
+	<input type="image" name="1" src="/kadoma/img/kadoma/softwarekeyboad/number_1.png" value="1" alt="" title="" style="">
+	<input type="image" name="2" src="/kadoma/img/kadoma/softwarekeyboad/number_2.png" value="2" alt="" title="" style="">
+	<input type="image" name="3" src="/kadoma/img/kadoma/softwarekeyboad/number_3.png" value="3" alt="" title="" style=""><br>
+	<input type="image" name="4" src="/kadoma/img/kadoma/softwarekeyboad/number_4.png" value="4" alt="" title="" style="">
+	<input type="image" name="5" src="/kadoma/img/kadoma/softwarekeyboad/number_5.png" value="5" alt="" title="" style="">
+	<input type="image" name="6" src="/kadoma/img/kadoma/softwarekeyboad/number_6.png" value="6" alt="" title="" style=""><br>
+	<input type="image" name="7" src="/kadoma/img/kadoma/softwarekeyboad/number_7.png" value="7" alt="" title="" style="">
+	<input type="image" name="8" src="/kadoma/img/kadoma/softwarekeyboad/number_8.png" value="8" alt="" title="" style="">
+	<input type="image" name="9" src="/kadoma/img/kadoma/softwarekeyboad/number_9.png" value="9" alt="" title="" style=""><br>
+	<img src="/kadoma/img/kadoma/softwarekeyboad/number_touka.png" alt="" title="" class="pngfix">
+	<input type="image" name="0" src="/kadoma/img/kadoma/softwarekeyboad/number_0.png" value="0" alt="" title="" style="">
+	<img src="/kadoma/img/kadoma/softwarekeyboad/number_touka.png" alt="" title="" class="pngfix"><br>
+	<input type="image" name="Backspace" src="/kadoma/img/kadoma/softwarekeyboad/backspace.png" value="Backspace" alt="" title="" style=""><br>
+	<input type="image" name="Close" src="/kadoma/img/kadoma/softwarekeyboad/close.png" value="Close" alt="" title="" style="margin-top: 30px;">
+	<input type="image" name="Enter" src="/kadoma/img/kadoma/softwarekeyboad/enter.png" value="Enter" alt="" title="" style="margin-top: 30px;">
+</div>
+</div>
+
+<div id="keyboard_alphabet" class="keyboard_alphabet ui-draggable">
+	<span class="skb_title">[パスワード]<br>を入力してください。</span>
+	<center><input type="password" id="txtUseAlphaNumeric" size="14" maxlength="12" class="password_box" style=""><br><br></center>
+	
+
+
+<div id="rowA0" class="rowA0">
+	<input type="image" name="1" src="/kadoma/img/kadoma/softwarekeyboad/number_1.png" value="1" alt="" title="" style="">
+	<input type="image" name="2" src="/kadoma/img/kadoma/softwarekeyboad/number_2.png" value="2" alt="" title="" style="">
+	<input type="image" name="3" src="/kadoma/img/kadoma/softwarekeyboad/number_3.png" value="3" alt="" title="" style="">
+	<input type="image" name="4" src="/kadoma/img/kadoma/softwarekeyboad/number_4.png" value="4" alt="" title="" style="">
+	<input type="image" name="5" src="/kadoma/img/kadoma/softwarekeyboad/number_5.png" value="5" alt="" title="" style="">
+	<input type="image" name="6" src="/kadoma/img/kadoma/softwarekeyboad/number_6.png" value="6" alt="" title="" style="">
+	<input type="image" name="7" src="/kadoma/img/kadoma/softwarekeyboad/number_7.png" value="7" alt="" title="" style="">
+	<input type="image" name="8" src="/kadoma/img/kadoma/softwarekeyboad/number_8.png" value="8" alt="" title="" style="">
+	<input type="image" name="9" src="/kadoma/img/kadoma/softwarekeyboad/number_9.png" value="9" alt="" title="" style="">
+	<input type="image" name="0" src="/kadoma/img/kadoma/softwarekeyboad/number_0.png" value="0" alt="" title="" style="">
+</div>
+
+<div id="rowA0_shift" class="rowA0_shift">
+	<input type="image" name="1" src="/kadoma/img/kadoma/softwarekeyboad/number_1.png" value="1" alt="" title="" style="">
+	<input type="image" name="2" src="/kadoma/img/kadoma/softwarekeyboad/number_2.png" value="2" alt="" title="" style="">
+	<input type="image" name="3" src="/kadoma/img/kadoma/softwarekeyboad/number_3.png" value="3" alt="" title="" style="">
+	<input type="image" name="4" src="/kadoma/img/kadoma/softwarekeyboad/number_4.png" value="4" alt="" title="" style="">
+	<input type="image" name="5" src="/kadoma/img/kadoma/softwarekeyboad/number_5.png" value="5" alt="" title="" style="">
+	<input type="image" name="6" src="/kadoma/img/kadoma/softwarekeyboad/number_6.png" value="6" alt="" title="" style="">
+	<input type="image" name="7" src="/kadoma/img/kadoma/softwarekeyboad/number_7.png" value="7" alt="" title="" style="">
+	<input type="image" name="8" src="/kadoma/img/kadoma/softwarekeyboad/number_8.png" value="8" alt="" title="" style="">
+	<input type="image" name="9" src="/kadoma/img/kadoma/softwarekeyboad/number_9.png" value="9" alt="" title="" style="">
+	<input type="image" name="0" src="/kadoma/img/kadoma/softwarekeyboad/number_0.png" value="0" alt="" title="" style="">
+</div>
+
+<div id="rowA1" class="rowA1">
+	<input type="image" name="q" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_q.png" value="q" alt="" title="" style="">
+	<input type="image" name="w" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_w.png" value="w" alt="" title="" style="">
+	<input type="image" name="e" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_e.png" value="e" alt="" title="" style="">
+	<input type="image" name="r" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_r.png" value="r" alt="" title="" style="">
+	<input type="image" name="t" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_t.png" value="t" alt="" title="" style="">
+	<input type="image" name="y" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_y.png" value="y" alt="" title="" style="">
+	<input type="image" name="u" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_u.png" value="u" alt="" title="" style="">
+	<input type="image" name="i" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_i.png" value="i" alt="" title="" style="">
+	<input type="image" name="o" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_o.png" value="o" alt="" title="" style="">
+	<input type="image" name="p" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_p.png" value="p" alt="" title="" style="">
+</div>
+
+<div id="rowA1_shift" class="rowA1_shift">
+	<input type="image" name="Q" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_q.png" value="Q" alt="" title="" style="">
+	<input type="image" name="W" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_w.png" value="W" alt="" title="" style="">
+	<input type="image" name="E" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_e.png" value="E" alt="" title="" style="">
+	<input type="image" name="R" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_r.png" value="R" alt="" title="" style="">
+	<input type="image" name="T" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_t.png" value="T" alt="" title="" style="">
+	<input type="image" name="Y" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_y.png" value="Y" alt="" title="" style="">
+	<input type="image" name="U" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_u.png" value="U" alt="" title="" style="">
+	<input type="image" name="I" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_i.png" value="I" alt="" title="" style="">
+	<input type="image" name="O" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_o.png" value="O" alt="" title="" style="">
+	<input type="image" name="P" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_p.png" value="P" alt="" title="" style="">
+</div>
+
+<div id="rowA2" class="rowA2">
+	<input type="image" name="a" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_a.png" value="a" alt="" title="" style="">
+	<input type="image" name="s" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_s.png" value="s" alt="" title="" style="">
+	<input type="image" name="d" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_d.png" value="d" alt="" title="" style="">
+	<input type="image" name="f" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_f.png" value="f" alt="" title="" style="">
+	<input type="image" name="g" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_g.png" value="g" alt="" title="" style="">
+	<input type="image" name="h" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_h.png" value="h" alt="" title="" style="">
+	<input type="image" name="j" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_j.png" value="j" alt="" title="" style="">
+	<input type="image" name="k" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_k.png" value="k" alt="" title="" style="">
+	<input type="image" name="l" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_l.png" value="l" alt="" title="" style="">
+</div>
+
+<div id="rowA2_shift" class="rowA2_shift">
+	<input type="image" name="A" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_a.png" value="A" alt="" title="" style="">
+	<input type="image" name="S" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_s.png" value="S" alt="" title="" style="">
+	<input type="image" name="D" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_d.png" value="D" alt="" title="" style="">
+	<input type="image" name="F" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_f.png" value="F" alt="" title="" style="">
+	<input type="image" name="G" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_g.png" value="G" alt="" title="" style="">
+	<input type="image" name="H" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_h.png" value="H" alt="" title="" style="">
+	<input type="image" name="J" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_j.png" value="J" alt="" title="" style="">
+	<input type="image" name="K" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_k.png" value="K" alt="" title="" style="">
+	<input type="image" name="L" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_l.png" value="L" alt="" title="" style="">
+</div>
+
+<div id="rowA3" class="rowA3">
+	<input type="image" name="z" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_z.png" value="z" alt="" title="" style="">
+	<input type="image" name="x" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_x.png" value="x" alt="" title="" style="">
+	<input type="image" name="c" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_c.png" value="c" alt="" title="" style="">
+	<input type="image" name="v" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_v.png" value="v" alt="" title="" style="">
+	<input type="image" name="b" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_b.png" value="b" alt="" title="" style="">
+	<input type="image" name="n" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_n.png" value="n" alt="" title="" style="">
+	<input type="image" name="m" src="/kadoma/img/kadoma/softwarekeyboad/small/alphabet_m.png" value="m" alt="" title="" style=""><br>
+	<input type="image" name="Shift" src="/kadoma/img/kadoma/softwarekeyboad/shift.png" value="Shift_Large" alt="" title="" style="">
+	<input type="image" name="Backspace" src="/kadoma/img/kadoma/softwarekeyboad/backspace.png" value="Backspace" alt="" title="" style=""><br>
+	<input type="image" name="Close" src="/kadoma/img/kadoma/softwarekeyboad/close.png" value="Close" alt="" title="" style="margin-top: 30px;">
+	<input type="image" name="Enter" src="/kadoma/img/kadoma/softwarekeyboad/enter.png" value="Enter" alt="" title="" style="margin-top: 30px;">
+</div>
+
+<div id="rowA3_shift" class="rowA3_shift">
+	<input type="image" name="Z" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_z.png" value="Z" alt="" title="" style="">
+	<input type="image" name="X" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_x.png" value="X" alt="" title="" style="">
+	<input type="image" name="C" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_c.png" value="C" alt="" title="" style="">
+	<input type="image" name="V" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_v.png" value="V" alt="" title="" style="">
+	<input type="image" name="B" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_b.png" value="B" alt="" title="" style="">
+	<input type="image" name="N" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_n.png" value="N" alt="" title="" style="">
+	<input type="image" name="M" src="/kadoma/img/kadoma/softwarekeyboad/capital/alphabet_m.png" value="M" alt="" title="" style=""><br>
+	<input type="image" name="Shift" src="/kadoma/img/kadoma/softwarekeyboad/shift.png" value="Shift_Small" alt="" title="" style="">
+	<input type="image" name="Backspace" src="/kadoma/img/kadoma/softwarekeyboad/backspace.png" value="Backspace" alt="" title="" style=""><br>
+	<input type="image" name="Close" src="/kadoma/img/kadoma/softwarekeyboad/close.png" value="Close" alt="" title="" style="margin-top: 30px;">
+	<input type="image" name="Enter" src="/kadoma/img/kadoma/softwarekeyboad/enter.png" value="Enter" alt="" title="" style="margin-top: 30px;">
+</div>
+</div>
+
+<script type="text/javascript" src="/kadoma/js/softwarekeyboad/jquery-fieldselection.js"></script>
+<script type="text/javascript" src="/kadoma/js/softwarekeyboad/vkeyboard-common.js"></script>
+<script type="text/javascript" src="/kadoma/js/softwarekeyboad/vkeyboard-login.js"></script>
+
+
+</body></html>
