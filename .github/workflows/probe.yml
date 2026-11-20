@@ -16,8 +16,6 @@ jobs:
       - run: npm install
       - run: npx playwright install --with-deps --only-shell chromium
       - run: node probe/probe.mjs
-        env:
-          URLS: ${{ '["https://www.shisetsu-osaka.jp/shisetsu-nw/fusetsu.html","https://www.shisetsu-osaka.jp/","https://www4.pf489.com/moriguchi/web/Wg_ModeSelect.aspx","https://www4.pf489.com/Neyagawa/Web/","https://shisetsu-yoyaku.jp/kadoma/menu/Welcome.cgi","https://www.google.com/"]' }}
       - name: 結果をブランチに置く
         if: always()
         run: |
