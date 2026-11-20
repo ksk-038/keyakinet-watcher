@@ -50,7 +50,6 @@ jobs:
         env:
           DEBUG: '1'
           FORCE: '1'
-          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
           TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
           YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
         run: time node watch.mjs
