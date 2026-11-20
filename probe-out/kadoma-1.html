@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja"><head>
+
+
+
+<!-- HTTPヘッダ制御 -->
+<meta http-equiv="Content-Type" content="text/html; charset=shift_jis">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<!-- キャッシュ対策(2行) -->
+<meta http-equiv="Expire" content="0">
+<meta http-equiv="Pragma" content="no-cache">
+<!-- ページの説明とキーワード -->
+<meta name="description" content="公共施設予約システム">
+<meta name="keywords" content="公共,施設予約">
+<!-- タイトル -->
+<title>公共施設予約システム（処理選択）</title>
+
+
+
+
+
+<!-- CSS、IMGのデフォルトパスの設定 -->
+
+<!-- 共通スタイルシート -->
+<link rel="stylesheet" type="text/css" href="/kadoma/css/kadoma/common.css?var=20200707">
+<link rel="SHORTCUT ICON" href="/kadoma/img/kadoma/icon/favicon.ico">
+
+<!-- Google Tag Manager -->
+<script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-KM41Y742PW&amp;cx=c&amp;_slc=1"></script><script type="text/javascript" async="" src="https://www.google-analytics.com/analytics.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-24QKYEPRGJ&amp;cx=c&amp;gtm=4e6bh1"></script><script async="" src="https://www.googletagmanager.com/gtm.js?id=GTM-TQRLG77"></script><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TQRLG77');</script>
+<!-- End Google Tag Manager -->
+<!-- 共通スクリプト -->
+<script type="text/javascript" src="/kadoma/js/CommonFunctions.js?var=20200707"></script>
+<script type="text/javascript" src="/kadoma/js/jquery.js?var=20200707"></script>
+<script type="text/javascript" src="/kadoma/js/jquery-ui-personalized.js?var=20200707"></script>
+<script type="text/javascript" src="/kadoma/js/meca.js?var=20200707"></script>
+<!--[if IE 6]>
+	<script type="text/javascript" src="/kadoma/js/DD_belatedPNG-min.js"></script>
+	<script type="text/javascript">
+		DD_belatedPNG.fix('.pngbg');
+	</script>
+<![endif]-->
+
+<!-- 共通変数の設定 -->
+
+
+
+</head>
+
+<body id="select" onpagehide="ignoreTrue();">
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TQRLG77"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<div class="menulogo">
+	<h1 class="logo"><img src="/kadoma/img/kadoma/side/logo_login.png" alt="公共施設予約システム" title="公共施設予約システム"></h1>
+	<noscript><p class="jserr">JavaScriptが無効になっているため使用できません。<br />ブラウザ設定でJavaScriptを有効にしてください。</p></noscript>
+</div>
+
+<div id="container" class="pngbg">
+	<form name="menu.Menu.Form" method="post" action="/kadoma/menu/Menu.cgi" onsubmit="return false;" id="formMain">
+	
+	<input type="hidden" name="action" value="" id="action" style="">
+	<input type="hidden" name="txtProcId" value="/menu/Menu" id="txtProcId" style="">
+	<input type="hidden" name="txtFunctionCode" value="" id="txtFunctionCode" style="">
+	
+	<div id="selectheader" class="pngbg">
+		<h2>処理選択</h2>
+		<div id="selectboxLogout">
+			<p class="c1">
+				以下の処理から一つを選択してください。
+			</p>
+			<p class="logoutbtn">
+				<a href="javascript:void(0)" onclick="javascript:oneClickSubmit('txtFunctionCode','Enter','Logout');return false;"><img src="/kadoma/img/kadoma/under/btn_logout.png" alt="ログアウトボタン" title="ログアウトボタン" class="pngfix btn"></a>
+			</p>
+		</div>
+
+		<!-- 2015/09/08 システムマスタよりボタン表示の有無を確認し、全て非表示の場合は、枠は出さないようにする -->
+		
+		<div id="selectbox" class="clfix">
+			<ul class="clfix">
+				
+				
+				
+					<li>
+						<a href="javascript:void(0)" onclick="javascript:oneClickSubmit('txtFunctionCode','Enter','Yoyaku');return false;"><strong>空き照会・予約</strong><div>抽選が終了した施設の空き状況を確認し、先着順利用申込ができます。</div></a>
+					</li>
+				
+				
+				
+					
+				
+				
+				
+				
+				
+					
+					
+				
+				
+				
+					
+				
+
+				
+				
+					
+					
+				
+				
+			</ul>
+		</div>
+		
+
+		
+		
+		<div id="selectbox2" class="clfix">
+			<ul class="clfix">
+				
+				<li>
+					<a href="javascript:void(0)" onclick="javascript:oneClickSubmit('txtFunctionCode','Enter','TodayInfo');return false;"><strong>本日のお知らせ</strong><div>本日の各施設からのお知らせを表示します。</div></a>
+				</li>
+			</ul>
+		</div>
+		
+		
+
+	</div>
+	</form>
+
+	
+
+	
+	
+	<div id="fmenuend" class="pngbg">
+		<div id="footer" style="margin-top:8px;"></div>
+	</div>
+
+</div>
+
+</body></html>
