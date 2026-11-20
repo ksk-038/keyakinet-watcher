@@ -175,7 +175,7 @@ async function scanHttp(dates, targets, cache, G) {
   for (const date of dates) {
     const { cells } = await H.day(site, date);
     const all = cells.map((x) => ({ ...x, sym: SYM[x.status] || x.status, date, key: `${x.facility}|${x.room}|${date}` }));
-    const picks = all.filter((c) => config.notifyMarks.includes(markOf(c.sym)) && (usualOk(c, G) || searchOk(c, G)));
+    const picks = all.filter((c) => !(config.roomFilter.excludeRoomWords || []).some((w) => L.norm(c.room).includes(w)) && config.notifyMarks.includes(markOf(c.sym)) && (usualOk(c, G) || searchOk(c, G)));
     const prio = (c) => { const h = cache[c.key]; return !h || h.sym !== c.sym ? 0 : Date.parse(h.at); };
     picks.sort((a, b) => prio(a) - prio(b));
     const check = picks.slice(0, config.maxCheckPerWindow || MAX_SELECT);

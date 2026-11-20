@@ -23,6 +23,7 @@ export class Site {
         for (const c of r.headers.getSetCookie?.() || []) { const kv = c.split(';')[0]; const k = kv.indexOf('='); this.jar.set(kv.slice(0, k).trim(), kv.slice(k + 1)); }
         const text = await r.text();
         bytes += text.length;
+        if (DEBUG) console.log(`      [通信] ${path.split('/').pop()} ${(text.length / 1e3).toFixed(0)}KB`);
         if (r.status >= 300 && r.status < 400) return this.req(r.headers.get('location'));
         if (!r.ok) throw new Error(`${path} が ${r.status}`);
         const tk = text.match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/);
