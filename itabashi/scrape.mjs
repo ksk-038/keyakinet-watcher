@@ -6,7 +6,7 @@ import * as L from '../lib.mjs';
 
 export const TOP = 'https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/menu/Welcome.cgi';
 const DEBUG = process.env.DEBUG === '1';
-const DEBUG_DIR = 'debug-itabashi';
+const DEBUG_DIR = process.env.DEBUG_DIR || 'debug-itabashi';
 let step = 0;
 
 export async function snap(page, name, force = false) {
@@ -44,8 +44,9 @@ async function checkError(page) {
 const row = (page, text) => page.locator('td').filter({ hasText: new RegExp(`^\\s*${text.replace(/[()（）]/g, '.')}\\s*$`) });
 
 // 検索して「施設別空き状況照会」を開く
-export async function open(page, { category, genre }) {
-  await page.goto(TOP, { waitUntil: 'load' });
+//   top: 同じ仕組みのほかの市のサイト（門真市など）。書いていなければ板橋区
+export async function open(page, { category, genre, top }) {
+  await page.goto(top || TOP, { waitUntil: 'load' });
   await go(page, page.locator('img[alt^="空き照会のみ"]'), '空き照会のみのかたはこちら');
   await go(page, page.getByText('空き照会・予約', { exact: true }), '空き照会・予約');
   await go(page, row(page, '利用目的から絞り込む'), '利用目的から絞り込む');

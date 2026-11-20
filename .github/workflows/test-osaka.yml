@@ -5,14 +5,16 @@ on:
 jobs:
   t:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: npm install
-        env: { PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1" }
-      - run: node osaka/watch.mjs
+      - run: npx playwright install --with-deps --only-shell chromium
+      - run: node kadoma/watch.mjs
         env:
           DEBUG: "1"
+          FORCE: "1"
+          DEBUG_DIR: debug-kadoma
           YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
