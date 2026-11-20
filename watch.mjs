@@ -56,9 +56,9 @@ const usualOk = (c, G) => facilityOk(c, G) && (L.roomOk(c.room, config.roomFilte
 // 空き検索の日は、いつもの施設と平日用の施設の、その広さの部屋
 const searchOk = (c, G) => Y.searchHit(G, c.date, L.areaOf(c.facility, c.room, rooms), capOf(c.room));
 
-async function loadGrid(page, start, cfg = config) {
-  await S.openFacilityGrid(page, cfg);
-  await S.showMonthFrom(page, start);
+async function loadGrid(page, start, cfg = config, span = '1ヶ月', open = true) {
+  if (open) await S.openFacilityGrid(page, cfg);
+  await S.showMonthFrom(page, start, span);
   const { tables, cells } = await S.readGrid(page, cfg.facilities);
   if (!tables.length) throw new Error('施設別空き状況の表が読み取れません');
   const tdates = tables.map((t) => L.datesFromDays(t.monthLabel, t.days, start));
@@ -73,39 +73,29 @@ async function newPage(browser) {
   return { ctx, page };
 }
 
-async function scanWindow(browser, start, until, targets, G, facilities = config.facilities) {
-  const cfg = { ...config, facilities };
-  let { ctx, page } = await newPage(browser);
-  try {
-    let cells = await loadGrid(page, start, cfg);
-    const picks = cells.filter(
-      (c) => c.date >= start && (!until || c.date < until) && targets.has(c.date) &&
-        config.notifyMarks.includes(L.markOf(c.sym)) && (usualOk(c, G) || searchOk(c, G)),
-    );
-    console.log(`${start}〜: 対象の空き候補 ${picks.length}コマ`);
-    for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room} ${L.markOf(c.sym)}`);
+// 見張る日を、1週間ごとのまとまりに分ける（1日だけなら「1日」表示）。1ヶ月の表は重いので使わない
+function spans(dates) {
+  return L.windows(dates, 7).map((start, i, all) => {
+    const ds = dates.filter((d) => d >= start && (!all[i + 1] || d < all[i + 1]));
+    return { start, until: all[i + 1], span: ds.length === 1 ? '1日' : '1週間' };
+  });
+}
 
+// ① 1つの画面で、まとまりごとに表示を切り替えて空き状況の表だけ読む（時間帯の画面には進まない）
+async function readGrids(browser, wins, facilities, targets, G) {
+  const cfg = { ...config, facilities };
+  const { ctx, page } = await newPage(browser);
+  try {
     const out = [];
-    for (let i = 0; i < picks.length; i += MAX_SELECT) {
-      const keys = new Set(picks.slice(i, i + MAX_SELECT).map((c) => c.key));
-      if (i > 0) {
-        // 2組目以降は新しいブラウザ画面で最初からやり直す（途中から戻ると弾かれるため）
-        await ctx.close();
-        ({ ctx, page } = await newPage(browser));
-        cells = await loadGrid(page, start, cfg);
-      }
-      const ids = cells.filter((c) => keys.has(c.key)).map((c) => c.id);
-      await S.selectCells(page, ids);
-      const raw = await S.readSlots(page, cfg.facilities);
-      const slots = raw
-        .filter((s) => L.markOf(s.sym) === '○')
-        .map((s) => ({ facility: s.facility, room: s.room, date: L.parseJpDate(s.dateText), time: L.fmtTime(s.time), area: L.areaOf(s.facility, s.room, rooms) }))
-        .filter((s) => s.date && targets.has(s.date))
-        .map((s) => ({ ...s, usual: usualOk(s, G) }))
-        .filter((s) => s.usual || searchOk(s, G));
-      console.log(`  時間帯の表 ${raw.length}マス / 空き ${slots.length}コマ`);
-      if (!raw.length) console.log('  時間帯画面の文字: ' + (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1500));
-      out.push(...slots);
+    for (let i = 0; i < wins.length; i++) {
+      const w = wins[i];
+      const cells = await loadGrid(page, w.start, cfg, w.span, i === 0);
+      const picks = cells.filter(
+        (c) => c.date >= w.start && (!w.until || c.date < w.until) && targets.has(c.date) &&
+          config.notifyMarks.includes(L.markOf(c.sym)) && (usualOk(c, G) || searchOk(c, G)),
+      );
+      console.log(`${w.start}〜（${w.span}）: 対象の空き候補 ${picks.length}コマ`);
+      out.push({ ...w, facilities, picks });
     }
     return out;
   } catch (e) {
@@ -115,6 +105,61 @@ async function scanWindow(browser, start, until, targets, G, facilities = config
     await ctx.close();
   }
 }
+
+// ② 記号が変わったコマ・しばらく確かめていないコマだけ、時間帯の画面で確かめる（初めて見るコマ・記号が変わったコマは全部。ほかは合わせて MAX_SELECT コマまで）
+//   確かめなかったコマは、前回確かめた結果を使う
+async function checkSlots(browser, w, cache, targets, G) {
+  const prio = (c) => { const h = cache[c.key]; return !h || h.sym !== c.sym ? 0 : Date.parse(h.at); };
+  const picks = [...w.picks].sort((a, b) => prio(a) - prio(b));
+  const fresh = picks.filter((c) => prio(c) === 0);
+  const check = fresh.length >= MAX_SELECT ? fresh : picks.slice(0, MAX_SELECT);
+  for (const c of picks) console.log(`  ${c.date} ${c.facility} ${c.room} ${L.markOf(c.sym)}${check.includes(c) ? ' ←確認' : ''}`);
+  const out = [];
+  for (const c of picks.filter((c) => !check.includes(c))) out.push(...(cache[c.key]?.slots || []));
+  for (let i = 0; i < check.length; i += MAX_SELECT) out.push(...(await retry(() => checkChunk(browser, w, check.slice(i, i + MAX_SELECT), cache, targets, G))));
+  return out;
+}
+async function checkChunk(browser, w, check, cache, targets, G) {
+  const out = [];
+  const cfg = { ...config, facilities: w.facilities };
+  const { ctx, page } = await newPage(browser);
+  try {
+    const cells = await loadGrid(page, w.start, cfg, w.span);
+    const keys = new Set(check.map((c) => c.key));
+    await S.selectCells(page, cells.filter((c) => keys.has(c.key)).map((c) => c.id));
+    const raw = await S.readSlots(page, cfg.facilities);
+    const now = new Date().toISOString();
+    for (const c of check) cache[c.key] = { sym: c.sym, at: now, slots: [] };
+    const slots = raw
+      .filter((s) => L.markOf(s.sym) === '○')
+      .map((s) => ({ facility: s.facility, room: s.room, date: L.parseJpDate(s.dateText), time: L.fmtTime(s.time), area: L.areaOf(s.facility, s.room, rooms) }))
+      .filter((s) => s.date && targets.has(s.date))
+      .map((s) => ({ ...s, usual: usualOk(s, G) }))
+      .filter((s) => s.usual || searchOk(s, G));
+    console.log(`  時間帯の表 ${raw.length}マス / 空き ${slots.length}コマ`);
+    if (!raw.length) console.log('  時間帯画面の文字: ' + (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1500));
+    for (const s of slots) {
+      out.push(s);
+      const n = L.norm(s.room);
+      const c = check.find((c) => c.facility === s.facility && c.date === s.date && (n.startsWith(L.norm(c.room)) || L.norm(c.room).startsWith(n)));
+      if (c) cache[c.key].slots.push(s);
+      else console.log(`  ⚠ 表のコマと結びつけられない空き: ${s.facility} ${s.room}`);
+    }
+    return out;
+  } catch (e) {
+    await S.snap(page, 'error', true);
+    throw e;
+  } finally {
+    await ctx.close();
+  }
+}
+
+// サイトが一時的に重くて止まったときは、30秒待ってもう一度だけやり直す
+const retry = (run) => run().catch(async (e) => {
+  console.log(`1回目は失敗（${e.message.split('\n')[0]}）。30秒後にもう一度やってみます`);
+  await new Promise((r) => setTimeout(r, 30000));
+  return run();
+});
 
 async function main() {
   if (process.env.TEST_NOTIFY === '1') { await line('✅ けやきネット監視のテスト通知です'); return; }
@@ -133,17 +178,20 @@ async function main() {
 
   const state = await loadState();
   const browser = await chromium.launch();
+  const cache = state.cells || {};
   let open = [];
   try {
-    const starts = L.windows(dates);
-    for (let i = 0; i < starts.length; i++) for (const f of facilityGroups(starts[i], starts[i + 1], G)) {
-      // サイトが一時的に重くて止まったときは、30秒待ってもう一度だけやり直す
-      const run = () => scanWindow(browser, starts[i], starts[i + 1], targets, G, f);
-      open.push(...(await run().catch(async (e) => {
-        console.log(`1回目は失敗（${e.message.split('\n')[0]}）。30秒後にもう一度やってみます`);
-        await new Promise((r) => setTimeout(r, 30000));
-        return run();
-      })));
+    const wins = spans(dates);
+    // 施設のまとまりごとに、見るべき週だけ（平日用の施設は、まだ取れていない平日か空き検索のある週だけ）
+    const groups = new Map();
+    for (const w of wins) for (const f of facilityGroups(w.start, w.until, G)) {
+      const k = f.join('|');
+      if (!groups.has(k)) groups.set(k, { f, wins: [] });
+      groups.get(k).wins.push(w);
+    }
+    for (const { f, wins: ws } of groups.values()) {
+      const read = await retry(() => readGrids(browser, ws, f, targets, G));
+      for (const w of read) if (w.picks.length) open.push(...(await checkSlots(browser, w, cache, targets, G)));
     }
     for (const s of open) console.log(`  空き: ${L.label(s.date)} ${s.facility} ${s.room} ${s.time}`);
   } catch (e) {
@@ -153,8 +201,8 @@ async function main() {
     const fails = (state.fails || 0) + 1;
     if (fails >= 2 && Date.now() - last > 12 * 3600e3) {
       await line(`⚠️ けやきネット監視でエラー\n${e.message.slice(0, 300)}\n（12時間に1回だけお知らせします）`).catch(() => {});
-      await saveState({ ...state, lastErrorAt: new Date().toISOString(), fails });
-    } else await saveState({ ...state, fails });
+      await saveState({ ...state, cells: cache, lastErrorAt: new Date().toISOString(), fails });
+    } else await saveState({ ...state, cells: cache, fails });
     process.exitCode = 1;
     return;
   } finally {
@@ -173,7 +221,8 @@ async function main() {
   // 新しく空いたコマに、つながる今の空きも足して「13:00〜17:30」のように送る（練習の時間の外まで続く空きも足す。アプリの表示と同じ）
   if (fresh.length) await line(L.buildMessage(L.widen(fresh, placed)));
   // いま空いているコマだけ記録 → 埋まってまた空いたら再通知される
-  await saveState({ notified: open.map(L.slotKey), lastErrorAt: state.lastErrorAt });
+  const cells = Object.fromEntries(Object.entries(cache).filter(([k]) => k.split('|').at(-1) > today));
+  await saveState({ notified: open.map(L.slotKey), cells, lastErrorAt: state.lastErrorAt });
 }
 
 await main();

@@ -1,0 +1,56 @@
+name: 世田谷 テスト
+
+on:
+  push:
+    branches: [setagaya-span]
+  schedule:
+    - cron: "0 0-14/2,22 * * *"   # 予備（ふだんは YANAGIBA の Supabase から2時間おき・日本時間7〜23時台。先着予約が始まる時刻にも動く）
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: "各画面のスクショを保存する（動作確認用）"
+        type: boolean
+        default: true
+      test_notify:
+        description: "LINEにテスト通知だけ送る"
+        type: boolean
+        default: false
+
+concurrency:
+  group: setagaya-test
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install
+      - name: ブラウザを前回の保存から戻す（毎回ダウンロードしない）
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps --only-shell chromium
+
+      - name: 前回の通知記録を復元
+        uses: actions/cache/restore@v4
+        with:
+          path: state
+          key: state-${{ github.run_id }}
+          restore-keys: state-
+
+      - name: 監視実行
+        env:
+          DEBUG: ${{ inputs.debug && '1' || '0' }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
+          TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
+        run: time node watch.mjs
+

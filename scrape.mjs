@@ -137,8 +137,9 @@ export async function openFacilityGrid(page, config) {
   await assertNoError(page);
 }
 
-// 3枚目: 表示開始日をセットして「1ヶ月」で表示
-export async function showMonthFrom(page, date) {
+// 3枚目: 表示開始日をセットして、期間（1日・1週間・2週間・1ヶ月）を選んで表示
+//   見る期間が短いほど、読み込むデータが少なくて速い
+export async function showMonthFrom(page, date, span = '1ヶ月') {
   const [y, m, d] = date.split('-');
   const setDate = () =>
     page.evaluate((v) => {
@@ -164,7 +165,12 @@ export async function showMonthFrom(page, date) {
     console.log('日付まわり: ' + (await page.evaluate(() => { const e = [...document.querySelectorAll('*')].find((x) => x.children.length === 0 && x.textContent.includes('表示開始日')); let p = e; for (let i = 0; i < 4 && p?.parentElement; i++) p = p.parentElement; return p ? p.outerHTML.replace(/\s+/g, ' ').slice(0, 1500) : 'なし'; })));
     throw new Error('表示開始日の入力欄が見つかりません');
   }
-  await clickText(page, /^1[ヶかケカヵ]月$/);
+  const SPAN = { '1日': /^1日$/, '1週間': /^1週間$/, '2週間': /^2週間$/, '1ヶ月': /^1[ヶかケカヵ]月$/ };
+  await clickText(page, SPAN[span] || SPAN['1ヶ月']).catch(async (e) => {
+    if (span === '1ヶ月') throw e;
+    console.log(`  「${span}」が見つからないので1ヶ月で表示します`);
+    await clickText(page, SPAN['1ヶ月']);
+  });
   await setDate(); // 期間ボタンで日付が戻る場合に備えてもう一度
   await clickText(page, '表示');
   await assertNoError(page);
