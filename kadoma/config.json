@@ -1,25 +1,48 @@
 {
   "_説明": "門真市（公共施設予約システム）用。板橋区と同じ仕組みのサイト。ここを書き換えると見張る条件が変わります",
   "top": "https://shisetsu-yoyaku.jp/kadoma/menu/Welcome.cgi",
-
   "watch": {
     "weekdays": [],
     "monthsAhead": 2,
     "dates": [],
     "excludeDates": []
   },
-
   "searches": [
-    { "category": "文化利用", "genre": "舞踊・ダンス" },
-    { "category": "スポーツ", "genre": "ダンス" }
+    {
+      "category": "文化利用",
+      "genre": "舞踊・ダンス"
+    },
+    {
+      "category": "スポーツ",
+      "genre": "ダンス"
+    }
   ],
-
   "roomFilter": {
     "minArea": 120,
     "includeUnlabeled": true
   },
-  "excludeRoomWords": ["和室", "料理", "陶芸", "視聴覚", "ＩＴ", "児童室", "ホワイエ", "グラウンド", "相撲場", "野外", "クラブハウス", "プレイルーム"],
-  "notifyMarks": ["○", "△"],
-
-  "quietHours": { "from": 1, "to": 6 }
+  "excludeRoomWords": [
+    "和室",
+    "料理",
+    "陶芸",
+    "視聴覚",
+    "ＩＴ",
+    "児童室",
+    "ホワイエ",
+    "グラウンド",
+    "相撲場",
+    "野外",
+    "クラブハウス",
+    "プレイルーム",
+    "練習室",
+    "小会議室"
+  ],
+  "notifyMarks": [
+    "○",
+    "△"
+  ],
+  "quietHours": {
+    "from": 1,
+    "to": 6
+  }
 }
