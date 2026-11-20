@@ -97,20 +97,37 @@ const areaOf = (fac, room) => {
   return k ? ROOMS[k] : null;
 };
 
-async function scanCity(city, dates, G) {
+// 施設・部屋の一覧はめったに変わらないので、1週間覚えておく（中継に問い合わせる回数を半分以下に）
+const LIST_DAYS = 7;
+async function loadLists(k) { try { return JSON.parse(await fs.readFile(`state-${k}/lists.json`, 'utf8')); } catch { return {}; } }
+async function saveLists(k, x) { await fs.mkdir(`state-${k}`, { recursive: true }); await fs.writeFile(`state-${k}/lists.json`, JSON.stringify(x)); }
+const fresh = (x) => x?.at && Date.now() - Date.parse(x.at) < LIST_DAYS * 86400e3;
+
+async function scanCity(city, dates, G, refresh = false) {
   const out = [];
   const seen = new Set();
   const log = [];
+  const lists = refresh ? {} : await loadLists(city.key);
   const want = (area, d) => (G.dates.has(d) && (area == null || Y.bigEnough(area, d, null, BASE))) || (G.sdates.has(d) && Y.searchHit(G, d, area, null));
   for (const s of city.searches) {
     const pre = prefix(s);
-    const p0 = await relay(city.base, pre);
-    const facs = facilitiesOf(p0.at(-1)?.body);
-    if (!facs.length) throw new Error(`施設の一覧が出ません（${s.label}）`);
+    const sk = `${s.cat}-${s.purpose}`;
+    let facs = fresh(lists[sk]) ? lists[sk].facs : null;
+    if (!facs) {
+      const p0 = await relay(city.base, pre);
+      facs = facilitiesOf(p0.at(-1)?.body);
+      if (!facs.length) throw new Error(`施設の一覧が出ません（${s.label}）`);
+      lists[sk] = { at: new Date().toISOString(), facs };
+    }
     console.log(`【${city.name} ${s.label}】${facs.map((f) => f.name).join('・')}`);
     for (const f of facs) {
-      const p1 = await relay(city.base, [...pre, ...pickFacility(f.idx, dates[0])]);
-      const rooms = roomsOf(p1.at(-1)?.body);
+      const rk = `${sk}|${f.idx}|${f.name}`;
+      let rooms = fresh(lists[rk]) ? lists[rk].rooms : null;
+      if (!rooms) {
+        const p1 = await relay(city.base, [...pre, ...pickFacility(f.idx, dates[0])]);
+        rooms = roomsOf(p1.at(-1)?.body);
+        lists[rk] = { at: new Date().toISOString(), rooms };
+      }
       const targets = [];
       for (const r of rooms) {
         if ((config.excludeRoomWords || []).some((w) => r.name.includes(L.norm(w)))) continue;
@@ -125,6 +142,8 @@ async function scanCity(city, dates, G) {
         const root = new URL(city.base).pathname;
         const p2 = await relay(city.base, [...pre, ...pickFacility(f.idx, dates[0]), ...part.map((t) => ({ get: `${root}Wm_JikanSentaku.aspx?SJCode=${t.r.code}&UseDate=${ymd8(t.d)}`, keep: true }))]);
         const pages = p2.slice(-part.length);
+        // 覚えていた一覧がずれている（時間の画面が出ない）ときは、一覧を読み直してもう一度
+        if (!refresh && pages.every((pg) => !/JikanSentaku/.test(pg?.body || ''))) throw Object.assign(new Error('一覧が古いようです'), { stale: true });
         part.forEach((t, j) => {
           seen.add(`${f.name}|${t.r.name}|${t.d}`);
           for (const time of joinSlots(timesOf(pages[j]?.body))) {
@@ -134,6 +153,7 @@ async function scanCity(city, dates, G) {
       }
     }
   }
+  await saveLists(city.key, lists);
   if (DEBUG) console.log(`--- 見た部屋（ダンスで使える部屋）---\n${[...new Set(log)].join('\n')}`);
   return out.map((s) => ({ ...s, usual: G.dates.has(s.date) && (s.area == null || Y.bigEnough(s.area, s.date, null, BASE)) }));
 }
@@ -165,7 +185,11 @@ async function runCity(city) {
   const state = await loadState(city.key);
   let placed;
   try {
-    placed = await scanCity(city, dates, G);
+    placed = await scanCity(city, dates, G).catch((e) => {
+      if (!e.stale) throw e;
+      console.log('施設・部屋の一覧を読み直します');
+      return scanCity(city, dates, G, true);
+    });
   } catch (e) {
     console.error(`❌ ${city.name}: ${e.message}`);
     const fails = (state.fails || 0) + 1;
@@ -177,7 +201,7 @@ async function runCity(city) {
     process.exitCode = 1;
     return;
   }
-  await Y.report(G, { site: city.key, ward: city.name, url: city.top }, placed);
+  await Y.report(G, { site: city.key, ward: city.name, url: city.top, stateDir: `state-${city.key}` }, placed);
   const open = placed.filter((s) => Y.lineOk(s, G, city.name, placed));
   const key = (s) => `${s.date}|${s.place}|${s.time}`;
   const first = !state.notified.length && !state.lastErrorAt && !state.started;

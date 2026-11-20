@@ -2,7 +2,7 @@ name: 新宿区 地域センター 空き監視
 
 on:
   schedule:
-    - cron: "6 0-14,22-23 * * *"   # 予備（ふだんは YANAGIBA の Supabase から1時間おき・日本時間7〜24時）
+    - cron: "6 0-14/2,22 * * *"   # 予備（ふだんは YANAGIBA の Supabase から2時間おき・日本時間7〜23時台。先着予約が始まる時刻にも動く）
   workflow_dispatch:
     inputs:
       debug:
@@ -31,8 +31,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - run: npm install
+      - name: ブラウザを前回の保存から戻す（毎回ダウンロードしない）
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps --only-shell chromium
 
       - name: 前回の通知記録を復元

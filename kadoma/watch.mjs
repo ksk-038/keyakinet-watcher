@@ -3,6 +3,7 @@
 //   DEBUG=1 node kadoma/watch.mjs          … 読み取った中身をログに出し、画面を debug-kadoma/ に保存
 //   TEST_NOTIFY=1 node kadoma/watch.mjs    … LINEにテスト送信だけする
 import { chromium } from 'playwright';
+import * as B from '../browser.mjs';
 import fs from 'node:fs/promises';
 import * as L from '../lib.mjs';
 import * as S from '../itabashi/scrape.mjs';
@@ -101,7 +102,7 @@ function buildMessage(slots, title = `🎉 ${NAME}に空きが出ました`) {
 }
 
 async function scan(browser, targets, G) {
-  const ctx = await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo', viewport: { width: 1280, height: 900 } });
+  const ctx = await B.light(await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo', viewport: { width: 1280, height: 900 } }), { images: true });
   const page = await ctx.newPage();
   page.on('dialog', async (d) => { console.warn(`ダイアログ: ${d.message()}`); await d.accept().catch(() => {}); });
   const weekdays = [...new Set([...targets.map(L.weekday), '祝'])];
@@ -195,7 +196,7 @@ async function main() {
   }
 
   const placed = open.map((s) => ({ ...s, place: s.label }));
-  await Y.report(G, { site: 'kadoma', ward: NAME, url: TOP }, placed);
+  await Y.report(G, { site: 'kadoma', ward: NAME, url: TOP, stateDir: STATE_DIR }, placed);
   // LINE: アプリのお知らせと同じ範囲（まだ取れていない日の練習の時間に重なる空き・空き検索に当てはまる空き）
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
   open = placed.filter((s) => Y.lineOk(s, G, NAME, placed));

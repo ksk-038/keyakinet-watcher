@@ -229,7 +229,7 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  await Y.report(G, { site: 'osaka', ward: NAME, url: TOP }, placed);
+  await Y.report(G, { site: 'osaka', ward: NAME, url: TOP, stateDir: STATE_DIR }, placed);
   const open = placed.filter((s) => Y.lineOk(s, G, NAME, placed));
   const key = (s) => `${s.date}|${s.place}|${s.time}`;
   const first = !state.notified.length && !state.lastErrorAt && !state.started;

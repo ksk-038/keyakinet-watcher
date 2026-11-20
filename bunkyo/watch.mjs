@@ -3,6 +3,7 @@
 //   DEBUG=1 node bunkyo/watch.mjs          … 各画面のスクショ/HTMLを debug-bunkyo/ に保存
 //   TEST_NOTIFY=1 node bunkyo/watch.mjs    … LINEにテスト送信だけする
 import { chromium } from 'playwright';
+import * as B from '../browser.mjs';
 import fs from 'node:fs/promises';
 import * as L from '../lib.mjs';
 import * as S from './scrape.mjs';
@@ -82,7 +83,7 @@ function buildMessage(slots) {
 }
 
 async function newPage(browser) {
-  const ctx = await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo', viewport: { width: 1280, height: 900 } });
+  const ctx = await B.light(await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo', viewport: { width: 1280, height: 900 } }));
   const page = await ctx.newPage();
   page.on('dialog', async (d) => { console.warn(`ダイアログ: ${d.message()}`); await d.accept().catch(() => {}); });
   return { ctx, page };
@@ -203,7 +204,7 @@ async function main() {
   }
 
   const placed = open.map((s) => ({ ...s, place: `${s.facility} ${s.room.replace(/[«≪《].*$/, '').trim()}`, area: areaOf(s.facility, s.room) }));
-  await Y.report(G, { site: 'bunkyo', ward: '文京区', url: S.TOP }, placed);
+  await Y.report(G, { site: 'bunkyo', ward: '文京区', url: S.TOP, stateDir: 'state-bunkyo' }, placed);
   // LINE: アプリのお知らせと同じ範囲（まだ取れていない日の練習の時間に重なる空き・空き検索に当てはまる空き）
   // 予約サイトで○でも、先着予約がまだ始まっていない空きは送らない（始まったら送る）
   open = placed.filter((s) => Y.lineOk(s, G, '文京区', placed));

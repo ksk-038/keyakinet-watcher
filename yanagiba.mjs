@@ -3,6 +3,8 @@
 //   ・その日の練習の時間に空いている部屋を、アプリに送る（アプリの画面に出て、スタッフにお知らせが届く）
 // 合言葉（GitHub の Secrets「YANAGIBA_SECRET」）がないときは何もしない
 import holidayJp from '@holiday-jp/holiday_jp';
+import fs from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import * as L from './lib.mjs';
 
 const URL = 'https://jskulzunyckseeokgzax.supabase.co';
@@ -286,8 +288,14 @@ export function lineOk(s, G, ward, all = null) {
 }
 
 // アプリに送る（その区の分をまるごと。なくなった空きはアプリ側で消える）
-export async function report(G, { site, ward, url }, slots) {
+//   stateDir があれば、前回送った中身を覚えておき、変わっていないときは送らない（Supabase の通信量を節約）
+//   ただし6時間に1回は、変わっていなくても送る（「調べた時刻」を新しくするため）
+export async function report(G, { site, ward, url, stateDir = null }, slots) {
   if (!SECRET || G.gaps == null) return;
+  const memo = stateDir ? `${stateDir}/yanagiba-${site}.json` : null;
+  let last = {};
+  if (memo) { try { last = JSON.parse(await fs.readFile(memo, 'utf8')); } catch { /* はじめて */ } }
+  const sent = {};
   const rows = match(slots, G, ward);
   for (const team of G.teams) {
     const mine = rows
@@ -299,10 +307,19 @@ export async function report(G, { site, ward, url }, slots) {
         ...(G.gaps || []).filter((g) => g.team === team).map((g) => `${g.date}|${g.time || ''}|${g.base || ''}`),
         ...(G.searches || []).filter((q) => q.team === team).map((q) => `s:${q.id}`),
       ];
+      const hash = createHash('sha1').update(JSON.stringify([mine, [...new Set(checked)].sort(), L.jstToday()])).digest('hex');
+      const prev = last[team];
+      if (prev && prev.hash === hash && Date.now() - Date.parse(prev.at) < 6 * 3600e3) {
+        console.log(`YANAGIBA: 前回と同じなので送りません（${mine.length}件）`);
+        sent[team] = prev;
+        continue;
+      }
       const r = await rpc('facility_watch_report', { p_team: team, p_site: site, p_ward: ward, p_rows: mine, p_checked: [...new Set(checked)] });
+      sent[team] = { hash, at: new Date().toISOString() };
       console.log(`YANAGIBAへ送信: ${mine.length}件（新しい空き ${r.new}件・なくなった空き ${r.removed}件）`);
     } catch (e) {
       console.warn(`⚠ YANAGIBAへ送れません: ${e.message}`);
     }
   }
+  if (memo) { await fs.mkdir(stateDir, { recursive: true }); await fs.writeFile(memo, JSON.stringify(sent)); }
 }
