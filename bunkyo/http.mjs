@@ -67,42 +67,70 @@ export async function open(site, purpose, facilities) {
 }
 
 const cond = (date) => [['SearchCondition.StartDate', date], ['SearchCondition.DisplayTerm', '1'], ['SearchCondition.DisplayCalendar', '0'], ['SearchCondition.TimeZone', '2147483647']];
+const tf = (v) => (v === true ? 'true' : v === false ? 'false' : v);
+const TF = (v) => (v === true ? 'True' : v === false ? 'False' : v);
+
+// 画面が持っている空き状況のデータを、画面と同じ形の入力欄にして送り返す（サイトがこれを見て動く）
+function flat(model, checked = new Set()) {
+  const out = [];
+  model.forEach((f, i) => {
+    const a = `AvailabilitySelectDays[${i}]`;
+    (f.FacilityNotificationList || []).forEach((n, k) => out.push([`${a}.FacilityNotificationList[${k}].Subject`, n.Subject], [`${a}.FacilityNotificationList[${k}].Body`, n.Body], [`${a}.FacilityNotificationList[${k}].NewsFrom`, n.NewsFrom]));
+    (f.Rows || []).forEach((r, ri) => {
+      const rr = `${a}.Rows[${ri}]`;
+      (r.Cells || []).forEach((c, ci) => {
+        const cc = `${rr}.Cells[${ci}]`;
+        out.push([`${cc}.IsChecked`, checked.has(c) ? 'true' : 'false'], [`${cc}.FacilityCode`, c.FacilityCode], [`${cc}.DisplayGroupCode`, c.DisplayGroupCode], [`${cc}.UseDate`, c.UseDate],
+          [`${cc}.Status`, c.Status], [`${cc}.ClosedDateName`, c.ClosedDateName], [`${cc}.Disabled`, TF(c.Disabled)]);
+        (c.ObjectCode || []).forEach((o, k) => out.push([`${cc}.ObjectCode[${k}]`, o]));
+      });
+      out.push([`${rr}.FacilityCode`, r.FacilityCode], [`${rr}.DisplayGroupCode`, r.DisplayGroupCode], [`${rr}.ObjectName`, r.ObjectName], [`${rr}.ObjectDescription`, r.ObjectDescription], [`${rr}.Capacity`, r.Capacity]);
+      (r.ObjectCodeList || []).forEach((o, k) => out.push([`${rr}.ObjectCodeList[${k}]`, o]));
+    });
+    out.push([`${a}.FacilityCode`, f.FacilityCode], [`${a}.FacilityName`, f.FacilityName], [`${a}.FacilityGuideUrl`, f.FacilityGuideUrl], [`${a}.FacilityDescription`, f.FacilityDescription],
+      [`${a}.StartDate`, f.StartDate], [`${a}.DisplayTerm`, f.DisplayTerm], [`${a}.TimeZone`, f.TimeZone]);
+    (f.Dates || []).forEach((d, k) => out.push([`${a}.Dates[${k}].Item1`, d?.Item1 ?? '']));
+  });
+  return out.map(([k, v]) => [k, tf(v)]);
+}
+const lists = () => {
+  const o = [];
+  ['1日', '1週間', '2週間', '1ヶ月'].forEach((t, i) => o.push([`SearchCondition.DisplayTermList[${i}].Value`, i + 1], [`SearchCondition.DisplayTermList[${i}].Text`, t]));
+  ['横表示', 'カレンダー表示'].forEach((t, i) => o.push([`SearchCondition.DisplayCalendarList[${i}].Value`, i], [`SearchCondition.DisplayCalendarList[${i}].Text`, t]));
+  o.push(['SearchCondition.TimeZoneList[0].Value', '2147483647'], ['SearchCondition.TimeZoneList[0].Text', '全日']);
+  ['月', '火', '水', '木', '金', '土', '日'].forEach((t, i) => o.push([`SearchCondition.WeekList[${i}].Value`, i + 1], [`SearchCondition.WeekList[${i}].Text`, `${t}曜日`]));
+  o.push(['SearchCondition.WeekList[7].Value', 8], ['SearchCondition.WeekList[7].Text', '祝日'], ['SearchCondition.Week', 'System.Collections.Generic.List`1[System.Int32]'], ['MessageNoDataUserModel', '']);
+  return o;
+};
+const parse = (txt, what) => { try { return JSON.parse(txt); } catch { throw new Error(`${what}が読めません（${String(txt).slice(0, 120)}）`); } };
 
 // 1日分の空き状況 → [{ facility, facilityCode, room, cap, status, row, cell }]
 export async function day(site, date) {
-  const txt = await site.req('AvailabilityCheckApplySelectDays/SearchCondition', site.form(cond(date)));
-  let j;
-  try { j = JSON.parse(txt); } catch { throw new Error('日ごとの空き状況が読めません'); }
-  const model = (Array.isArray(j) ? j.find((x) => x?.AvailabilitySelectDays) : j)?.AvailabilitySelectDays;
-  if (!model) throw new Error(`日ごとの空き状況が空です（${String(txt).slice(0, 120)}）`);
-  const out = [];
-  for (const f of model) for (const row of f.Rows || []) for (const cell of row.Cells || []) {
-    if (cell.UseDate?.slice(0, 10) !== date) continue;
-    out.push({ facility: f.FacilityName, facilityCode: f.FacilityCode, room: (row.ObjectName || '').trim(), desc: row.ObjectDescription || '', cap: row.Capacity || null, status: cell.Status, row, cell });
+  if (!site.model) {
+    // 画面を開いたときと同じ最初の読み込み（1日表示で）
+    const j = parse(await site.req('AvailabilityCheckApplySelectDays/GetAvailability', site.form([...cond(date), ...lists()])), '最初の空き状況');
+    site.model = j?.[0]?.AvailabilitySelectDays;
+    if (!site.model) throw new Error(`最初の空き状況が空です（${JSON.stringify(j).slice(0, 120)}）`);
   }
-  return { cells: out, model };
+  if (!site.model.some((f) => (f.Rows || []).some((r) => (r.Cells || []).some((c) => c.UseDate?.slice(0, 10) === date)))) {
+    const j = parse(await site.req('AvailabilityCheckApplySelectDays/SearchCondition', site.form([...cond(date), ...lists(), ...flat(site.model)])), '日ごとの空き状況');
+    if (j?.[0]?.Result === 'Error') throw new Error(`日ごとの空き状況でエラー ${j[0].Information}（${date}）`);
+    site.model = j?.[1]?.AvailabilitySelectDays;
+    if (!site.model) throw new Error(`日ごとの空き状況が空です（${JSON.stringify(j).slice(0, 120)}）`);
+  }
+  const out = [];
+  for (const f of site.model) for (const row of f.Rows || []) for (const cell of row.Cells || []) {
+    if (cell.UseDate?.slice(0, 10) !== date) continue;
+    out.push({ facility: f.FacilityName, facilityCode: f.FacilityCode, room: (row.ObjectName || '').trim(), cap: row.Capacity || null, status: cell.Status, row, cell });
+  }
+  return { cells: out };
 }
 
 // 選んだ部屋（同じ日）の時間帯別空き状況 → [{ facility, room, cap, date, time, status }]
 export async function times(site, date, picks) {
-  const fields = [...cond(date)];
-  const byFac = new Map();
-  for (const p of picks) { if (!byFac.has(p.facilityCode)) byFac.set(p.facilityCode, []); byFac.get(p.facilityCode).push(p); }
-  let fi = 0;
-  for (const [code, ps] of byFac) {
-    const a = `AvailabilitySelectDays[${fi++}]`;
-    fields.push([`${a}.FacilityCode`, code], [`${a}.FacilityName`, ps[0].facility]);
-    ps.forEach((p, ri) => {
-      const r = `${a}.Rows[${ri}]`;
-      fields.push([`${r}.FacilityCode`, p.row.FacilityCode], [`${r}.DisplayGroupCode`, p.row.DisplayGroupCode], [`${r}.ObjectName`, p.row.ObjectName], [`${r}.Capacity`, p.row.Capacity ?? '']);
-      (p.row.ObjectCodeList || []).forEach((o, k) => fields.push([`${r}.ObjectCodeList[${k}]`, o]));
-      const c = `${r}.Cells[0]`;
-      fields.push([`${c}.IsChecked`, 'true'], [`${c}.FacilityCode`, p.cell.FacilityCode], [`${c}.DisplayGroupCode`, p.cell.DisplayGroupCode], [`${c}.UseDate`, p.cell.UseDate],
-        [`${c}.Status`, p.cell.Status], [`${c}.ClosedDateName`, p.cell.ClosedDateName || ''], [`${c}.Disabled`, p.cell.Disabled ? 'True' : 'False']);
-      (p.cell.ObjectCode || []).forEach((o, k) => fields.push([`${c}.ObjectCode[${k}]`, o]));
-    });
-  }
-  await site.req('AvailabilityCheckApplySelectDays/Next', site.form(fields));
+  const j = parse(await site.req('AvailabilityCheckApplySelectDays/Next', site.form([...cond(date), ...lists(), ...flat(site.model, new Set(picks.map((p) => p.cell)))])), '次へ進むの返事');
+  const r = typeof j === 'string' ? JSON.parse(j) : j;
+  if (r?.Result === 'Error') throw new Error(`時間帯の画面へ進めません ${JSON.stringify(r.Information).slice(0, 100)}`);
   const html = await site.req('AvailabilityCheckApplySelectTime');
   const m = html.match(/model: JSON\.parse\("((?:[^"\\]|\\.)*)"\)/);
   if (!m) throw new Error('時間帯別空き状況が読めません');
@@ -112,8 +140,9 @@ export async function times(site, date, picks) {
   for (const f of d.AvailabilityTime?.FacilityList || []) for (const t of f.Tables || []) for (const p of t.Places || []) for (const c of p.Cells || []) {
     out.push({ facility: f.FacilityName, room: (p.ObjectName || '').trim(), cap: p.Capacity || null, date: t.UseDate.slice(0, 10), time: [L.norm(c.FrameName || ''), `${hm(c.TimeFrom)}〜${hm(c.TimeTo)}`].filter(Boolean).join(' '), status: c.Status });
   }
-  // 次の日を見るために、日ごとの空き状況の画面に戻る
+  // 次の日を見るために、日ごとの空き状況の画面に戻る（戻ると最初の読み込みからやり直し）
   await site.req('AvailabilityCheckApplySelectDays');
+  site.model = null;
   return out;
 }
 
