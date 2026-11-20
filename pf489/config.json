@@ -1,0 +1,23 @@
+{
+  "_説明": "守口市・寝屋川市（同じ仕組みの予約サイト。日本の中の中継を通して見る）。使用目的「ダンス」で出てくる施設・部屋だけを見張る",
+  "cities": [
+    {
+      "name": "守口市", "key": "moriguchi",
+      "base": "https://www4.pf489.com/moriguchi/mobile/",
+      "top": "https://www4.pf489.com/moriguchi/web/",
+      "searches": [{ "cat": "1", "purpose": "18", "label": "スポーツ活動 → ダンス" }]
+    },
+    {
+      "name": "寝屋川市", "key": "neyagawa",
+      "base": "https://www4.pf489.com/Neyagawa/mobile/",
+      "top": "https://www4.pf489.com/Neyagawa/Web/",
+      "searches": [
+        { "cat": "1", "purpose": "2", "label": "社会教育施設 → ダンス" },
+        { "cat": "3", "purpose": "20", "label": "体育施設 → ジャズダンス" }
+      ]
+    }
+  ],
+  "watch": { "monthsAhead": 2 },
+  "excludeRoomWords": ["和室", "調理", "料理", "食事", "楽屋", "茶室", "小会議室"],
+  "quietHours": { "from": 1, "to": 6 }
+}

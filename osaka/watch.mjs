@@ -124,13 +124,16 @@ function sheetRoom(fac, room) {
 }
 const num = (s) => { const m = L.norm(s || '').match(/([\d.]+)/); return m ? Number(m[1]) : null; };
 
+const MISSING = new Set();
 // 状況の表を、空いているコマの一覧にする
 export function slotsOf(facName, scd, rooms, want) {
   const out = [];
   for (const rm of rooms) {
     if (SKIP_KINDS.includes(rm.roomkindCd)) continue;
     const sh = sheetRoom(facName, rm.roomName);
-    if (sh && sh.ok === false) continue; // 調査シートで「不可」の部屋
+    // ダンスができる部屋だけ：練習場所調査シート(大阪市)で「利用可」が「可」の部屋。シートにない部屋は外す（ログに出すので、シートに足せば見張る）
+    if (!sh) { MISSING.add(`${facLabel(facName)} ${L.norm(rm.roomName)}（${rm.hirosa || '広さ不明'}）`); continue; }
+    if (sh.ok === false) continue;
     const area = num(rm.hirosa) ?? sh?.area ?? null;
     const cap = rm.tenin ?? sh?.cap ?? null;
     for (const d of rm.dateList || []) {
@@ -189,6 +192,7 @@ async function scan(dates, G) {
     if (DEBUG) log.push(`${scd} ${name}（${n}週）`);
   }
   if (DEBUG) console.log(`--- 見た施設 ---\n${log.join('\n')}`);
+  if (MISSING.size) console.log(`--- 調査シートにない部屋（見張っていません）${MISSING.size}室 ---\n${[...MISSING].join('\n')}`);
   console.log(`施設 ${facs.size}か所を確認`);
   return out;
 }
