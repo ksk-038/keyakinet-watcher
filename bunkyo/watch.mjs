@@ -7,6 +7,7 @@ import * as B from '../browser.mjs';
 import fs from 'node:fs/promises';
 import * as L from '../lib.mjs';
 import * as S from './scrape.mjs';
+import * as H from './http.mjs';
 import * as Y from '../yanagiba.mjs';
 
 const config = JSON.parse(await fs.readFile(new URL('./config.json', import.meta.url), 'utf8'));
@@ -164,6 +165,43 @@ async function scanWindow(browser, start, until, targets, cache, G) {
   }
 }
 
+// ブラウザを使わない読み方（ふだんはこちら）。見張る日だけ、1日分ずつ読む
+const SYM = { vacant: '○', some: '△', full: '×', lot: '抽選' };
+async function scanHttp(dates, targets, cache, G) {
+  const site = new H.Site();
+  const names = await H.open(site, config.purpose, [...new Set([...config.facilities, ...WD_ONLY])]);
+  console.log(`施設 ${names.length}か所`);
+  const out = [];
+  for (const date of dates) {
+    const { cells } = await H.day(site, date);
+    const all = cells.map((x) => ({ ...x, sym: SYM[x.status] || x.status, date, key: `${x.facility}|${x.room}|${date}` }));
+    const picks = all.filter((c) => config.notifyMarks.includes(markOf(c.sym)) && (usualOk(c, G) || searchOk(c, G)));
+    const prio = (c) => { const h = cache[c.key]; return !h || h.sym !== c.sym ? 0 : Date.parse(h.at); };
+    picks.sort((a, b) => prio(a) - prio(b));
+    const check = picks.slice(0, config.maxCheckPerWindow || MAX_SELECT);
+    console.log(`${date}: 部屋 ${all.length}・空き候補 ${picks.length}（今回確認 ${check.length}）`);
+    if (process.env.DEBUG === '1') for (const c of picks) console.log(`  ${c.facility} ${c.room.slice(0, 20)} ${areaOf(c.facility, c.room) ?? '広さ不明'}㎡ 定員${c.cap ?? '表記なし'} ${c.sym}${check.includes(c) ? ' ←確認' : ''}`);
+    for (const c of picks.filter((c) => !check.includes(c))) out.push(...(cache[c.key]?.slots || []));
+    if (!check.length) continue;
+    const raw = await H.times(site, date, check);
+    const now = new Date().toISOString();
+    for (const c of check) cache[c.key] = { sym: c.sym, at: now, slots: [] };
+    for (const r of raw) {
+      if (DEBUG_SLOTS) console.log(`    ${r.date} ${r.facility} ${r.room.slice(0, 12)} ${r.time} [${r.status}]`);
+      if (!targets.has(r.date) || !(config.slotMarks || ['○']).includes(SYM[r.status] || '')) continue;
+      const slot = { facility: r.facility, room: r.room, cap: r.cap, date: r.date, time: L.fmtTime(r.time) || '時間帯不明' };
+      slot.usual = usualOk(slot, G);
+      if (!slot.usual && !searchOk(slot, G)) continue;
+      out.push(slot);
+      const c = check.find((c) => c.facility === r.facility && L.norm(c.room) === L.norm(r.room));
+      if (c) cache[c.key].slots.push(slot);
+    }
+  }
+  console.log(`読んだデータ ${(H.used() / 1e6).toFixed(1)}MB`);
+  return out;
+}
+const DEBUG_SLOTS = process.env.DEBUG === '1';
+
 async function main() {
   if (process.env.TEST_NOTIFY === '1') { await line('✅ 文京区 空き監視のテスト通知です'); return; }
 
@@ -180,12 +218,16 @@ async function main() {
   const targets = new Set(dates);
 
   const state = await loadState();
-  const browser = await chromium.launch();
+  const useBrowser = process.env.BUNKYO_BROWSER === '1';
+  const browser = useBrowser ? await chromium.launch() : null;
   let open = [];
   const cache = state.cells || {};
   try {
-    const starts = L.windows(dates).slice(0, Number(process.env.MAX_WINDOWS) || undefined);
-    for (let i = 0; i < starts.length; i++) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets, cache, G)));
+    if (!useBrowser) open.push(...(await scanHttp(dates, targets, cache, G)));
+    else {
+      const starts = L.windows(dates).slice(0, Number(process.env.MAX_WINDOWS) || undefined);
+      for (let i = 0; i < starts.length; i++) open.push(...(await scanWindow(browser, starts[i], starts[i + 1], targets, cache, G)));
+    }
     for (const s of open) console.log(`  空き: ${L.label(s.date)} ${s.facility} ${s.room} ${s.time}`);
   } catch (e) {
     console.error(`❌ ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`);
@@ -200,7 +242,7 @@ async function main() {
     process.exitCode = 1;
     return;
   } finally {
-    await browser.close();
+    await browser?.close();
   }
 
   const placed = open.map((s) => ({ ...s, place: `${s.facility} ${s.room.replace(/[«≪《].*$/, '').trim()}`, area: areaOf(s.facility, s.room) }));

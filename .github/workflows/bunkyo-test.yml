@@ -1,0 +1,49 @@
+name: 文京区 テスト
+
+on:
+  push:
+    branches: [bunkyo-http]
+  schedule:
+    - cron: "18 0-14/2,22 * * *"   # 予備（ふだんは YANAGIBA の Supabase から2時間おき・日本時間7〜23時台。先着予約が始まる時刻にも動く）
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: "各画面のスクショを保存する（動作確認用）"
+        type: boolean
+        default: true
+      test_notify:
+        description: "LINEにテスト通知だけ送る"
+        type: boolean
+        default: false
+
+concurrency:
+  group: bunkyo-test
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install
+      - name: 前回の通知記録を復元
+        uses: actions/cache/restore@v4
+        with:
+          path: state-bunkyo
+          key: bunkyo-state-${{ github.run_id }}
+          restore-keys: bunkyo-state-
+
+      - name: 監視実行
+        env:
+          DEBUG: ${{ (github.event_name == 'push' || inputs.debug) && '1' || '0' }}
+          FORCE: ${{ github.event_name != 'schedule' && '1' || '0' }}
+          TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
+        run: time node bunkyo/watch.mjs
+
