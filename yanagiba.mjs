@@ -4,6 +4,7 @@
 // 合言葉（GitHub の Secrets「YANAGIBA_SECRET」）がないときは何もしない
 import holidayJp from '@holiday-jp/holiday_jp';
 import fs from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import * as L from './lib.mjs';
 
@@ -183,7 +184,15 @@ const range = (s) => {
 
 // 空き（{ date, place, time, area, cap }）と、まだ取れていない日（の練習の時間）を突き合わせる
 //   続きのコマはつなげて考える。練習の時間をまるごと含めば「全部」、一部だけ重なれば「一部」
+// 公演用のホール（床をフラットにできない部屋）は出さない（stage-halls.json）
+const STAGE = JSON.parse(readFileSync(new globalThis.URL('./stage-halls.json', import.meta.url), 'utf8')).rooms || [];
+export function stageHall(ward, place) {
+  const p = L.norm(place);
+  return STAGE.some((h) => h.ward === ward && p.includes(L.norm(h.facility)) && p.endsWith(L.norm(h.room)));
+}
+
 export function match(slots, G, ward) {
+  slots = slots.filter((s) => !stageHall(ward, s.place));
   const rows = [];
   const all = [...(G.gaps || []), ...(G.searches || []).map((q) => ({ ...q, search: true }))];
   if (!all.length) return rows;
@@ -271,6 +280,7 @@ const covers = (span, gr) => !gr || (!!span && span[0] <= gr[0] && span[1] >= gr
 //   ・空き検索の日の、その広さで、検索した時間をまるごと使える空き
 //   all：同じ区の空き全部（前後のコマとつながるかを見るため）
 export function lineOk(s, G, ward, all = null) {
+  if (stageHall(ward, s.place)) return false;
   const span = chainSpan(s, all);
   const full = s.usual !== false && bookable(G, ward, s.place, s.date) && (G.gaps || []).some((g) => {
     if (g.date !== s.date) return false;
