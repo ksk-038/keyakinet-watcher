@@ -1,0 +1,17 @@
+name: オリセン 下調べ
+on:
+  push:
+    branches: [oly-probe]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node probe/oly.mjs
+      - run: |
+          git config user.name Claude; git config user.email noreply@anthropic.com
+          git add probe/out && git commit -m "下調べの結果" && git push
