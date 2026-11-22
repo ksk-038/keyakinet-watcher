@@ -33,11 +33,16 @@ const inRange = (area, q, cap = null) => area == null ? capOk(cap, q.min ?? 0) :
 // その日のどれかの空き検索に入る部屋か
 export const searchHit = (G, date, area, cap = null) => (G.searches || []).some((q) => q.date === date && inRange(area, q, cap));
 
-// まだ取れていない日に見る部屋の広さ（拠点ごと）: 東京は土日祝150㎡以上・平日100㎡以上、大阪は土日祝120㎡以上・平日70㎡以上
-//   広さ不明で定員だけある部屋は、定員で判断（どちらもない部屋は各区のいつもの条件で）
-export const MIN_AREA = { 東京: { rest: 150, weekday: 100 }, 大阪: { rest: 120, weekday: 70 } };
-export const minAreaFor = (date, base = '東京') => (MIN_AREA[base] || MIN_AREA.東京)[isRestDay(date) ? 'rest' : 'weekday'];
-export const bigEnough = (area, date, cap = null, base = '東京') => area != null ? area >= minAreaFor(date, base) : cap != null && capOk(cap, minAreaFor(date, base));
+// まだ取れていない日に見る部屋の広さ（拠点ごと）
+//   東京：土日祝 150㎡以上・平日 100〜200㎡　／　大阪：土日祝 100㎡以上・平日 50〜150㎡
+//   （平日練は人数が少ないので、広すぎる部屋は出さない）。広さ不明で定員だけある部屋は、定員で判断
+export const MIN_AREA = { 東京: { rest: 150, weekday: 100, weekdayMax: 200 }, 大阪: { rest: 100, weekday: 50, weekdayMax: 150 } };
+const areaRule = (base) => MIN_AREA[base] || MIN_AREA.東京;
+export const minAreaFor = (date, base = '東京') => areaRule(base)[isRestDay(date) ? 'rest' : 'weekday'];
+export const maxAreaFor = (date, base = '東京') => (isRestDay(date) ? null : areaRule(base).weekdayMax ?? null);
+// 平日に広すぎる部屋か（広さがわかる部屋だけ）
+export const tooBig = (area, date, base = '東京') => { const mx = maxAreaFor(date, base || '東京'); return area != null && mx != null && area > mx; };
+export const bigEnough = (area, date, cap = null, base = '東京') => area != null ? area >= minAreaFor(date, base) && !tooBig(area, date, base) : cap != null && capOk(cap, minAreaFor(date, base));
 
 // アプリの「まだ施設が取れていない日」を読む。watch は各区の config.watch（何ヶ月先まで見るか）、ward は区の名前
 //   その区を使う拠点（区・施設の予約のきまりの「どこの練習の施設か」）の練習だけ。きまりがない区は東京
@@ -218,6 +223,7 @@ export function match(slots, G, ward) {
       if (p.date !== g.date || hidden(G, g.team, ward, p.place, p.date)) continue;
       // まだ取れていない日は、いつもの条件の部屋だけ。空き検索は、その広さの部屋だけ
       if (g.search ? !inRange(p.area ?? null, g, p.cap ?? null) : p.usual === false) continue;
+      if (!g.search && tooBig(p.area ?? null, g.date, g.base)) continue;
       const rs = p.times.map(range).filter(Boolean).sort((a, b) => a[0] - b[0]);
       const merged = [];
       for (const r of rs) {
@@ -300,6 +306,7 @@ export function lineOk(s, G, ward, all = null) {
     if (g.date !== s.date) return false;
     if (ward && s.place && hidden(G, g.team, ward, s.place, s.date)) return false;
     if (ward && muted(G, g.team, ward, s.place, s.date, g.base)) return false;
+    if (tooBig(s.area ?? null, s.date, g.base)) return false;
     return covers(span, range(g.time));
   });
   if (full) return true;
