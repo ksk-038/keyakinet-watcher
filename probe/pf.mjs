@@ -11,13 +11,12 @@ const pur = {};
 for (const [c] of cats) {
   if (!c || c === '0') continue;
   const q = await relay([{ get: 'Wm_TopMenu.aspx' }, { get: 'Wm_ShisetsuKensaku.aspx?ActiveForm=Purpose' }, { submit: [['slPurpose1', c], ['cmdSelect2', '選択']] }]);
-  pur[c] = opts(q.at(-1).body, 'slPurpose2').filter(([v]) => v && v !== '0');
-  if (!pur[c].length) out.push('BODY ' + (q.at(-1).body || '').replace(/\s+/g, ' ').slice(0, 1500));
+  pur[c] = [...(q.at(-1).body || '').matchAll(/name="slPurpose2" value="(\d+)">([^<]+)/g)].map((m) => [m[1], m[2].trim()]);
   out.push(`cat ${c} ` + JSON.stringify(pur[c]));
 }
 // 守口市民体育館の部屋：目的ごと
 for (const [c, ps] of Object.entries(pur)) for (const [v, name] of ps) {
-  if (!/体操|エアロ|ヨガ|ダンス|バレエ|舞|会議|研修|ストレッチ|健康|卓球|バドミントン|その他|太極/.test(name)) continue;
+  if (!/体操|エアロ|ヨガ|ダンス|バレエ|舞|ストレッチ|健康|太極|フラ|リズム|演劇|音楽|練習|レク/.test(name)) continue;
   try {
     const q = await relay([
       { get: 'Wm_TopMenu.aspx' }, { get: 'Wm_ShisetsuKensaku.aspx?ActiveForm=Purpose' },
