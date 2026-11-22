@@ -1,0 +1,15 @@
+name: 守口 下調べ
+on:
+  push:
+    branches: [pf-debug]
+    paths: [probe/pf.mjs]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node probe/pf.mjs
+        env:
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
