@@ -5,7 +5,10 @@
       "name": "守口市", "key": "moriguchi",
       "base": "https://www4.pf489.com/moriguchi/mobile/",
       "top": "https://www4.pf489.com/moriguchi/web/",
-      "searches": [{ "cat": "1", "purpose": "18", "label": "スポーツ活動 → ダンス" }]
+      "searches": [
+        { "cat": "1", "purpose": "18", "label": "スポーツ活動 → ダンス" },
+        { "cat": "1", "purpose": "17", "label": "スポーツ活動 → 各種体操（市民体育館の多目的室など）" }
+      ]
     },
     {
       "name": "寝屋川市", "key": "neyagawa",
