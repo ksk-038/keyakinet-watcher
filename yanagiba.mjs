@@ -33,9 +33,11 @@ const inRange = (area, q, cap = null) => area == null ? capOk(cap, q.min ?? 0) :
 // その日のどれかの空き検索に入る部屋か
 export const searchHit = (G, date, area, cap = null) => (G.searches || []).some((q) => q.date === date && inRange(area, q, cap));
 
-// まだ取れていない日に見る部屋の広さ: 土日祝は150㎡以上、平日は100㎡以上
-//   広さ不明で定員だけある部屋は、土日祝は定員80名以上、平日は定員40名以上（どちらもない部屋は各区のいつもの条件で）
-export const bigEnough = (area, date, cap = null) => area != null ? area >= (isRestDay(date) ? 150 : 100) : cap != null && capOk(cap, isRestDay(date) ? 150 : 100);
+// まだ取れていない日に見る部屋の広さ（拠点ごと）: 東京は土日祝150㎡以上・平日100㎡以上、大阪は土日祝120㎡以上・平日70㎡以上
+//   広さ不明で定員だけある部屋は、定員で判断（どちらもない部屋は各区のいつもの条件で）
+export const MIN_AREA = { 東京: { rest: 150, weekday: 100 }, 大阪: { rest: 120, weekday: 70 } };
+export const minAreaFor = (date, base = '東京') => (MIN_AREA[base] || MIN_AREA.東京)[isRestDay(date) ? 'rest' : 'weekday'];
+export const bigEnough = (area, date, cap = null, base = '東京') => area != null ? area >= minAreaFor(date, base) : cap != null && capOk(cap, minAreaFor(date, base));
 
 // アプリの「まだ施設が取れていない日」を読む。watch は各区の config.watch（何ヶ月先まで見るか）、ward は区の名前
 //   その区を使う拠点（区・施設の予約のきまりの「どこの練習の施設か」）の練習だけ。きまりがない区は東京

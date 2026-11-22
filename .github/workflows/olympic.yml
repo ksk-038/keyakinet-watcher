@@ -1,0 +1,48 @@
+name: オリンピックセンター 空き監視
+
+on:
+  schedule:
+    - cron: "45 0-14/2,22 * * *"   # 予備（ふだんは YANAGIBA の Supabase から2時間おき・日本時間7〜23時台。先着予約が始まる時刻にも動く）
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: "読み取った中身をログに出す（動作確認用）"
+        type: boolean
+        default: true
+
+concurrency:
+  group: olympic-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --omit=optional
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+      - name: 前回の通知記録を復元
+        uses: actions/cache/restore@v4
+        with:
+          path: state-olympic
+          key: olympic-state-${{ github.run_id }}
+          restore-keys: olympic-state-
+
+      - name: 監視実行
+        env:
+          DEBUG: ${{ inputs.debug && '1' || '0' }}
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
+        run: node olympic/watch.mjs
+
+      - name: 通知記録を保存
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state-olympic
+          key: olympic-state-${{ github.run_id }}
