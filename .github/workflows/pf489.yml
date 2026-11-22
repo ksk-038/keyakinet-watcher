@@ -1,6 +1,8 @@
 name: 守口市・寝屋川市 空き監視
 
 on:
+  push:
+    branches: [pf-debug]
   schedule:
     - cron: "39 0-14/2,22 * * *"   # 予備（ふだんは YANAGIBA の Supabase から2時間おき・日本時間7〜23時台。先着予約が始まる時刻にも動く）
   workflow_dispatch:
@@ -19,7 +21,7 @@ on:
         default: false
 
 concurrency:
-  group: pf489-watch
+  group: pf-debug
   cancel-in-progress: false
 
 jobs:
@@ -46,20 +48,11 @@ jobs:
 
       - name: 監視実行
         env:
-          DEBUG: ${{ inputs.debug && '1' || '0' }}
+          DEBUG: '1'
           FORCE: ${{ github.event_name != 'schedule' && '1' || '0' }}
           TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
           NOTIFY_ALL: ${{ inputs.notify_all && '1' || '0' }}
-          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
           YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
         run: node pf489/watch.mjs
 
-      - name: 通知記録を保存
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            state-moriguchi
-            state-neyagawa
-          key: pf489-state-${{ github.run_id }}
