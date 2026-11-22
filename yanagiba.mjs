@@ -51,6 +51,12 @@ export async function load(watch, today, ward) {
     const end = L.ymd(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate());
     const list = await rpc('facility_watch_gaps', {});
     const rules = list.flatMap((x) => (x.rules || []).map((r) => ({ ...r, team: x.team_id })));
+    // 先着予約がもう始まっている日は、2か月より先も見る（大阪市・門真市などは半年前から先着）
+    //   その区・市のきまりの先着予約の手続きから、いちばん先の「もう先着が始まっている日」まで
+    let far = end;
+    const firsts = rules.filter((r) => nf(r.ward) === nf(ward)).flatMap((r) => (r.steps || []).filter((st) => st.kind === 'first'));
+    for (let d = addMonths(end, 0), stop = addMonths(today, 13); firsts.length && d <= stop; d = nextDay(d)) if (firsts.some((st) => firstOpen(st, d) <= today)) far = d;
+    if (far > end) console.log(`先着予約が始まっている ${L.label(far)} まで見ます（${L.label(end)} より先は、先着が始まっている施設だけ）`);
     const forBase = (team, base) => {
       const rs = rules.filter((r) => r.team === team && nf(r.ward) === nf(ward));
       if (!rs.length) return !base || /東京/.test(base);
@@ -58,7 +64,7 @@ export async function load(watch, today, ward) {
     };
     const gaps = list.flatMap((x) =>
       (x.gaps || [])
-        .filter((g) => !g.outdoor && g.date > today && g.date <= end && forBase(x.team_id, g.base || null))
+        .filter((g) => !g.outdoor && g.date > today && g.date <= far && forBase(x.team_id, g.base || null))
         .map((g) => ({ team: x.team_id, date: g.date, time: g.time || null, title: g.title || g.label || '練習', base: g.base || null })),
     );
     const dates = new Set(gaps.map((g) => g.date));
@@ -66,7 +72,7 @@ export async function load(watch, today, ward) {
     // 空き検索（アプリに載せない練習用）。日にち・時間・拠点・広さ（min〜max）
     const searches = list.flatMap((x) =>
       (x.searches || [])
-        .filter((q) => q.date > today && q.date <= end && forBase(x.team_id, q.base || null))
+        .filter((q) => q.date > today && q.date <= far && forBase(x.team_id, q.base || null))
         .map((q) => ({ team: x.team_id, id: q.id, date: q.date, time: q.time || null, title: '空き検索', min: q.min_area ?? null, max: q.max_area ?? null, line: q.line === true })),
     );
     const sdates = new Set(searches.map((q) => q.date));
@@ -75,7 +81,7 @@ export async function load(watch, today, ward) {
     const skips = new Map(list.map((x) => [x.team_id, new Set(x.skips || [])]));
     const nSkip = [...skips.values()].reduce((n, x) => n + x.size, 0);
     if (nSkip) console.log(`グレーにした手続き: ${nSkip}件`);
-    return { teams: list.map((x) => x.team_id), gaps, dates, rules, searches, sdates, skips };
+    return { teams: list.map((x) => x.team_id), gaps, dates, rules, searches, sdates, skips, near: end };
   } catch (e) {
     console.warn(`⚠ YANAGIBAのまだ取れていない日を読めません: ${e.message}`);
     return empty;
@@ -123,6 +129,7 @@ const addMonths = (s, n) => {
   const x = new Date(Date.UTC(y, m - 1 + n, Math.min(d, last)));
   return L.ymd(x.getUTCFullYear(), x.getUTCMonth() + 1, x.getUTCDate());
 };
+const nextDay = (s) => { const [y, m, d] = s.split('-').map(Number); const x = new Date(Date.UTC(y, m - 1, d + 1)); return L.ymd(x.getUTCFullYear(), x.getUTCMonth() + 1, x.getUTCDate()); };
 const closed = (s) => isRestDay(s) || /-01-0[123]$/.test(s);
 // 先着予約が始まる日（アプリの firstOpen と同じ）。day: null＝利用日と同じ日にち、0＝第一営業日、31以上＝月末
 function firstOpen(st, date) {
@@ -232,10 +239,13 @@ export function match(slots, G, ward) {
         else if (!rs.length) time = [...new Set(p.times)].join(' / '); // 時間が読めないコマ
         else continue;
       }
+      const opens = opensAt(G, g.team, ward, p.place, g.date, g.base);
+      // 2か月より先は、先着予約がもう始まっている施設だけ（きまりのない施設は出さない）
+      if (G.near && g.date > G.near && (!opens || Date.parse(opens) > Date.now())) continue;
       rows.push({
         team: g.team, date: g.date, place: p.place, area: p.area ?? null, cap: p.cap ?? null, time,
         gap_time: g.time, gap_title: g.title, partial: !full,
-        opens_at: opensAt(G, g.team, ward, p.place, g.date, g.base),
+        opens_at: opens,
         search_id: g.search ? g.id : null,
         url: p.url ?? null,
         // アプリでグレーにした手続きの日の空き：画面には出すが、お知らせはしない（グレーを戻せば、まだ空いていれば知らせる）
@@ -283,6 +293,8 @@ const covers = (span, gr) => !gr || (!!span && span[0] <= gr[0] && span[1] >= gr
 //   all：同じ区の空き全部（前後のコマとつながるかを見るため）
 export function lineOk(s, G, ward, all = null) {
   if (stageHall(ward, s.place)) return false;
+  // 2か月より先の空きは YANAGIBA に出すだけ（LINE には送らない）
+  if (G.near && s.date > G.near) return false;
   const span = chainSpan(s, all);
   const full = s.usual !== false && bookable(G, ward, s.place, s.date) && (G.gaps || []).some((g) => {
     if (g.date !== s.date) return false;
