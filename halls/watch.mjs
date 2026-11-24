@@ -86,9 +86,10 @@ async function readPkashikan(hall, dates) {
   const list = await relay(hall.base, [{ get: 'Top' }, { post: 'SrchSst', data: 'op=SrchSst', cut: ['name="ShisetsuCode"', '</form>'] }]);
   const body = list.at(-1).body || '';
   const re = new RegExp(hall.facility);
-  const facs = [...body.matchAll(/name="ShisetsuCode" value="(\w+)"[^>]*>\s*<label[^>]*>([^<]+)</g)];
+  const facs = [...body.matchAll(/name="ShisetsuCode" value="(\w+)"[^>]*>\s*<label[^>]*>([\s\S]*?)<\/label>/g)].map((m) => [m[0], m[1], text(m[2])]);
+  if (DEBUG) console.log(`  施設一覧: ${facs.map((m) => `${m[1]}:${m[2]}`).join('、')}`);
   const fac = facs.find((m) => re.test(m[2]));
-  if (!fac) throw new Error(`施設「${hall.facility}」が一覧にありません（${facs.slice(0, 8).map((m) => m[2]).join('、')}…）`);
+  if (!fac) throw new Error(`施設「${hall.facility}」が一覧にありません（全${facs.length}施設）`);
   const pages = await relay(hall.base, [
     { get: 'Top' },
     ...dates.map((d) => ({ post: 'SrchSst', data: `op=SrchSst&UseYM=${ymd8(d).slice(0, 6)}&UseDay=${Number(d.slice(8))}&UseDate=${ymd8(d)}&ShisetsuCode=${fac[1]}`, keep: true, cut: ['<!-- Calendar -->', '<!-- /Calendar -->'] })),
