@@ -148,10 +148,20 @@ async function readEprs(hall, dates) {
 async function readOec(hall, dates) {
   const H = await import('../bunkyo/http.mjs');
   const site = new H.Site(hall.base);
-  await site.req('Home');
+  const home = await site.req('Home');
+  // 利用目的の番号（名前で指定したときは Home の一覧から探す）
+  const purpose = { ...hall.purpose };
+  if (purpose.useName) {
+    const u = home.replace(/\\u([0-9a-f]{4})/gi, (_, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&#x([0-9A-F]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)));
+    const all = [...u.matchAll(/"PurposeCategoryCode":(\d+),"PurposeCode":(\d+),"PurposeName":"([^"]+)"/g)];
+    const hit = all.find((m) => new RegExp(purpose.useName).test(m[3]));
+    if (!hit) throw new Error(`利用目的「${purpose.useName}」がありません（${all.map((m) => m[3]).slice(0, 40).join('、')}…）`);
+    [purpose.categoryCode, purpose.useCode] = [hit[1], hit[2]];
+    if (DEBUG) console.log(`  利用目的: ${hit[3]}（${hit[1]}-${hit[2]}）`);
+  }
   await site.req('Home/SearchByPurpose', site.form([
     ['HomeModel.SelectedPlaceClassCategory', '1'], ['HomeModel.CapacityFromByPlaceClass', ''], ['HomeModel.CapacityToByPlaceClass', ''],
-    ['HomeModel.SelectedPurposeCategory', hall.purpose.categoryCode], ['HomeModel.SelectedPurpose', hall.purpose.useCode],
+    ['HomeModel.SelectedPurposeCategory', purpose.categoryCode], ['HomeModel.SelectedPurpose', purpose.useCode],
     ['HomeModel.CapacityFromByPurpose', ''], ['HomeModel.CapacityToByPurpose', ''], ['SelectedLanguageCode', '0'],
   ]));
   const html = await site.req('AvailabilityCheckApplySelectFacility');

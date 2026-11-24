@@ -82,6 +82,18 @@
       "facility": "船堀",
       "room": "大ホール",
       "note": "空き予約は利用月12か月前の25日12時から（えどねっと）。予約後10日以内に窓口で手続き"
+    },
+    {
+      "name": "セシオン杉並 ホール",
+      "city": "杉並区",
+      "platform": "oec",
+      "base": "https://www.shisetsuyoyaku.city.suginami.tokyo.jp/user/",
+      "purpose": {
+        "useName": "発表会|演奏会|演劇|コンサート|舞踊"
+      },
+      "facility": "セシオン",
+      "room": "ホール",
+      "note": "区外は抽選不可。空き枠の申込は使用日の7か月前の月の27日から（さざんかねっと）"
     }
   ],
   "quietHours": {
