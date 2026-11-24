@@ -180,11 +180,11 @@ async function readOec(hall, dates) {
         const from = Number((t.time.match(/(\d+):(\d+)〜/) || [0, 0, 0]).slice(1).join(''));
         const name = /午前/.test(t.time) ? '午前' : /午後/.test(t.time) ? '午後' : /夜/.test(t.time) ? '夜間' : from < 1200 ? '午前' : from < 1700 ? '午後' : '夜間';
         const free = t.status === 'vacant';
-        const mark = free ? '○' : t.status === 'full' ? '×' : String(t.status);
+        const mark = free ? '○' : t.status === 'full' ? '×' : t.status === 'time-over' ? '-' : t.status === 'lot' ? '抽' : String(t.status);
         slots[name] = slots[name] == null ? { free, mark } : { free: slots[name].free && free, mark: slots[name].mark + mark };
       }
     } else {
-      const mark = c.status === 'full' ? '×' : String(c.status || '-');
+      const mark = c.status === 'full' ? '×' : c.status === 'lot' ? '抽' : '-';
       for (const n of ['午前', '午後', '夜間']) slots[n] = { free: false, mark };
     }
     out.push({ date: d, slots });
