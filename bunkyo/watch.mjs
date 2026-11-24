@@ -49,7 +49,7 @@ const areaOf = (facility, room) => L.areaOf(facility, room.replace(/[≪«《].*
 
 // 部屋の条件: 広さがわかれば150㎡以上。わからなければ 定員80以上 or 定員が書いていない（「学生」などの部屋は除く）
 export function roomOk(c, f) {
-  if ((f.excludeRoomWords || []).some((w) => L.norm(c.room).includes(w))) return false;
+  if (L.badRoom(c.room) || (f.excludeRoomWords || []).some((w) => L.norm(c.room).includes(w))) return false;
   // 特例: 広さや定員に関係なく必ず見張る部屋（「施設名+部屋名」の一部）
   if ((f.includeRoomWords || []).some((w) => L.norm(c.facility + c.room).includes(L.norm(w)))) return true;
   const area = areaOf(c.facility, c.room);
@@ -98,11 +98,12 @@ function configFor(start, until, G) {
   return wd ? { ...config, facilities: [...new Set([...config.facilities, ...WD_ONLY])] } : config;
 }
 // 平日用だけの施設は、まだ取れていない平日だけ
-const facilityOk = (c, G) => !WD_ONLY.has(c.facility) || ((config.weekdayFacilities || []).includes(c.facility) && G.dates.has(c.date) && !Y.isRestDay(c.date));
+const facilityOk = (c, G) => !L.badRoom(c.room) && !WD_ONLY.has(c.facility) || ((config.weekdayFacilities || []).includes(c.facility) && G.dates.has(c.date) && !Y.isRestDay(c.date));
 // いつもの条件（YANAGIBAのまだ取れていない平日は100㎡以上も）
 const usualOk = (c, G) => facilityOk(c, G) && (roomOk(c, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(areaOf(c.facility, c.room), c.date, c.cap ?? null)));
 // 空き検索の日は、その広さの部屋。100㎡未満の部屋は searchFacilities の施設だけ
 const searchOk = (c, G) => {
+  if (L.badRoom(c.room)) return false;
   const a = areaOf(c.facility, c.room);
   if (!Y.searchHit(G, c.date, a, c.cap ?? null)) return false;
   return !config.searchFacilities || (a != null && a >= 100) || config.searchFacilities.includes(c.facility);

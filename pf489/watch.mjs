@@ -138,7 +138,7 @@ async function scanCity(city, dates, G, refresh = false) {
       }
       const targets = [];
       for (const r of rooms) {
-        if ((config.excludeRoomWords || []).some((w) => r.name.includes(L.norm(w)))) continue;
+        if (L.badRoom(r.name) || (config.excludeRoomWords || []).some((w) => r.name.includes(L.norm(w)))) continue;
         const area = areaOf(f.name, r.name);
         log.push(`${f.name} ${r.name}（${area ?? '広さ不明'}）\t${s.label}`);
         for (const d of dates) if (want(area, d) && !seen.has(`${f.name}|${r.name}|${d}`)) targets.push({ r, d, area });

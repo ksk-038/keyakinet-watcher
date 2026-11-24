@@ -124,7 +124,7 @@ async function scan(browser, targets, G) {
         for (const c of cells) {
           const { name, cap } = splitRoom(c.room);
           const label = display(c.building, name);
-          if ((config.excludeRoomWords || []).some((w) => L.norm(label).includes(L.norm(w)))) continue;
+          if (L.badRoom(label) || (config.excludeRoomWords || []).some((w) => L.norm(label).includes(L.norm(w)))) continue;
           const area = areaOf(label);
           // いつもの条件（150㎡以上か広さ不明）。YANAGIBAのまだ取れていない平日は100㎡以上も
           const usual = roomOk({ cap, area }, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(area, c.date, cap ?? null));

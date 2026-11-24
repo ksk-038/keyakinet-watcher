@@ -48,13 +48,13 @@ function facilityGroups(start, until, G) {
   return groups;
 }
 // 平日用だけの施設は、まだ取れていない平日だけ
-const facilityOk = (c, G) => !WD_ONLY.has(c.facility) || (G.dates.has(c.date) && !Y.isRestDay(c.date));
+const facilityOk = (c, G) => !L.badRoom(c.room) && !WD_ONLY.has(c.facility) || (G.dates.has(c.date) && !Y.isRestDay(c.date));
 // いつもの条件（土曜はいつもの施設・部屋。YANAGIBAのまだ取れていない平日は平日用の施設の100㎡以上も）
 // 部屋名に書いてある定員（例：「（定員60）」）
 const capOf = (room) => { const m = L.norm(room).match(/定員(\d+)/); return m ? Number(m[1]) : null; };
 const usualOk = (c, G) => facilityOk(c, G) && (L.roomOk(c.room, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(L.areaOf(c.facility, c.room, rooms), c.date, capOf(c.room))));
 // 空き検索の日は、いつもの施設と平日用の施設の、その広さの部屋
-const searchOk = (c, G) => Y.searchHit(G, c.date, L.areaOf(c.facility, c.room, rooms), capOf(c.room));
+const searchOk = (c, G) => !L.badRoom(c.room) && Y.searchHit(G, c.date, L.areaOf(c.facility, c.room, rooms), capOf(c.room));
 
 async function loadGrid(page, start, cfg = config, span = '1ヶ月', open = true) {
   if (open) await S.openFacilityGrid(page, cfg);

@@ -131,7 +131,7 @@ async function scan(browser, targets, G) {
           if ((config.excludeBuildingWords || []).some((w) => L.norm(b.name).includes(L.norm(w)))) continue;
           const rooms = await S.selectBuilding(page, b.value);
           for (const r of rooms) {
-            if ((config.excludeRoomWords || []).some((w) => L.norm(r.name).includes(L.norm(w)))) continue;
+            if (L.badRoom(r.name) || (config.excludeRoomWords || []).some((w) => L.norm(r.name).includes(L.norm(w)))) continue;
             const area = areaOf(b.name, r.name);
             // 部屋名の後ろに書いてある定員（例：「集会室(60)」）
             const capM = L.norm(r.name).match(/\((\d+)\)$/);

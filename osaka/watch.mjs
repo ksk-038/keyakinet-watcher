@@ -139,7 +139,7 @@ export function slotsOf(facName, scd, rooms, want) {
     const sh = sheetRoom(facName, rm.roomName, num(rm.hirosa));
     // ダンスができる部屋だけ：練習場所調査シート(大阪市)で「利用可」が「可」の部屋。シートにない部屋は外す（ログに出すので、シートに足せば見張る）
     if (!sh) { MISSING.add(`${facLabel(facName)} ${L.norm(rm.roomName)}（${rm.hirosa || '広さ不明'}）`); continue; }
-    if (sh.ok === false) continue;
+    if (sh.ok === false || L.badRoom(rm.roomName)) continue;
     const area = num(rm.hirosa) ?? sh?.area ?? null;
     const cap = rm.tenin ?? sh?.cap ?? null;
     for (const d of rm.dateList || []) {
