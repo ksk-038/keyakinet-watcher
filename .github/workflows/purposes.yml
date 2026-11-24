@@ -21,6 +21,8 @@ jobs:
           mkdir docs; i=0
           for u in $URLS; do i=$((i+1)); curl -sSL -m 60 -A "Mozilla/5.0" -o "docs/$i-$(basename "${u%%\?*}")" "$u" || echo "失敗 $u"; done
           ls -la docs
+          sudo apt-get install -y -qq poppler-utils >/dev/null 2>&1
+          for f in docs/*; do echo "===== $f"; pdftotext -layout "$f" - 2>/dev/null || sed 's/<[^>]*>//g' "$f"; done
       - if: startsWith(inputs.site, 'http')
         uses: actions/upload-artifact@v4
         with:
