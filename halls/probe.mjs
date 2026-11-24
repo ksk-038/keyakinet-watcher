@@ -18,6 +18,16 @@ for (const s of SITES) {
     await fs.writeFile(`${OUT}/${s.key}-${n}-${tag}.html`, await page.content());
     await page.screenshot({ path: `${OUT}/${s.key}-${n}-${tag}.png`, fullPage: true }).catch(() => {});
     console.log(`${s.key} ${n} ${tag}: ${page.url()}`);
+    const info = await page.evaluate(() => {
+      const t = (e) => (e.innerText || e.value || e.title || e.alt || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+      const links = [...document.querySelectorAll('a,button,input[type=button],input[type=submit],[onclick],[role=button]')]
+        .map((e) => `${e.tagName}|${t(e)}|${e.getAttribute('href') || ''}|${(e.getAttribute('onclick') || '').slice(0, 80)}`);
+      const forms = [...document.forms].map((f) => `FORM ${f.method} ${f.action} :: ${[...f.elements].map((x) => `${x.name}=${(x.value || '').slice(0, 20)}`).join('&').slice(0, 400)}`);
+      const sels = [...document.querySelectorAll('select')].map((x) => `SELECT ${x.name}: ${[...x.options].map((o) => `${o.value}:${o.text}`).join(', ').slice(0, 600)}`);
+      const frames = [...document.querySelectorAll('iframe,frame')].map((f) => `FRAME ${f.src}`);
+      return { links, forms, sels, frames, body: document.body.innerText.replace(/\s+/g, ' ').slice(0, 1500) };
+    });
+    console.log(['--- BODY', info.body, '--- LINKS', ...info.links.slice(0, 80), ...info.forms, ...info.sels, ...info.frames, '--- END'].join('\n'));
   };
   const clickText = async (re) => {
     const el = page.locator('a, button, input[type=button], input[type=submit], [onclick]').filter({ hasText: re }).first();
