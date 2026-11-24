@@ -21,6 +21,6 @@
     }
   ],
   "watch": { "monthsAhead": 2 },
-  "excludeRoomWords": ["和室", "調理", "料理", "食事", "楽屋", "茶室", "小会議室"],
+  "excludeRoomWords": ["和室", "茶室"],
   "quietHours": { "from": 1, "to": 6 }
 }
