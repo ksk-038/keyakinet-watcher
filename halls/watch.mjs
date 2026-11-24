@@ -144,6 +144,60 @@ async function readEprs(hall, dates) {
   }
 }
 
+// 大田区 うぐいすネット（…/eshisetsu/）: 全施設から館を選ぶ → 部屋を選ぶ → 7日分の表（表示開始日を変えて読む）
+async function readUguisu(hall, dates) {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const p = await browser.newPage({ locale: 'ja-JP' });
+    p.on('dialog', (d) => { console.log(`  （サイトのメッセージ）${d.message()}`); d.accept().catch(() => {}); });
+    await p.goto(hall.top, { waitUntil: 'networkidle' });
+    if (/システム休止|受付時間外/.test(await p.evaluate(() => document.body.innerText))) throw new Error('システム休止中（午前2〜5時）');
+    await p.click('text=ログインせずに空き状況を検索'); await p.waitForTimeout(800);
+    await p.click('label[for=yoyakuMode_1]'); await p.waitForTimeout(800);
+    await p.click('label[for=jouken1_3]'); await p.waitForTimeout(800);
+    const kid = await p.evaluate((re) => [...document.querySelectorAll('input[name=catSel3]')].find((e) => new RegExp(re).test(document.querySelector(`label[for="${e.id}"]`)?.innerText || ''))?.id, hall.kaikan);
+    if (!kid) throw new Error(`館「${hall.kaikan}」が一覧にありません`);
+    await p.click(`label[for=${kid}]`); await p.waitForTimeout(500);
+    await p.click('#submitbutton'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(1000);
+    const rid = await p.evaluate((name) => [...document.querySelectorAll('input[name=checkMeisaiUniqKey]')].find((e) => (e.getAttribute('aria-label') || e.title || document.querySelector(`label[for="${e.id}"]`)?.innerText || '').trim() === `${name}を選択`)?.id, hall.kaikanName + hall.room);
+    if (!rid) throw new Error(`部屋「${hall.room}」が一覧にありません`);
+    await p.check(`#${rid}`); await p.waitForTimeout(300);
+    await p.click('#submitbutton'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(1000);
+    const out = [];
+    const starts = [...new Set(dates.map((d) => (L.weekday(d) === '日' ? L.addDays(d, -1) : d)))];
+    for (const st of starts) {
+      await p.fill('#startDate', st);
+      await Promise.all([p.waitForLoadState('networkidle'), p.click('button:has-text("選択した条件で表示")')]);
+      await p.waitForTimeout(800);
+      const t = await p.evaluate(() => {
+        const tb = document.querySelector('table.box_calendar'); if (!tb) return null;
+        const rows = [...tb.querySelectorAll('tr')];
+        const days = [...rows[0].querySelectorAll('th')].slice(1).map((th) => th.querySelector('.day')?.innerText.replace(/\s+/g, '') || '');
+        return { days, rows: rows.slice(1).map((r) => ({ time: r.querySelector('th').innerText.trim(), cells: [...r.querySelectorAll('td')].map((td) => td.querySelector('img')?.alt || td.innerText.trim()) })) };
+      });
+      if (!t) throw new Error('空き状況の表が出ません');
+      for (const d of dates.filter((x) => x === st || x === L.addDays(st, 1))) {
+        const [, m, dd] = d.match(/^\d{4}-(\d{2})-(\d{2})/);
+        const col = t.days.indexOf(`${Number(m)}月${Number(dd)}日`);
+        if (col < 0) { if (DEBUG) console.log(`  ${d}: 表にありません（${t.days.join(' ')}）`); continue; }
+        const slots = {};
+        for (const r of t.rows) {
+          const h = Number(r.time.slice(0, 2));
+          const name = h < 12 ? '午前' : h < 17 ? '午後' : '夜間';
+          const alt = r.cells[col] || '';
+          const free = /空いて/.test(alt);
+          slots[name] = { free, mark: free ? '○' : /予約済/.test(alt) ? '×' : /抽選/.test(alt) ? '抽' : '-' };
+        }
+        out.push({ date: d, slots });
+      }
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
 // OEC の予約システム（えどねっと・文の京など。…/user/Home）: 利用目的で検索 → 施設を選ぶ → 日ごとの空き → 部屋の時間帯別空き
 async function readOec(hall, dates) {
   const H = await import('../bunkyo/http.mjs');
@@ -204,7 +258,7 @@ async function readOec(hall, dates) {
   return out;
 }
 
-const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec };
+const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu };
 
 // その日に取れる組み合わせ（例: ["午前＋午後", "午後"]）
 export function okCombos(date, slots, combos) {

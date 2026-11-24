@@ -92,6 +92,16 @@
       "purpose": "ダンス",
       "room": "大ホール",
       "note": "11月分は窓口で随時受付（3日前まで）。12月分は12/1必着で抽選申込→12/15〜窓口"
+    },
+    {
+      "name": "大田区民プラザ 大ホール",
+      "city": "大田区",
+      "platform": "uguisu",
+      "top": "https://www.yoyaku.city.ota.tokyo.jp/eshisetsu/menu/Welcome.cgi",
+      "kaikan": "^大田区民プラザ$",
+      "kaikanName": "大田区民プラザ",
+      "room": "大ホール",
+      "note": "ネット予約は不可（空き確認のみ）。空きの先着は窓口で申込と同時に支払い。12月分は〜12/1 抽選申込→12/23〜先着"
     }
   ],
   "quietHours": {
