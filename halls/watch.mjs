@@ -198,6 +198,40 @@ async function readUguisu(hall, dates) {
   }
 }
 
+// ka-ruku（狛江エコルマホールなど …/month）: 月別の表。30分ごとのマス（色）で、枠の中が全部「空き(base)」なら空き
+async function readKaruku(hall, dates) {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const p = await browser.newPage({ locale: 'ja-JP' });
+    await p.goto(hall.top, { waitUntil: 'networkidle' });
+    if (/メンテナンス中/.test(await p.evaluate(() => document.body.innerText))) throw new Error('メンテナンス中');
+    const out = [];
+    for (const ym of [...new Set(dates.map((d) => d.slice(0, 7).replace('-', '')))]) {
+      await p.selectOption('#selShisetsu', hall.shisetsu);
+      await p.selectOption('#selNengetu', ym);
+      await p.click('#searchMonth'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(1200);
+      for (const d of dates.filter((x) => x.slice(0, 7).replace('-', '') === ym)) {
+        const cells = await p.evaluate((id) => { const tr = document.getElementById(id); return tr ? [...tr.querySelectorAll('td.base, td.reserve, td.off, td[class]')].filter((td) => td.colSpan > 1).map((td) => [td.className, td.colSpan]) : null; }, `calendar${d.replace(/-/g, '')}`);
+        if (!cells) { if (DEBUG) console.log(`  ${d}: 表にありません`); continue; }
+        const slots = {};
+        let min = 0;
+        for (const [cls, span] of cells) {
+          const name = min < 240 ? '午前' : min < 600 ? '午後' : '夜間';
+          const free = cls === 'base';
+          const mark = free ? '○' : cls === 'reserve' ? '×' : '-';
+          slots[name] = slots[name] == null ? { free, mark } : { free: slots[name].free && free, mark: slots[name].free && !free ? mark : slots[name].mark === '○' ? mark : slots[name].mark };
+          min += span;
+        }
+        out.push({ date: d, slots });
+      }
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
 // OEC の予約システム（えどねっと・文の京など。…/user/Home）: 利用目的で検索 → 施設を選ぶ → 日ごとの空き → 部屋の時間帯別空き
 async function readOec(hall, dates) {
   const H = await import('../bunkyo/http.mjs');
@@ -258,7 +292,7 @@ async function readOec(hall, dates) {
   return out;
 }
 
-const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu };
+const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku };
 
 // その日に取れる組み合わせ（例: ["午前＋午後", "午後"]）
 export function okCombos(date, slots, combos) {

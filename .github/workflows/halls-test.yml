@@ -16,7 +16,6 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps --only-shell chromium
-      - run: node tools/probe-halls.mjs
       - run: node halls/watch.mjs
         env:
           DEBUG: "1"
