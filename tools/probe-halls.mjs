@@ -1,10 +1,11 @@
-// 下調べ: 各ホールの公式サイトに「空き状況」のページがあるか
-const sites = ['https://www.muse-tokorozawa.or.jp/', 'https://www.chofu-culture-community.org/', 'https://www.musashino.or.jp/', 'https://www.k-mst.or.jp/', 'https://www.nicesacademia.jp/', 'https://www.saf.or.jp/saitama_kaikan/', 'https://www.ecorma-hall.jp/', 'https://www.tachikawa-chiikibunka.or.jp/', 'https://www.ageo-bunka.jp/', 'https://www.city.ageo.lg.jp/', 'https://www.city.tokorozawa.saitama.jp/shisetu/yoyaku/', 'https://www.hikifune-bunka.jp/', 'https://www.akishima-bunka.jp/', 'https://www.machida-shiminhall.jp/', 'https://www.miyajigakki-hall.jp/', 'https://www.shibu-cul.jp/'];
-for (const u of sites) {
-  try {
-    const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'ja' }, redirect: 'follow', signal: AbortSignal.timeout(15000) });
-    const h = await r.text();
-    const links = [...h.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)].map((m) => [m[1], m[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()]).filter(([href, t]) => /空き|空室|予約|利用案内|施設利用|貸/.test(t + href)).slice(0, 12).map(([a, t]) => `${t.slice(0, 25)} → ${a}`);
-    console.log('SITE', r.status, r.url, (h.match(/<title>([^<]*)/i) || [])[1]?.trim().slice(0, 40), '\n  ' + links.join('\n  '));
-  } catch (e) { console.log('SITE ERR', u, e.cause?.code || e.message); }
-}
+const go = async (u) => { try { const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'ja' }, redirect: 'follow', signal: AbortSignal.timeout(20000) }); const h = await r.text(); console.log('\nURL', r.status, r.url, h.length); return h; } catch (e) { console.log('\nERR', u, e.cause?.code || e.message); return ''; } };
+const text = (h, n = 1500) => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').slice(0, n);
+const links = (h, re) => [...h.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)].map((m) => `${m[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 30)} → ${m[1]}`).filter((s) => re.test(s)).slice(0, 15).join('\n  ');
+let h = await go('https://www3.11489.jp/nakano/user/Home');
+const u = h.replace(/\\u([0-9a-f]{4})/gi, (_, x) => String.fromCodePoint(parseInt(x, 16))).replace(/&#x([0-9A-F]+);/gi, (_, x) => String.fromCodePoint(parseInt(x, 16)));
+console.log('NAKANO-P', [...u.matchAll(/"PurposeCategoryCode":(\d+),"PurposeCode":(\d+),"PurposeName":"([^"]+)"/g)].map((m) => `${m[1]}-${m[2]}${m[3]}`).join(' ').slice(0, 1500));
+h = await go('https://sst1.ka-ruku.com/komae/month'); console.log('KOMAE', text(h, 2500)); console.log('KOMAE-L', links(h, /./));
+console.log('KOMAE-F', [...h.matchAll(/<(form|select|input)\b[^>]*>/gi)].map((m) => m[0].slice(0, 160)).slice(0, 30).join('\n'));
+h = await go('https://www.hikifune-bunka.jp/guide/vacant/'); console.log('HIKI', text(h, 2500)); console.log('HIKI-L', links(h, /空き|pdf|PDF|vacant|calendar/i));
+h = await go('https://www.musashino.or.jp/1000007/index.html'); console.log('MUSA', text(h, 1200)); console.log('MUSA-L', links(h, /空き|予約|http/));
+h = await go('https://web118.rsv.ws-scs.jp/tokorozawa/web/'); console.log('TOKO', text(h, 1000)); console.log('TOKO-L', links(h, /./));
