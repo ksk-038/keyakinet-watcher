@@ -81,6 +81,9 @@ async function relay(base, steps) {
 }
 const strip = (h) => L.norm((h || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&#215;/g, '×')).trim();
 const options = (body, name) => {
+  // 小分類はチェックボックスで並ぶこともある
+  const boxes = [...(body || '').matchAll(new RegExp(`<input type="checkbox" name="${name}" value="([^"]*)">([^<]*)`, 'g'))].map((m) => ({ v: m[1], t: strip(m[2]) }));
+  if (boxes.length) return boxes;
   const sel = (body || '').match(new RegExp(`<select[^>]*name="${name}"[^>]*>([\\s\\S]*?)</select>`));
   return sel ? [...sel[1].matchAll(/<option[^>]*?value="([^"]*)"[^>]*>([^<]*)/g)].map((m) => ({ v: m[1], t: strip(m[2]) })).filter((o) => o.v !== '' && o.t) : [];
 };
