@@ -1,11 +1,10 @@
-const go = async (u) => { try { const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'ja' }, redirect: 'follow', signal: AbortSignal.timeout(20000) }); const h = await r.text(); console.log('\nURL', r.status, r.url, h.length); return h; } catch (e) { console.log('\nERR', u, e.cause?.code || e.message); return ''; } };
-const text = (h, n = 1500) => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').slice(0, n);
-const links = (h, re) => [...h.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)].map((m) => `${m[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 30)} → ${m[1]}`).filter((s) => re.test(s)).slice(0, 15).join('\n  ');
-let h = await go('https://www3.11489.jp/nakano/user/Home');
-const u = h.replace(/\\u([0-9a-f]{4})/gi, (_, x) => String.fromCodePoint(parseInt(x, 16))).replace(/&#x([0-9A-F]+);/gi, (_, x) => String.fromCodePoint(parseInt(x, 16)));
-console.log('NAKANO-P', [...u.matchAll(/"PurposeCategoryCode":(\d+),"PurposeCode":(\d+),"PurposeName":"([^"]+)"/g)].map((m) => `${m[1]}-${m[2]}${m[3]}`).join(' ').slice(0, 1500));
-h = await go('https://sst1.ka-ruku.com/komae/month'); console.log('KOMAE', text(h, 2500)); console.log('KOMAE-L', links(h, /./));
-console.log('KOMAE-F', [...h.matchAll(/<(form|select|input)\b[^>]*>/gi)].map((m) => m[0].slice(0, 160)).slice(0, 30).join('\n'));
-h = await go('https://www.hikifune-bunka.jp/guide/vacant/'); console.log('HIKI', text(h, 2500)); console.log('HIKI-L', links(h, /空き|pdf|PDF|vacant|calendar/i));
-h = await go('https://www.musashino.or.jp/1000007/index.html'); console.log('MUSA', text(h, 1200)); console.log('MUSA-L', links(h, /空き|予約|http/));
-h = await go('https://web118.rsv.ws-scs.jp/tokorozawa/web/'); console.log('TOKO', text(h, 1000)); console.log('TOKO-L', links(h, /./));
+import { chromium } from 'playwright';
+const b = await chromium.launch(); const p = await b.newPage({ locale: 'ja-JP' });
+try {
+  await p.goto('https://yoyaku.musashino.or.jp/mnet/web/index.jsp', { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(4000);
+  console.log('MUSA', p.url(), await p.title());
+  console.log('MUSA-O', JSON.stringify(await p.evaluate(() => Object.fromEntries(['#bname', '#purpose'].map((s) => [s, [...document.querySelectorAll(`${s} option`)].map((o) => o.text.trim())])))).slice(0, 3000));
+  console.log('MUSA-T', (await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 800));
+} catch (e) { console.log('MUSA ERR', e.message); }
+await b.close();

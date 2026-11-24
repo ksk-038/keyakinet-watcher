@@ -82,6 +82,18 @@
       "facility": "船堀",
       "room": "大ホール",
       "note": "空き予約は利用月12か月前の25日12時から（えどねっと）。予約後10日以内に窓口で手続き"
+    },
+    {
+      "name": "なかのZERO 大ホール",
+      "city": "中野区",
+      "platform": "oec",
+      "base": "https://www3.11489.jp/nakano/user/",
+      "purpose": {
+        "useName": "舞台芸術"
+      },
+      "facility": "ZERO|ゼロ",
+      "room": "大ホール",
+      "note": "11月分は12/1〜9抽選申込→25日〜空きの先着、12月分は1/1〜9抽選申込（中野区施設予約システム）"
     }
   ],
   "quietHours": {
