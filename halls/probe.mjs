@@ -3,9 +3,10 @@ const RELAY = 'https://jskulzunyckseeokgzax.supabase.co/functions/v1/jp-relay';
 const SECRET = process.env.YANAGIBA_SECRET;
 const SITES = [
   { base: 'https://k5.p-kashikan.jp/nishitokyo-city/', steps: [{ get: 'index.php' }] },
+  { base: 'https://k5.p-kashikan.jp/higashiyamato-city/', steps: [{ get: 'index.php' }] },
 ];
 async function relay(base, steps) {
-  const r = await fetch(RELAY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, body: JSON.stringify({ secret: SECRET, base, steps }), signal: AbortSignal.timeout(140000) });
+  const r = await fetch(RELAY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, body: JSON.stringify({ secret: SECRET, base, enc: 'utf8', steps }), signal: AbortSignal.timeout(140000) });
   return { status: r.status, j: await r.json().catch(async () => ({ raw: (await r.text()).slice(0, 500) })) };
 }
 for (const s of SITES) {
