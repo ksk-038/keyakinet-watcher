@@ -68,6 +68,20 @@
       "facility": "文化会館",
       "room": "^大ホール",
       "note": "市外の受付は11月分が2026/12/1〜、12月分が2027/1/4〜（窓口のみ・電話不可）"
+    },
+    {
+      "name": "タワーホール船堀 大ホール",
+      "city": "江戸川区",
+      "platform": "oec",
+      "base": "https://www.shisetsuyoyaku.city.edogawa.tokyo.jp/user/",
+      "purpose": {
+        "categoryCode": "7",
+        "useCode": "155",
+        "_": "会議・発表会等 → 発表会"
+      },
+      "facility": "船堀",
+      "room": "大ホール",
+      "note": "空き予約は利用月12か月前の25日12時から（えどねっと）。予約後10日以内に窓口で手続き"
     }
   ],
   "quietHours": {

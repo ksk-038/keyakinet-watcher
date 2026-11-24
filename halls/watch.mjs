@@ -144,7 +144,55 @@ async function readEprs(hall, dates) {
   }
 }
 
-const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs };
+// OEC の予約システム（えどねっと・文の京など。…/user/Home）: 利用目的で検索 → 施設を選ぶ → 日ごとの空き → 部屋の時間帯別空き
+async function readOec(hall, dates) {
+  const H = await import('../bunkyo/http.mjs');
+  const site = new H.Site(hall.base);
+  await site.req('Home');
+  await site.req('Home/SearchByPurpose', site.form([
+    ['HomeModel.SelectedPlaceClassCategory', '1'], ['HomeModel.CapacityFromByPlaceClass', ''], ['HomeModel.CapacityToByPlaceClass', ''],
+    ['HomeModel.SelectedPurposeCategory', hall.purpose.categoryCode], ['HomeModel.SelectedPurpose', hall.purpose.useCode],
+    ['HomeModel.CapacityFromByPurpose', ''], ['HomeModel.CapacityToByPurpose', ''], ['SelectedLanguageCode', '0'],
+  ]));
+  const html = await site.req('AvailabilityCheckApplySelectFacility');
+  const dec = (x) => x.replace(/&#x([0-9A-F]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&amp;/g, '&');
+  const hidden = [...html.matchAll(/<input type="hidden" name="(SelectFacilities\.Facilities\[\d+\]\.SelectedFacility\.(?:Value|Text))" value="([^"]*)"/g)].map((m) => [m[1], dec(m[2])]);
+  const list = [];
+  for (let i = 0; i < hidden.length; i += 2) if (/Value$/.test(hidden[i][0])) list.push({ value: hidden[i][1], name: hidden[i + 1]?.[1] });
+  if (DEBUG) console.log(`  施設一覧: ${list.map((f) => f.name).join('、')}`);
+  const fre = new RegExp(hall.facility);
+  const picked = list.filter((f) => fre.test(f.name));
+  if (!picked.length) throw new Error(`施設「${hall.facility}」が一覧にありません（全${list.length}施設）`);
+  await site.req('AvailabilityCheckApplySelectFacility/Next', site.form([...hidden, ...picked.map((f, i) => [`SelectFacilities.Selected[${i}]`, f.value])]));
+  await site.req('AvailabilityCheckApplySelectDays');
+  const roomRe = new RegExp(hall.room);
+  const out = [];
+  for (const d of dates) {
+    const { cells } = await H.day(site, d);
+    const mine = cells.filter((c) => roomRe.test(c.room));
+    if (DEBUG) console.log(`  ${d}: ${cells.map((c) => `${c.room}[${c.status}]`).join(' / ') || '（表なし）'}`);
+    if (!mine.length) { console.log(`  ⚠️ ${d}: 部屋「${hall.room}」が表にありません`); continue; }
+    const c = mine[0];
+    const slots = {};
+    if (c.status === 'vacant' || c.status === 'some') {
+      for (const t of await H.times(site, d, [c])) {
+        if (!roomRe.test(t.room) || t.date !== d) continue;
+        const from = Number((t.time.match(/(\d+):(\d+)〜/) || [0, 0, 0]).slice(1).join(''));
+        const name = /午前/.test(t.time) ? '午前' : /午後/.test(t.time) ? '午後' : /夜/.test(t.time) ? '夜間' : from < 1200 ? '午前' : from < 1700 ? '午後' : '夜間';
+        const free = t.status === 'vacant';
+        const mark = free ? '○' : t.status === 'full' ? '×' : String(t.status);
+        slots[name] = slots[name] == null ? { free, mark } : { free: slots[name].free && free, mark: slots[name].mark + mark };
+      }
+    } else {
+      const mark = c.status === 'full' ? '×' : String(c.status || '-');
+      for (const n of ['午前', '午後', '夜間']) slots[n] = { free: false, mark };
+    }
+    out.push({ date: d, slots });
+  }
+  return out;
+}
+
+const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec };
 
 // その日に取れる組み合わせ（例: ["午前＋午後", "午後"]）
 export function okCombos(date, slots, combos) {
