@@ -113,6 +113,7 @@ async function readEprs(hall, dates) {
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage({ locale: 'ja-JP' });
+    page.on('dialog', (d) => { console.log(`  （サイトのメッセージ）${d.message()}`); d.dismiss().catch(() => {}); });
     const roomRe = new RegExp(hall.room);
     const out = [];
     // 土曜はじまりで1週間ずつ（土日が同じ表に入る）
