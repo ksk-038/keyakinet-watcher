@@ -18,5 +18,3 @@ jobs:
           key: playwright-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps --only-shell chromium
       - run: node halls/probe.mjs
-        env:
-          URLS: "https://www.yoyaku.city.ota.tokyo.jp/ https://web02.rsv.ws-scs.jp/chofu/web/ https://www.city.edogawa.tokyo.jp/e030/kuseijoho/denshi/shisetsuyoyaku/index.html https://www.city.ageo.lg.jp/page/17-shisetuyoyaku.html https://www.muse-tokorozawa.or.jp/guide/search.php https://www.cm9.eprs.jp/shinagawa/web/index.jsp https://www.city.tokorozawa.saitama.jp/shisetu/yoyaku/index.html"
