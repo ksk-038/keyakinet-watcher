@@ -8,12 +8,12 @@ const DEBUG = process.env.DEBUG === '1';
 let bytes = 0;
 
 export class Site {
-  constructor() { this.jar = new Map(); this.token = null; }
+  constructor(base = BASE) { this.base = base; this.jar = new Map(); this.token = null; }
   cookie() { return [...this.jar].map(([k, v]) => `${k}=${v}`).join('; '); }
   async req(path, form = null) {
     for (let i = 0; i < 3; i++) {
       try {
-        const r = await fetch(new URL(path, BASE), {
+        const r = await fetch(new URL(path, this.base), {
           method: form ? 'POST' : 'GET',
           headers: { Cookie: this.cookie(), 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'ja', ...(form ? { 'X-Requested-With': 'XMLHttpRequest' } : {}) },
           body: form || undefined,
