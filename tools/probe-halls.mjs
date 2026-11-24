@@ -1,10 +1,6 @@
-import { chromium } from 'playwright';
-const b = await chromium.launch(); const p = await b.newPage({ locale: 'ja-JP' });
-try {
-  await p.goto('https://yoyaku.musashino.or.jp/mnet/web/index.jsp', { waitUntil: 'domcontentloaded' });
-  await p.waitForTimeout(4000);
-  console.log('MUSA', p.url(), await p.title());
-  console.log('MUSA-O', JSON.stringify(await p.evaluate(() => Object.fromEntries(['#bname', '#purpose'].map((s) => [s, [...document.querySelectorAll(`${s} option`)].map((o) => o.text.trim())])))).slice(0, 3000));
-  console.log('MUSA-T', (await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 800));
-} catch (e) { console.log('MUSA ERR', e.message); }
-await b.close();
+const go = async (u) => { try { const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'ja' }, redirect: 'follow', signal: AbortSignal.timeout(20000) }); const h = await r.text(); return [r, h]; } catch (e) { console.log('ERR', u, e.cause?.code || e.message); return [null, '']; } };
+const ext = (h, base) => [...new Set([...h.matchAll(/href="(https?:\/\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)].filter((m) => !m[1].includes(base)).map((m) => `${m[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 25)} → ${m[1]}`))].filter((s) => /予約|空き|施設|yoyaku|shisetsu|rsv|reserve/i.test(s)).slice(0, 10).join('\n  ');
+for (const [u, base] of [['https://www.hikifune-bunka.jp/guide/vacant/', 'hikifune'], ['https://www.chofu-culture-community.org/news/archives/43086', 'chofu-culture'], ['https://www.chofu-culture-community.org/renter/', 'chofu-culture'], ['https://www.tachikawa-chiikibunka.or.jp/', 'tachikawa-chiikibunka'], ['https://www.tachikawa-chiikibunka.or.jp/risuruhall/', 'tachikawa-chiikibunka'], ['https://www.muse-tokorozawa.or.jp/guide/', 'muse-tokorozawa'], ['https://www.city.ageo.lg.jp/page/0000007.html', 'ageo'], ['https://www.ageo-shimin.jp/', 'xx'], ['https://www.saf.or.jp/saitama_kaikan/rental/', 'saf.or']]) {
+  const [r, h] = await go(u); if (!r) continue;
+  console.log('SITE', r.status, r.url, (h.match(/<title>([^<]*)/i) || [])[1]?.trim().slice(0, 40), '\n  ' + ext(h, base));
+}
