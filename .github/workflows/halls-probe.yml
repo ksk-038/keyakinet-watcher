@@ -1,0 +1,23 @@
+name: ホール空き監視 下調べ
+on:
+  push:
+    branches: [halls-watch]
+    paths: ["halls/probe.mjs", ".github/workflows/halls-probe.yml"]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm install
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps --only-shell chromium
+      - run: node halls/probe.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: debug-halls, path: debug-halls/, retention-days: 3 }
