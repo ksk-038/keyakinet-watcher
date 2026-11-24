@@ -1,0 +1,25 @@
+name: 調べもの 資料をダウンロード
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "ダウンロードするURL（空白区切り）"
+        required: true
+
+jobs:
+  get:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: ダウンロード
+        env:
+          URLS: ${{ inputs.urls }}
+        run: |
+          mkdir docs; i=0
+          for u in $URLS; do i=$((i+1)); curl -sSL -m 60 -A "Mozilla/5.0" -o "docs/$i-$(basename "${u%%\?*}")" "$u" || echo "失敗 $u"; done
+          ls -la docs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: docs
