@@ -15,6 +15,7 @@ for (const s of SITES) {
     const b = p.body || '';
     if (s.raw) { const js = b; for (const m of js.matchAll(/(function \w+|url\s*:|\$\.(ajax|post|get)\(|action\s*=|op\.value|\.submit\(\))[\s\S]{0,160}/g)) console.log('JS> ' + m[0].replace(/\s+/g, ' ')); continue; }
     console.log(`--- PAGE ${p.url} ${p.status} len=${b.length}`);
+    const i = b.indexOf('メインホール'); if (i > 0) console.log('RAW> ' + b.slice(i - 1500, i + 2500).replace(/\s+/g, ' '));
     const tags = [...b.matchAll(/<(a|form|input|select|option|button|iframe|label)\b[^>]*>(?:[^<]{0,40})/gi)].map((m) => m[0].replace(/\s+/g, ' ').slice(0, 220));
     console.log(tags.filter((t) => !/navigation-link|menu-|scd0|select-bt/.test(t)).slice(0, 300).join('\n'));
     console.log('--- TEXT', b.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 7000));
