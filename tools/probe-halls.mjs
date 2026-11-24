@@ -1,6 +1,17 @@
-const go = async (u) => { try { const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'ja' }, redirect: 'follow', signal: AbortSignal.timeout(20000) }); const h = await r.text(); console.log('\nURL', r.status, r.url, h.length); return h; } catch (e) { console.log('\nERR', u, e.cause?.code || e.message); return ''; } };
-const text = (h, n) => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').slice(0, n);
-const tags = (h) => [...h.matchAll(/<(a|form|select|option|input|iframe)\b[^>]*>([^<]{0,30})/gi)].map((m) => (m[0]).replace(/\s+/g, ' ').slice(0, 170)).filter((s) => !/type="hidden"/.test(s) || /name="(?!__)/.test(s)).slice(0, 50).join('\n');
-let h = await go('https://sst1.ka-ruku.com/komae/month'); console.log('KOMAE', text(h, 2500)); console.log(tags(h));
-h = await go('https://web118.rsv.ws-scs.jp/tokorozawa/web/'); console.log('TOKO', text(h, 800)); console.log(tags(h));
-h = await go('https://risuru.hall-info.jp/'); console.log('RISURU', text(h, 300)); console.log([...h.matchAll(/href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)].map((m) => `${m[2].replace(/<[^>]+>/g, '').trim().slice(0, 25)} → ${m[1]}`).filter((s) => /空き|予約|貸|利用/.test(s)).slice(0, 12).join('\n'));
+import { chromium } from 'playwright';
+const b = await chromium.launch();
+try {
+  const p = await b.newPage({ locale: 'ja-JP' });
+  await p.goto('https://sst1.ka-ruku.com/komae/month', { waitUntil: 'networkidle' });
+  await p.selectOption('#selShisetsu', '0010'); await p.selectOption('#selNengetu', '202711');
+  const btn = await p.$('button:has-text("検索"), input[value="検索"]');
+  await Promise.all([p.waitForLoadState('networkidle'), btn.click()]); await p.waitForTimeout(1500);
+  console.log('KOMAE', p.url(), (await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 2000));
+  console.log('KOMAE-H', (await p.content()).replace(/\s+/g, ' ').match(/空き状況<[\s\S]{0,3500}/)?.[0]);
+} catch (e) { console.log('KOMAE ERR', e.message); }
+try {
+  const p = await b.newPage({ locale: 'ja-JP' });
+  await p.goto('https://web118.rsv.ws-scs.jp/tokorozawa/web/index.jsp', { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(3000);
+  console.log('TOKO-O', JSON.stringify(await p.evaluate(() => Object.fromEntries(['#bname', '#purpose'].map((s) => [s, [...document.querySelectorAll(`${s} option`)].map((o) => o.text.trim())])))).slice(0, 3500));
+} catch (e) { console.log('TOKO ERR', e.message); }
+await b.close();
