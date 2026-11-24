@@ -131,7 +131,7 @@ async function readEprs(hall, dates) {
         const slots = {};
         for (const c of cells.filter((x) => x.date === d)) {
           const name = /午前/.test(c.label) ? '午前' : /午後/.test(c.label) ? '午後' : /夜/.test(c.label) ? '夜間' : c.label;
-          const free = /[○◯〇]/.test(c.sym);
+          const free = /[○◯〇]|空き/.test(c.sym);
           slots[name] = slots[name] == null ? { free, mark: c.sym || '?' } : { free: slots[name].free && free, mark: slots[name].mark + (c.sym || '?') };
         }
         if (DEBUG) console.log(`  ${d} ${room.name}: ${Object.entries(slots).map(([k, v]) => `${k}${v.mark}`).join(' ') || '（表なし）'}`);
