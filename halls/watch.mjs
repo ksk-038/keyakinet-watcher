@@ -167,9 +167,12 @@ async function readUguisu(hall, dates) {
     const out = [];
     const starts = [...new Set(dates.map((d) => (L.weekday(d) === '日' ? L.addDays(d, -1) : d)))];
     for (const st of starts) {
-      await p.fill('#startDate', st);
-      await Promise.all([p.waitForLoadState('networkidle'), p.click('button:has-text("選択した条件で表示")')]);
-      await p.waitForTimeout(800);
+      let ok = false;
+      for (let i = 0; i < 3 && !ok; i++) {
+        await p.fill('#startDate', st);
+        await Promise.all([p.waitForLoadState('networkidle'), p.click('button:has-text("選択した条件で表示")')]);
+        ok = await p.waitForSelector('table.box_calendar', { timeout: 15000 }).then(() => true, () => false);
+      }
       const t = await p.evaluate(() => {
         const tb = document.querySelector('table.box_calendar'); if (!tb) return null;
         const rows = [...tb.querySelectorAll('tr')];
@@ -324,7 +327,7 @@ async function main() {
       const res = await READERS[hall.platform](hall, dates);
       for (const r of res) {
         const combos = okCombos(r.date, r.slots, config.combos);
-        table.push({ hall: `${hall.city} ${hall.name}`, date: r.date, slots: Object.fromEntries(Object.entries(r.slots).map(([k, v]) => [k, v.mark])), combos, url: hall.base });
+        table.push({ hall: `${hall.city} ${hall.name}`, date: r.date, slots: Object.fromEntries(Object.entries(r.slots).map(([k, v]) => [k, v.mark])), combos, url: hall.base || hall.top });
         console.log(`  ${L.label(r.date)} ${Object.entries(r.slots).map(([k, v]) => `${k}${v.mark}`).join(' ')}${combos.length ? ` → 取れる: ${combos.join('・')}` : ''}`);
         for (const c of combos) {
           const key = `${r.date}|${hall.name}|${c}`;
@@ -347,7 +350,7 @@ async function main() {
     }
     const lines = ['🎭 ざわめき祭のホールに空きが出ました'];
     for (const v of [...by.values()].sort((a, b) => a.date.localeCompare(b.date))) {
-      lines.push('', `■ ${L.label(v.date)} ${v.hall.city} ${v.hall.name}`, `  取れる枠: ${v.combos.join('／')}`, ...(v.hall.note ? [`  ${v.hall.note}`] : []), `  ${v.hall.base}`);
+      lines.push('', `■ ${L.label(v.date)} ${v.hall.city} ${v.hall.name}`, `  取れる枠: ${v.combos.join('／')}`, ...(v.hall.note ? [`  ${v.hall.note}`] : []), `  ${v.hall.base || v.hall.top}`);
     }
     await line(lines.join('\n'));
   }
