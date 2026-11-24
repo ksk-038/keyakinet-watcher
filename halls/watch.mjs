@@ -1,7 +1,7 @@
 // ざわめき祭の公演ホールの空き監視 → LINE通知（＋スプレッドシートへの書き込み）
 //   見張る日（config.json の dates）に、取りたい枠の組み合わせ（土曜: 午前＋午後・午後＋夜間・午後だけ・夜間だけ／日曜: 午前＋午後・午後＋夜間・午後だけ）が
 //   空いたら知らせる。区の練習場所の監視とは別（YANAGIBA には出さない）
-//   いまの対応サイト: p-kashikan（西東京市・東大和市・浦安市の予約システム。日本の外から開けないので YANAGIBA の中継を通す）
+//   いまの対応サイト: p-kashikan（西東京市・浦安市などの予約システム。日本の外から開けないので YANAGIBA の中継を通す）
 //   node halls/watch.mjs   DEBUG=1 で読み取った表をログに出す / TEST_NOTIFY=1 で LINE にテスト送信 / NOTIFY_ALL=1 で今の空きを全部送る
 import fs from 'node:fs/promises';
 import * as L from '../lib.mjs';
@@ -156,7 +156,7 @@ async function main() {
     }
     const lines = ['🎭 ざわめき祭のホールに空きが出ました'];
     for (const v of [...by.values()].sort((a, b) => a.date.localeCompare(b.date))) {
-      lines.push('', `■ ${L.label(v.date)} ${v.hall.city} ${v.hall.name}`, `  取れる枠: ${v.combos.join('／')}`, `  ${v.hall.base}`);
+      lines.push('', `■ ${L.label(v.date)} ${v.hall.city} ${v.hall.name}`, `  取れる枠: ${v.combos.join('／')}`, ...(v.hall.note ? [`  ${v.hall.note}`] : []), `  ${v.hall.base}`);
     }
     await line(lines.join('\n'));
   }
