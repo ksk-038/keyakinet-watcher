@@ -20,7 +20,7 @@ export async function snap(page, name, force = false) {
 const WD = { 日: 'SUN', 月: 'MON', 火: 'TUE', 水: 'WED', 木: 'THU', 金: 'FRI', 土: 'SAT', 祝: 'HOL' };
 
 // クリックして次の画面が出るまで待つ
-async function go(page, locator, what) {
+export async function go(page, locator, what) {
   const el = locator.first();
   if (!(await el.count())) {
     const body = L.norm(await page.locator('body').innerText().catch(() => ''));
@@ -41,7 +41,7 @@ async function checkError(page) {
   if (m && body.length < 1500) throw new Error(`予約サイトでエラー: ${m[0]}`);
 }
 
-const row = (page, text) => page.locator('td').filter({ hasText: new RegExp(`^\\s*${text.replace(/[()（）]/g, '.')}\\s*$`) });
+export const row = (page, text) => page.locator('td').filter({ hasText: new RegExp(`^\\s*${text.replace(/[()（）]/g, '.')}\\s*$`) });
 
 // 検索して「施設別空き状況照会」を開く
 //   top: 同じ仕組みのほかの市のサイト（門真市など）。書いていなければ板橋区
