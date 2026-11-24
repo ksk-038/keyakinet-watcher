@@ -109,6 +109,7 @@ async function scan(browser, targets, G) {
   const marks = new Map();
   const open = [];
   const roomLog = new Map();
+  const hitBy = new Map(); // 部屋ごとに、どの利用目的の検索で出てきたか
   try {
     for (const s of config.searches) {
       const n = await S.open(page, s);
@@ -129,6 +130,8 @@ async function scan(browser, targets, G) {
           const usual = roomOk({ cap, area }, config.roomFilter) || (G.dates.has(c.date) && Y.bigEnough(area, c.date, cap ?? null));
           // 空き検索の日は、その広さの部屋も
           const ok = usual || Y.searchHit(G, c.date, area, cap ?? null);
+          if (!hitBy.has(label)) hitBy.set(label, new Set());
+          hitBy.get(label).add(`${s.category} → ${s.genre}`);
           if (!roomLog.has(label)) roomLog.set(label, `${ok ? '◎' : '　'} ${label}（${cap ?? '定員不明'}${cap ? '名' : ''}${area ? ` ${area}㎡` : ''}）`);
           if (!ok || !tset.has(c.date)) continue;
           const time = L.fmtTime(c.time);
@@ -149,6 +152,7 @@ async function scan(browser, targets, G) {
   } finally {
     await ctx.close();
   }
+  if (DEBUG) console.log(`--- 部屋ごとの利用目的 ---\n${[...hitBy].map(([k, v]) => `${k}\t${[...v].join(' / ')}`).join('\n')}`);
   if (DEBUG) console.log(`--- 部屋の一覧（◎が監視対象）---\n${[...roomLog.values()].join('\n')}`);
   console.log(`監視対象の部屋: ${[...roomLog.values()].filter((v) => v.startsWith('◎')).length} / 表のアイコン: ${[...marks].map(([k, v]) => `${k || '(空)'}×${v}`).join(' ')}`);
   return open;
