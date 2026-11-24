@@ -166,15 +166,16 @@ async function readOec(hall, dates) {
   ]));
   const html = await site.req('AvailabilityCheckApplySelectFacility');
   const dec = (x) => x.replace(/&#x([0-9A-F]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&amp;/g, '&');
-  const hidden = [...html.matchAll(/<input type="hidden" name="(SelectFacilities\.Facilities\[\d+\]\.SelectedFacility\.(?:Value|Text))" value="([^"]*)"/g)].map((m) => [m[1], dec(m[2])]);
+  // 施設ごとの hidden（id が name より前に来るサイトもある）
+  const hidden = [...html.matchAll(/<input type="hidden"[^>]*?name="(SelectFacilities\.Facilities\[(\d+)\]\.SelectedFacility\.(?:Value|Text))"[^>]*?value="([^"]*)"/g)].map((m) => [m[1], dec(m[3]), m[2]]);
   const list = [];
-  for (let i = 0; i < hidden.length; i += 2) if (/Value$/.test(hidden[i][0])) list.push({ value: hidden[i][1], name: hidden[i + 1]?.[1] });
+  for (const [k, v, idx] of hidden) if (/Value$/.test(k)) list.push({ value: v, idx, name: hidden.find((h) => h[2] === idx && /Text$/.test(h[0]))?.[1] });
   if (DEBUG) console.log(`  施設一覧: ${list.map((f) => f.name).join('、')}`);
   const fre = new RegExp(hall.facility);
   const picked = list.filter((f) => fre.test(f.name));
   if (!picked.length && DEBUG) { const d = dec(html); const i = d.search(new RegExp(hall.facility)); console.log('  画面HTML: ' + d.slice(Math.max(0, i - 2500), i + 300).replace(/\s+/g, ' ')); }
   if (!picked.length) throw new Error(`施設「${hall.facility}」が一覧にありません（全${list.length}施設）`);
-  await site.req('AvailabilityCheckApplySelectFacility/Next', site.form([...hidden, ...picked.map((f, i) => [`SelectFacilities.Selected[${i}]`, f.value])]));
+  await site.req('AvailabilityCheckApplySelectFacility/Next', site.form([...hidden.map(([k, v]) => [k, v]), ...picked.map((f) => [`SelectFacilities.Facilities[${f.idx}].IsChecked`, 'true']), ...picked.map((f, i) => [`SelectFacilities.Selected[${i}]`, f.value])]));
   await site.req('AvailabilityCheckApplySelectDays');
   const roomRe = new RegExp(hall.room);
   const out = [];
