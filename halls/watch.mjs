@@ -214,14 +214,19 @@ async function readKaruku(hall, dates) {
       for (const d of dates.filter((x) => x.slice(0, 7).replace('-', '') === ym)) {
         const cells = await p.evaluate((id) => { const tr = document.getElementById(id); return tr ? [...tr.querySelectorAll('td.base, td.reserve, td.off, td[class]')].filter((td) => td.colSpan > 1).map((td) => [td.className, td.colSpan]) : null; }, `calendar${d.replace(/-/g, '')}`);
         if (!cells) { if (DEBUG) console.log(`  ${d}: 表にありません`); continue; }
-        const slots = {};
+        // 枠ごとに数える。「申込不可(off)」は枠の間の休憩時間などなので数えない
+        const cnt = {};
         let min = 0;
         for (const [cls, span] of cells) {
           const name = min < 240 ? '午前' : min < 600 ? '午後' : '夜間';
-          const free = cls === 'base';
-          const mark = free ? '○' : cls === 'reserve' ? '×' : '-';
-          slots[name] = slots[name] == null ? { free, mark } : { free: slots[name].free && free, mark: slots[name].free && !free ? mark : slots[name].mark === '○' ? mark : slots[name].mark };
+          const c = (cnt[name] ||= { base: 0, reserve: 0, off: 0, other: 0 });
+          c[cls in c ? cls : 'other'] += 1;
           min += span;
+        }
+        const slots = {};
+        for (const [name, c] of Object.entries(cnt)) {
+          const free = c.base > 0 && !c.reserve && !c.other;
+          slots[name] = { free, mark: free ? '○' : c.reserve ? '×' : '-' };
         }
         out.push({ date: d, slots });
       }
