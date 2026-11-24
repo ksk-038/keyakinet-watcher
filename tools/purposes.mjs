@@ -81,8 +81,8 @@ async function relay(base, steps) {
 }
 const strip = (h) => L.norm((h || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&#215;/g, '×')).trim();
 const options = (body, name) => {
-  const sel = (body || '').match(new RegExp(`<select name="${name}"[^>]*>([\\s\\S]*?)</select>`));
-  return sel ? [...sel[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)/g)].map((m) => ({ v: m[1], t: strip(m[2]) })).filter((o) => o.v !== '' && o.t) : [];
+  const sel = (body || '').match(new RegExp(`<select[^>]*name="${name}"[^>]*>([\\s\\S]*?)</select>`));
+  return sel ? [...sel[1].matchAll(/<option[^>]*?value="([^"]*)"[^>]*>([^<]*)/g)].map((m) => ({ v: m[1], t: strip(m[2]) })).filter((o) => o.v !== '' && o.t) : [];
 };
 async function pf489(base) {
   const d = new Date(Date.now() + 14 * 86400e3);
@@ -90,9 +90,11 @@ async function pf489(base) {
   const p0 = await relay(base, head);
   const cats = options(p0.at(-1)?.body, 'slPurpose1');
   console.log(`大分類: ${cats.map((c) => c.t).join(' / ')}`);
-  for (const c of cats) {
+  for (const c of cats.filter((c) => c.v !== '0' && !/選択なし/.test(c.t))) {
     const p1 = await relay(base, [...head, { submit: [['slPurpose1', c.v], ['cmdSelect2', '選択']] }]);
-    const ps = options(p1.at(-1)?.body, 'slPurpose2');
+    const b1 = p1.at(-1)?.body || '';
+    const ps = options(b1, 'slPurpose2');
+    if (!ps.length) console.log(`  （小分類が読めない: 画面${p1.length}枚 / ${(b1.match(/<select[^>]*>/g) || []).join(' ')} / ${b1.replace(/\s+/g, ' ').slice(b1.indexOf('slPurpose2') - 50, b1.indexOf('slPurpose2') + 400)}）`);
     console.log(`【${c.t}】${ps.map((p) => p.t).join(' / ')}`);
     for (const p of ps) {
       const label = `${c.t} → ${p.t}`;
