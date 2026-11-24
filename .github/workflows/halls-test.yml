@@ -1,0 +1,17 @@
+name: ホール空き監視 動作確認（ブランチ用・LINEは送らない）
+on:
+  push:
+    branches: [halls-watch]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node halls/watch.mjs
+        env:
+          DEBUG: "1"
+          FORCE: "1"
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}

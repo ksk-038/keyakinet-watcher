@@ -1,0 +1,23 @@
+{
+  "_説明": "ざわめき祭（2027年11・12月）の公演ホールの空き監視。見張る日と、取りたい枠の組み合わせ。ホールはサイトの仕組みごとに足していく",
+  "dates": ["2027-11-27", "2027-11-28", "2027-12-04", "2027-12-05", "2027-12-11", "2027-12-12"],
+  "combos": {
+    "土": [["午前", "午後"], ["午後", "夜間"], ["午後"], ["夜間"]],
+    "日": [["午前", "午後"], ["午後", "夜間"], ["午後"]]
+  },
+  "halls": [
+    {
+      "name": "保谷こもれびホール メインホール", "city": "西東京市", "platform": "p-kashikan",
+      "base": "https://k5.p-kashikan.jp/nishitokyo-city/", "facility": "こもれび", "room": "^メインホール"
+    },
+    {
+      "name": "東大和市民会館ハミングホール 大ホール", "city": "東大和市", "platform": "p-kashikan",
+      "base": "https://k5.p-kashikan.jp/higashiyamato-city/", "facility": "市民会館|ハミング", "room": "^大ホール"
+    },
+    {
+      "name": "浦安市文化会館 大ホール", "city": "浦安市", "platform": "p-kashikan",
+      "base": "https://k5.p-kashikan.jp/urayasu-city/", "facility": "文化会館", "room": "^大ホール"
+    }
+  ],
+  "quietHours": { "from": 1, "to": 6 }
+}
