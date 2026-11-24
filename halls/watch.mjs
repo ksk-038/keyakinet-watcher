@@ -119,7 +119,7 @@ async function readEprs(hall, dates) {
     // 土曜はじまりで1週間ずつ（土日が同じ表に入る）
     const starts = [...new Set(dates.map((d) => (L.weekday(d) === '日' ? L.addDays(d, -1) : d)))];
     for (const st of starts) {
-      const r = await S.search(page, { top: hall.top, area: hall.area, purpose: hall.purpose, start: ymd8(st), weekdays: ['土', '日'] });
+      const r = await S.search(page, { top: hall.top, area: hall.area, purpose: hall.purpose, start: st, weekdays: ['土', '日'] });
       const b = r.buildings.find((x) => x.name.includes(hall.area)) || r.buildings[0];
       if (!b) throw new Error(`「${hall.area}」が検索結果にありません`);
       const rooms = await S.selectBuilding(page, b.value);
