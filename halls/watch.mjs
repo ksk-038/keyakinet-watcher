@@ -172,6 +172,7 @@ async function readOec(hall, dates) {
   if (DEBUG) console.log(`  施設一覧: ${list.map((f) => f.name).join('、')}`);
   const fre = new RegExp(hall.facility);
   const picked = list.filter((f) => fre.test(f.name));
+  if (!picked.length && DEBUG) console.log('  画面: ' + dec(html).replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 1500));
   if (!picked.length) throw new Error(`施設「${hall.facility}」が一覧にありません（全${list.length}施設）`);
   await site.req('AvailabilityCheckApplySelectFacility/Next', site.form([...hidden, ...picked.map((f, i) => [`SelectFacilities.Selected[${i}]`, f.value])]));
   await site.req('AvailabilityCheckApplySelectDays');

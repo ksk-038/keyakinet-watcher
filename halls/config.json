@@ -94,6 +94,16 @@
       "facility": "ZERO|ゼロ",
       "room": "大ホール",
       "note": "11月分は12/1〜9抽選申込→25日〜空きの先着、12月分は1/1〜9抽選申込（中野区施設予約システム）"
+    },
+    {
+      "name": "武蔵野市民文化会館 大ホール",
+      "city": "武蔵野市",
+      "platform": "eprs",
+      "top": "https://yoyaku.musashino.or.jp/mnet/web/index.jsp",
+      "area": "武蔵野市民文化会館",
+      "purpose": "ダンス",
+      "room": "大ホール",
+      "note": "11月分は窓口で随時受付（3日前まで）。12月分は12/1必着で抽選申込→12/15〜窓口"
     }
   ],
   "quietHours": {
