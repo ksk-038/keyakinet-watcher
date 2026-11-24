@@ -41,6 +41,17 @@
   },
   "halls": [
     {
+      "name": "きゅりあん 大ホール",
+      "city": "品川区",
+      "platform": "eprs",
+      "top": "https://www.cm9.eprs.jp/shinagawa/web/index.jsp",
+      "base": "https://www.cm9.eprs.jp/shinagawa/web/index.jsp",
+      "area": "きゅりあん",
+      "purpose": "演奏会・発表会・鑑賞会",
+      "room": "大ホール",
+      "note": "区民料金なら予算内（区外料金だと2枠とも25万超）"
+    },
+    {
       "name": "保谷こもれびホール メインホール",
       "city": "西東京市",
       "platform": "p-kashikan",

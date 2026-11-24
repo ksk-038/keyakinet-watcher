@@ -106,7 +106,44 @@ async function readPkashikan(hall, dates) {
   return out;
 }
 
-const READERS = { 'p-kashikan': readPkashikan };
+// しせつよやく（品川区など）: 館（どこで）と目的で検索し、部屋の7日分の表を読む。ブラウザを使う
+async function readEprs(hall, dates) {
+  const { chromium } = await import('playwright');
+  const S = await import('../shinjuku/scrape.mjs');
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ locale: 'ja-JP' });
+    const roomRe = new RegExp(hall.room);
+    const out = [];
+    // 土曜はじまりで1週間ずつ（土日が同じ表に入る）
+    const starts = [...new Set(dates.map((d) => (L.weekday(d) === '日' ? L.addDays(d, -1) : d)))];
+    for (const st of starts) {
+      const r = await S.search(page, { top: hall.top, area: hall.area, purpose: hall.purpose, start: ymd8(st), weekdays: ['土', '日'] });
+      const b = r.buildings.find((x) => x.name.includes(hall.area)) || r.buildings[0];
+      if (!b) throw new Error(`「${hall.area}」が検索結果にありません`);
+      const rooms = await S.selectBuilding(page, b.value);
+      if (DEBUG) console.log(`  部屋: ${rooms.map((x) => x.name).join('、')}`);
+      const room = rooms.filter((x) => roomRe.test(x.name)).sort((a, b2) => (b2.name.includes('全面') ? 1 : 0) - (a.name.includes('全面') ? 1 : 0))[0];
+      if (!room) throw new Error(`部屋「${hall.room}」がありません（${rooms.map((x) => x.name).join('、')}）`);
+      const cells = await S.readRoom(page, room.value);
+      for (const d of dates.filter((x) => x === st || x === L.addDays(st, 1))) {
+        const slots = {};
+        for (const c of cells.filter((x) => x.date === d)) {
+          const name = /午前/.test(c.label) ? '午前' : /午後/.test(c.label) ? '午後' : /夜/.test(c.label) ? '夜間' : c.label;
+          const free = /[○◯〇]/.test(c.sym);
+          slots[name] = slots[name] == null ? { free, mark: c.sym || '?' } : { free: slots[name].free && free, mark: slots[name].mark + (c.sym || '?') };
+        }
+        if (DEBUG) console.log(`  ${d} ${room.name}: ${Object.entries(slots).map(([k, v]) => `${k}${v.mark}`).join(' ') || '（表なし）'}`);
+        if (Object.keys(slots).length) out.push({ date: d, slots });
+      }
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
+const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs };
 
 // その日に取れる組み合わせ（例: ["午前＋午後", "午後"]）
 export function okCombos(date, slots, combos) {
