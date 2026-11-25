@@ -335,10 +335,16 @@ async function readAserv(hall, dates) {
     const p = await browser.newPage({ locale: 'ja-JP' });
     p.on('dialog', (d) => { console.log(`  （サイトのメッセージ）${d.message()}`); d.accept().catch(() => {}); });
     await p.goto(hall.top, { waitUntil: 'networkidle' });
+    // 選ぶと画面を読み直すことがあるので、読み直しが終わるのを待ってから次へ
     const choose = async (name, re) => {
-      const v = await p.evaluate(([n, r]) => [...document.querySelectorAll(`select[name=${n}] option`)].find((o) => o.value !== '-1' && new RegExp(r).test(o.text.trim()))?.value, [name, re]);
+      let v;
+      for (let i = 0; i < 5 && !v; i++) {
+        v = await p.evaluate(([n, r]) => [...document.querySelectorAll(`select[name=${n}] option`)].find((o) => o.value !== '-1' && new RegExp(r).test(o.text.trim()))?.value, [name, re]).catch(() => null);
+        if (!v) await p.waitForTimeout(1000);
+      }
       if (!v) throw new Error(`「${re}」が選択肢にありません（${name}）`);
-      await p.selectOption(`select[name=${name}]`, v); await p.waitForTimeout(1200);
+      await p.selectOption(`select[name=${name}]`, v);
+      await p.waitForLoadState('networkidle').catch(() => {}); await p.waitForTimeout(1500);
     };
     await choose('kanCode', hall.kan);
     await choose('skubunCode', hall.kubun);
@@ -387,14 +393,15 @@ async function readFureai(hall, dates) {
     // 最初から月の表までたどる（週の表から月の表へは戻れないので、日を選ぶたびにやり直す）
     const openMonth = async (ym) => {
       await p.goto(hall.top, { waitUntil: 'networkidle' });
-      await act('doAction(document.form1, gRsvWTransRsvMenuAction)');
+      await act(hall.entry || 'doAction(document.form1, gRsvWTransRsvMenuAction)');
       await act('doPpsdSearchAction(document.form1, gRsvWTransInstSrchPpsdAction)');
       await act(`sendPpsdCd(document.form1, gRsvWTransInstSrchPpsAction, '${hall.ppsd}','2')`);
       await act(`doTransInstSrchBuildAction(document.form1, gRsvWTransInstSrchBuildAction, '${hall.ppsd}' , '${hall.pps}')`);
       await act(`sendBldCd(document.form1, gRsvWTransInstSrchInstAction, '${hall.bld}')`);
-      if (/施設選択/.test(await p.evaluate(() => document.body.innerText))) {
-        const c = await p.evaluate((r) => [...document.querySelectorAll('a')].find((a) => new RegExp(r).test(a.textContent))?.getAttribute('href')?.replace(/^javascript:/, ''), hall.room);
-        if (!c) throw new Error(`施設「${hall.room}」が一覧にありません`);
+      if (/施設を?選択/.test(await p.evaluate(() => document.body.innerText))) {
+        const links = await p.evaluate(() => [...document.querySelectorAll('a,input[type=button],input[type=checkbox]')].map((a) => ({ t: (a.textContent || a.value || a.title || a.id || '').replace(/\s+/g, ' ').trim(), h: (a.getAttribute('href') || a.getAttribute('onclick') || '').replace(/^javascript:/, '') })));
+        const c = links.find((a) => new RegExp(hall.room).test(a.t) && /send|doTrans|Inst/.test(a.h))?.h;
+        if (!c) throw new Error(`施設「${hall.room}」が一覧にありません（${links.filter((a) => a.h).slice(0, 30).map((a) => `${a.t}=${a.h.slice(0, 70)}`).join(' / ')}）`);
         await act(c);
       }
       await act(`moveCalender(document.form1, gRsvWInstSrchMonthVacantAction, ${ym.replace('-', '')}01)`);
@@ -435,6 +442,42 @@ async function readFureai(hall, dates) {
   }
 }
 
+// 東大和市民会館（rikuu.net）: 空き状況照会の月別一覧（〇＝仮予約可能 ×＝不可 ‐＝参照期間外）
+async function readRikuu(hall, dates) {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const p = await browser.newPage({ locale: 'ja-JP' });
+    const post = async (js) => { await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 60000 }), p.evaluate((c) => setTimeout(() => (0, eval)(c), 0), js)]); await p.waitForTimeout(400); };
+    await p.goto(hall.top, { waitUntil: 'networkidle' });
+    await post("__doPostBack('btnUserEntry','')");
+    const v = await p.evaluate((r) => [...document.querySelectorAll('#ddlShisetsu option')].find((o) => new RegExp(r).test(o.text))?.value, hall.room);
+    if (!v) throw new Error(`施設「${hall.room}」が一覧にありません`);
+    // 画面の一部だけを書き換える作り（ページは移動しない）なので、値が変わるのを待つ
+    if ((await p.inputValue('#ddlShisetsu')) !== v) { await p.selectOption('#ddlShisetsu', v); await p.waitForLoadState('networkidle'); await p.waitForTimeout(1500); }
+    const got = new Map();
+    for (const ym of [...new Set(dates.map((d) => d.slice(0, 7).replace('-', '/')))]) {
+      for (let i = 0; i < 24 && (await p.inputValue('#txtDate')) < ym; i++) {
+        const before = await p.inputValue('#txtDate');
+        await p.click('#btnAfter');
+        await p.waitForFunction((b) => document.querySelector('#txtDate')?.value && document.querySelector('#txtDate').value !== b, before, { timeout: 30000 });
+        await p.waitForLoadState('networkidle'); await p.waitForTimeout(300);
+      }
+      if ((await p.inputValue('#txtDate')) !== ym) { if (DEBUG) console.log(`  ${ym} の月に進めません`); continue; }
+      const rows = await p.evaluate(() => [...document.querySelectorAll('tr')].map((tr) => [...tr.querySelectorAll('td,th')].map((c) => c.innerText.trim())).filter((r) => /^\d{4}\/\d{2}\/\d{2}/.test(r[0] || '')));
+      for (const r of rows) got.set(r[0].slice(0, 10).replace(/\//g, '-'), r.slice(1, 4));
+    }
+    return dates.filter((d) => got.has(d)).map((d) => {
+      const c = got.get(d);
+      const slots = {};
+      ['午前', '午後', '夜間'].forEach((k, i) => { const t = c[i] || ''; slots[k] = { free: /[〇○]/.test(t), mark: /[〇○]/.test(t) ? '○' : /×/.test(t) ? '×' : '-' }; });
+      return { date: d, slots };
+    });
+  } finally {
+    await browser.close();
+  }
+}
+
 // OEC の予約システム（えどねっと・文の京など。…/user/Home）: 利用目的で検索 → 施設を選ぶ → 日ごとの空き → 部屋の時間帯別空き
 async function readOec(hall, dates) {
   const H = await import('../bunkyo/http.mjs');
@@ -467,9 +510,26 @@ async function readOec(hall, dates) {
   if (!picked.length && DEBUG) { const d = dec(html); const i = d.search(new RegExp(hall.facility)); console.log('  画面HTML: ' + d.slice(Math.max(0, i - 2500), i + 300).replace(/\s+/g, ' ')); }
   if (!picked.length) throw new Error(`施設「${hall.facility}」が一覧にありません（全${list.length}施設）`);
   await site.req('AvailabilityCheckApplySelectFacility/Next', site.form([...hidden.map(([k, v]) => [k, v]), ...picked.map((f) => [`SelectFacilities.Facilities[${f.idx}].IsChecked`, 'true']), ...picked.map((f, i) => [`SelectFacilities.Selected[${i}]`, f.value])]));
-  await site.req('AvailabilityCheckApplySelectDays');
   const roomRe = new RegExp(hall.room);
   const out = [];
+  // 横浜市のような新しい型：1週間ずつ、午前・午後・夜間それぞれの空きを読む
+  if (hall.horizontal) {
+    const got = new Map();
+    for (const st of [...new Set(dates.map((d) => (L.weekday(d) === '日' ? L.addDays(d, -1) : d)))]) {
+      for (const [tz, name] of [[1, '午前'], [2, '午後'], [3, '夜間']]) {
+        for (const c of await H.weekH(site, st, tz)) {
+          if (!roomRe.test(c.room)) continue;
+          if (DEBUG && dates.includes(c.date)) console.log(`  ${c.date} ${c.room} ${name}: ${c.vacant} / ${c.disp}`);
+          if (!got.has(c.date)) got.set(c.date, {});
+          const free = c.vacant === 'vacant' && c.disp !== 'closed' && (hall.closedOk || c.disp !== 'receptionClosed');
+          got.get(c.date)[name] = { free, mark: c.disp === 'closed' ? '休' : c.vacant === 'vacant' ? (c.disp === 'receptionClosed' ? '○' : '○') : c.vacant === 'some' ? '△' : '×' };
+        }
+      }
+    }
+    for (const d of dates) if (got.has(d)) out.push({ date: d, slots: got.get(d) });
+    return out;
+  }
+  await site.req('AvailabilityCheckApplySelectDays');
   for (const d of dates) {
     const { cells } = await H.day(site, d);
     const mine = cells.filter((c) => roomRe.test(c.room));
@@ -495,7 +555,7 @@ async function readOec(hall, dates) {
   return out;
 }
 
-export const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku, olympic: readOlympic, pf489: readPf489, aserv: readAserv, fureai: readFureai };
+export const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku, olympic: readOlympic, pf489: readPf489, aserv: readAserv, fureai: readFureai, rikuu: readRikuu };
 
 // その日に取れる組み合わせ（例: ["午前＋午後", "午後"]）
 export function okCombos(date, slots, combos) {
