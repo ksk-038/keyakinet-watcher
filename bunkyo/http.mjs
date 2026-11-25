@@ -124,7 +124,7 @@ export async function day(site, date) {
   const search = async () => {
     const j = parse(await site.req('AvailabilityCheckApplySelectDays/SearchCondition', site.form([...cond(date), ...lists(), ...flat(site.model || [])])), '日ごとの空き状況');
     if (j?.[0]?.Result === 'Error') return j[0].Information;
-    site.model = j?.[1]?.AvailabilitySelectDays;
+    site.model = j?.[1]?.AvailabilitySelectDays ?? (Array.isArray(j) ? j.find((x) => x?.AvailabilitySelectDays)?.AvailabilitySelectDays : undefined);
     return site.model ? null : `中身が空（${JSON.stringify(j).slice(0, 80)}）`;
   };
   // まずはそのまま見たい日を読む。だめなら、画面を開き直したときと同じ最初の読み込みをしてから
@@ -133,8 +133,8 @@ export async function day(site, date) {
     if (DEBUG) console.log(`      そのままでは読めないので開き直します（${err}）`);
     await site.req('AvailabilityCheckApplySelectDays');
     const j = parse(await site.req('AvailabilityCheckApplySelectDays/GetAvailability', site.form([...cond(date), ...lists()])), '最初の空き状況');
-    site.model = j?.[0]?.AvailabilitySelectDays;
-    if (!site.model) throw new Error(`最初の空き状況が空です（${JSON.stringify(j).slice(0, 120)}）`);
+    site.model = j?.[0]?.AvailabilitySelectDays ?? (Array.isArray(j) ? j.find((x) => x?.AvailabilitySelectDays)?.AvailabilitySelectDays : undefined);
+    if (!site.model) throw new Error(`最初の空き状況が空です（${Array.isArray(j) ? j.map((x) => Object.keys(x || {}).join('/')).join(' | ') : JSON.stringify(j).slice(0, 120)}）`);
     if (!site.model.some((f) => (f.Rows || []).some((r) => (r.Cells || []).some((c) => c.UseDate?.slice(0, 10) === date)))) {
       err = await search();
       if (err) throw new Error(`日ごとの空き状況でエラー ${err}（${date}）`);
