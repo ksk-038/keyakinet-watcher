@@ -229,6 +229,15 @@
       "room": "^大ホール",
       "cal": "小金井 宮地楽器ホール",
       "note": "市外の先着（窓口）"
+    },
+    {
+      "name": "東大和市民会館 大ホール",
+      "city": "東大和市",
+      "platform": "rikuu",
+      "top": "https://rikuu.net/higashiyamato/client/Top.aspx",
+      "room": "^大ホール$",
+      "cal": "東大和市民会館",
+      "note": "一般の先着（来館優先・FAX可）。12月分は12/15 9時〜。オンライン仮予約は登録者のみ"
     }
   ],
   "quietHours": {
