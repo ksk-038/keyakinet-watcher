@@ -65,7 +65,8 @@ export async function load(watch, today, ward) {
     if (far > end) console.log(`先着予約が始まっている ${L.label(far)} まで見ます（${L.label(end)} より先は、先着が始まっている施設だけ）`);
     const forBase = (team, base) => {
       const rs = rules.filter((r) => r.team === team && nf(r.ward) === nf(ward));
-      if (!rs.length) return !base || /東京/.test(base);
+      // きまりがない区・市は、大阪の市なら大阪の練習、それ以外は東京の練習
+      if (!rs.length) return OSAKA_WARDS.includes(ward) ? base === '大阪' : !base || /東京/.test(base);
       return rs.some((r) => !r.base || !base || r.base === base);
     };
     const gaps = list.flatMap((x) =>
@@ -326,7 +327,7 @@ export function lineOk(s, G, ward, all = null) {
 //   ただし6時間に1回は、変わっていなくても送る（「調べた時刻」を新しくするため）
 // シートで「使える」にしている部屋だけを残す（slots をその場で減らす。このあとの LINE の判定も同じ配列を使うため）
 //   シートにない部屋も外す（ログに出すので、シートに足す）。SHEET_ONLY が '0' のときは外さず、ログに出すだけ
-const OSAKA_WARDS = ['大阪市', '寝屋川市', '守口市', '門真市'];
+const OSAKA_WARDS = ['大阪市', '寝屋川市', '守口市', '門真市', '堺市'];
 export async function sheetOnly(ward, slots) {
   if (!slots?.length) return;
   const st = await roomStatusFor(ward);
