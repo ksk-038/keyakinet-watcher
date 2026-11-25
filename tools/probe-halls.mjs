@@ -1,5 +1,5 @@
 const RELAY = 'https://jskulzunyckseeokgzax.supabase.co/functions/v1/jp-relay';
-const steps = [{ get: 'gin_menu' }, { submit: [], form: 'gin_init' }, { submit: [], form: 'gin_z_dest_sel' }, { submit: [['riyosmk', '3']], form: 'gin_z_amenity_sel', replace: true }];
+const steps = [{ get: 'gin_menu' }, { submit: [], form: 'gin_init' }, { submit: [], form: 'gin_z_dest_sel' }, { submit: [['riyosmk', '1']], form: 'gin_z_amenity_sel', replace: true }];
 const r = await fetch(RELAY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, body: JSON.stringify({ secret: process.env.YANAGIBA_SECRET, base: 'https://yoyaku.saf-ticket.jp/cultos/reserve/', enc: 'utf8', steps }) });
 const j = await r.json();
 const h = j.pages?.at(-1)?.body || JSON.stringify(j).slice(0, 500);
