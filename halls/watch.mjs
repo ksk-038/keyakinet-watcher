@@ -309,12 +309,18 @@ async function readPf489(hall, dates) {
   dates.forEach((dt, i) => {
     const b = pages[pages.length - dates.length + i]?.body || '';
     if (DEBUG) console.log(`  ${dt}: ${T(b).replace(/\s+/g, ' ').slice(0, 300)}`);
-    const lot = /抽選/.test(T(b)) && !/予約申込ができます/.test(b);
-    const times = lot ? [] : [...b.matchAll(/name="slTime" value="\d+">\s*(\d{1,2}):\d{2}/g)].map((x) => Number(x[1]));
+    const t = T(b);
+    const lot = /抽選/.test(t) && !/予約申込ができます/.test(b);
+    const off = /受付期間外/.test(t);
+    // 空いている時間：選べる時間（slTime）か、「空いている時間帯のみを表示」の一覧（9:00～12:00 など）
+    const times = lot || off ? [] : [
+      ...[...b.matchAll(/name="slTime" value="\d+">\s*(\d{1,2}):\d{2}/g)].map((x) => Number(x[1])),
+      ...[...(t.split('空き状況')[1] || '').matchAll(/(\d{1,2}):\d{2}\s*[～~〜-]\s*\d{1,2}:\d{2}/g)].map((x) => Number(x[1])),
+    ];
     const slots = {};
     for (const nm of ['午前', '午後', '夜間']) {
       const free = times.some((h) => slotName(h) === nm);
-      slots[nm] = { free, mark: free ? '○' : lot ? '抽' : '×' };
+      slots[nm] = { free, mark: free ? '○' : off ? '-' : lot ? '抽' : '×' };
     }
     out.push({ date: dt, slots });
   });
