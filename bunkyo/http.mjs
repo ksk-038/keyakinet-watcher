@@ -86,10 +86,10 @@ const tf = (v) => (v === true ? 'true' : v === false ? 'false' : v);
 const TF = (v) => (v === true ? 'True' : v === false ? 'False' : v);
 
 // 画面が持っている空き状況のデータを、画面と同じ形の入力欄にして送り返す（サイトがこれを見て動く）
-function flat(model, checked = new Set()) {
+function flat(model, checked = new Set(), key = 'AvailabilitySelectDays') {
   const out = [];
   model.forEach((f, i) => {
-    const a = `AvailabilitySelectDays[${i}]`;
+    const a = `${key}[${i}]`;
     (f.FacilityNotificationList || []).forEach((n, k) => out.push([`${a}.FacilityNotificationList[${k}].Subject`, n.Subject], [`${a}.FacilityNotificationList[${k}].Body`, n.Body], [`${a}.FacilityNotificationList[${k}].NewsFrom`, n.NewsFrom]));
     (f.Rows || []).forEach((r, ri) => {
       const rr = `${a}.Rows[${ri}]`;
@@ -117,14 +117,22 @@ const lists = () => {
   o.push(['SearchCondition.WeekList[7].Value', 8], ['SearchCondition.WeekList[7].Text', '祝日'], ['SearchCondition.Week', 'System.Collections.Generic.List`1[System.Int32]'], ['MessageNoDataUserModel', '']);
   return o;
 };
+// 日ごとの空き状況の返事から、施設の一覧を取り出す（多くは AvailabilitySelectDays。横浜市などは Horizontal）
+const pickModel = (site, j) => {
+  for (const x of Array.isArray(j) ? j : [j]) {
+    if (x?.AvailabilitySelectDays) { site.modelKey = 'AvailabilitySelectDays'; return x.AvailabilitySelectDays; }
+    if (Array.isArray(x?.Horizontal)) { site.modelKey = 'Horizontal'; return x.Horizontal; }
+  }
+  return undefined;
+};
 const parse = (txt, what) => { try { return JSON.parse(txt); } catch { throw new Error(`${what}が読めません（${String(txt).slice(0, 120)}）`); } };
 
 // 1日分の空き状況 → [{ facility, facilityCode, room, cap, status, row, cell }]
 export async function day(site, date) {
   const search = async () => {
-    const j = parse(await site.req('AvailabilityCheckApplySelectDays/SearchCondition', site.form([...cond(date), ...lists(), ...flat(site.model || [])])), '日ごとの空き状況');
+    const j = parse(await site.req('AvailabilityCheckApplySelectDays/SearchCondition', site.form([...cond(date), ...lists(), ...flat(site.model || [], new Set(), site.modelKey)])), '日ごとの空き状況');
     if (j?.[0]?.Result === 'Error') return j[0].Information;
-    site.model = j?.[1]?.AvailabilitySelectDays;
+    site.model = pickModel(site, j);
     return site.model ? null : `中身が空（${JSON.stringify(j).slice(0, 80)}）`;
   };
   // まずはそのまま見たい日を読む。だめなら、画面を開き直したときと同じ最初の読み込みをしてから
@@ -133,8 +141,8 @@ export async function day(site, date) {
     if (DEBUG) console.log(`      そのままでは読めないので開き直します（${err}）`);
     await site.req('AvailabilityCheckApplySelectDays');
     const j = parse(await site.req('AvailabilityCheckApplySelectDays/GetAvailability', site.form([...cond(date), ...lists()])), '最初の空き状況');
-    site.model = j?.[0]?.AvailabilitySelectDays;
-    if (!site.model) throw new Error(`最初の空き状況が空です（${JSON.stringify(j).slice(0, 120)}）`);
+    site.model = pickModel(site, j);
+    if (!site.model) throw new Error(`最初の空き状況が空です（${Array.isArray(j) ? j.map((x) => Object.keys(x || {}).join('/')).join(' | ') : JSON.stringify(j).slice(0, 120)}）`);
     if (!site.model.some((f) => (f.Rows || []).some((r) => (r.Cells || []).some((c) => c.UseDate?.slice(0, 10) === date)))) {
       err = await search();
       if (err) throw new Error(`日ごとの空き状況でエラー ${err}（${date}）`);
@@ -150,7 +158,7 @@ export async function day(site, date) {
 
 // 選んだ部屋（同じ日）の時間帯別空き状況 → [{ facility, room, cap, date, time, status }]
 export async function times(site, date, picks) {
-  const j = parse(await site.req('AvailabilityCheckApplySelectDays/Next', site.form([...cond(date), ...lists(), ...flat(site.model, new Set(picks.map((p) => p.cell)))])), '次へ進むの返事');
+  const j = parse(await site.req('AvailabilityCheckApplySelectDays/Next', site.form([...cond(date), ...lists(), ...flat(site.model, new Set(picks.map((p) => p.cell)), site.modelKey)])), '次へ進むの返事');
   const r = typeof j === 'string' ? JSON.parse(j) : j;
   if (r?.Result === 'Error') throw new Error(`時間帯の画面へ進めません ${JSON.stringify(r.Information).slice(0, 100)}`);
   const html = await site.req('AvailabilityCheckApplySelectTime');

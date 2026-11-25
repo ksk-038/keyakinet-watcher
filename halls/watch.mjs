@@ -240,6 +240,93 @@ async function readKaruku(hall, dates) {
   }
 }
 
+// オリンピックセンター（カルチャー棟の空き状況ページ。13か月分が1ページに入っている）
+async function readOlympic(hall, dates) {
+  const r = await fetch(hall.page, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(60000) });
+  if (!r.ok) throw new Error(`空き状況のページが ${r.status}`);
+  const html = await r.text();
+  const T = (h) => h.replace(/<BR>/gi, '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+  const cells = [];
+  for (const t of html.split(/<A NAME=/i).slice(1)) {
+    const ym = t.match(/^(\d{4})年(\d{1,2})月/);
+    if (!ym) continue;
+    const head = t.match(/<TR[^>]*>([\s\S]*?)<\/TR>/i)?.[1] || '';
+    const days = [...head.matchAll(/<TH ALIGN=CENTER>([\s\S]*?)<\/TH>/gi)].map((m) => Number(T(m[1])));
+    let room = null;
+    for (const tr of t.matchAll(/<TR BGCOLOR=[^>]*>([\s\S]*?)<\/TR>/gi)) {
+      const tds = [...tr[1].matchAll(/<TD([^>]*)>([\s\S]*?)<\/TD>/gi)];
+      if (/ROWSPAN/i.test(tds[0]?.[1] || '')) room = T(tds.shift()[2]);
+      const kubun = T(tds.shift()?.[2] || '');
+      tds.forEach((td, i) => { if (days[i]) cells.push({ room, kubun, date: `${ym[1]}-${ym[2].padStart(2, '0')}-${String(days[i]).padStart(2, '0')}`, sym: T(td[2]) }); });
+    }
+  }
+  const re = new RegExp(hall.room);
+  const out = [];
+  for (const d of dates) {
+    const mine = cells.filter((c) => c.date === d && re.test(c.room || '') && ['午前', '午後', '夜間'].includes(c.kubun));
+    if (!mine.length) { if (DEBUG) console.log(`  ${d}: ページにありません`); continue; }
+    out.push({ date: d, slots: Object.fromEntries(mine.map((c) => [c.kubun, { free: c.sym === '○', mark: (c.sym || '-').replace('－', '-') }])) });
+  }
+  return out;
+}
+
+// pf489 の携帯版（町田市など。日本の外から開けないので中継を通す。Shift_JIS）
+//   使用目的で検索 → 施設 → 部屋 → 日ごとの「時間を選ぶ画面」に出る空き時間を、午前・午後・夜間に分ける
+async function readPf489(hall, dates) {
+  const T = (h) => (h || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+  const call = async (steps) => {
+    const r = await fetch(RELAY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, body: JSON.stringify({ secret: SECRET, base: hall.base, steps }), signal: AbortSignal.timeout(140000) });
+    const j = await r.json().catch(() => ({ error: `${r.status}` }));
+    if (j.error) throw new Error(`中継でエラー（${j.error}）`);
+    return j.pages;
+  };
+  // 施設の名前で探す（search があるとき）か、使用目的で探す
+  const pre = hall.search ? [
+    { get: 'Wm_TopMenu.aspx' },
+    { get: 'Wm_ShisetsuKensaku.aspx?ActiveForm=Shisetsu' },
+    { submit: [['txtSSName$txt', hall.search], ['cmdNext1', '[6]検索']] },
+  ] : [
+    { get: 'Wm_TopMenu.aspx' },
+    { get: 'Wm_ShisetsuKensaku.aspx?ActiveForm=Purpose' },
+    { submit: [['slPurpose1', hall.purpose.cat], ['cmdSelect2', '選択']] },
+    { submit: [['slPurpose1', hall.purpose.cat], ['slPurpose2', hall.purpose.use], ['cmdNext4', '[6]検索']] },
+    { get: 'Wm_ShisetsuSentaku.aspx?SearchRoute=Purpose' },
+  ];
+  const facs = [...((await call(pre)).at(-1)?.body || '').matchAll(/name="slShisetsu" value="(\d+)">([^<]+)/g)].map((m) => ({ idx: m[1], name: m[2].trim() }));
+  const fac = facs.find((f) => new RegExp(hall.facility).test(f.name));
+  if (!fac) throw new Error(`施設「${hall.facility}」が一覧にありません（${facs.map((f) => f.name).join('、')}）`);
+  const [y, m, d] = dates[0].split('-').map(Number);
+  const pick = [
+    { submit: [['txtNen$txt', String(y)], ['txtTsuki$txt', String(m)], ['txtHi$txt', String(d)], ['slShisetsu', fac.idx], ['cmdNext', '[6]次へ']] },
+    { get: 'Wm_ShitsujouSentaku.aspx' },
+  ];
+  const rooms = [...((await call([...pre, ...pick])).at(-1)?.body || '').matchAll(/Wm_JikanSentaku\.aspx\?SJCode=(\w+)&(?:amp;)?UseDate=\d+"[^>]*>([^<]+)</g)].map((x) => ({ code: x[1], name: T(x[2]).replace(/&#215;/g, '×').replace(/^・\s*/, '').replace(/^\([^)]*\)/, '').trim() }));
+  const room = rooms.find((r) => new RegExp(hall.room).test(r.name));
+  if (!room) throw new Error(`部屋「${hall.room}」が一覧にありません（${rooms.map((r) => r.name).join('、')}）`);
+  const root = new URL(hall.base).pathname;
+  const pages = await call([...pre, ...pick, ...dates.map((dt) => ({ get: `${root}Wm_JikanSentaku.aspx?SJCode=${room.code}&UseDate=${dt.replace(/-/g, '')}`, keep: true, cut: ['<form', '</form>'] }))]);
+  const out = [];
+  dates.forEach((dt, i) => {
+    const b = pages[pages.length - dates.length + i]?.body || '';
+    if (DEBUG) console.log(`  ${dt}: ${T(b).replace(/\s+/g, ' ').slice(0, 300)}`);
+    const t = T(b);
+    const lot = /抽選/.test(t) && !/予約申込ができます/.test(b);
+    const off = /受付期間外/.test(t);
+    // 空いている時間：選べる時間（slTime）か、「空いている時間帯のみを表示」の一覧（9:00～12:00 など）
+    const times = lot || off ? [] : [
+      ...[...b.matchAll(/name="slTime" value="\d+">\s*(\d{1,2}):\d{2}/g)].map((x) => Number(x[1])),
+      ...[...(t.split('空き状況')[1] || '').matchAll(/(\d{1,2}):\d{2}\s*[～~〜-]\s*\d{1,2}:\d{2}/g)].map((x) => Number(x[1])),
+    ];
+    const slots = {};
+    for (const nm of ['午前', '午後', '夜間']) {
+      const free = times.some((h) => slotName(h) === nm);
+      slots[nm] = { free, mark: free ? '○' : off ? '-' : lot ? '抽' : '×' };
+    }
+    out.push({ date: dt, slots });
+  });
+  return out;
+}
+
 // OEC の予約システム（えどねっと・文の京など。…/user/Home）: 利用目的で検索 → 施設を選ぶ → 日ごとの空き → 部屋の時間帯別空き
 async function readOec(hall, dates) {
   const H = await import('../bunkyo/http.mjs');
@@ -300,7 +387,7 @@ async function readOec(hall, dates) {
   return out;
 }
 
-const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku };
+export const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku, olympic: readOlympic, pf489: readPf489 };
 
 // その日に取れる組み合わせ（例: ["午前＋午後", "午後"]）
 export function okCombos(date, slots, combos) {
