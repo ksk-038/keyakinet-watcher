@@ -10,10 +10,45 @@ const TABS = {
   大阪市: [OSAKA, '大阪市'], 寝屋川市: [OSAKA, '寝屋川市'], 守口市: [OSAKA, '守口市'], 門真市: [OSAKA, '門真市'],
 };
 
-/** 名前のゆれをそろえる（全角・半角、空白） */
-export const norm = (s) => String(s || '').normalize('NFKC').replace(/\s+/g, '').toLowerCase();
+/** 名前のゆれをそろえる（全角・半角、空白、「_」） */
+export const norm = (s) => String(s || '').normalize('NFKC').replace(/[\s_]+/g, '').toLowerCase();
+const BR = /[(\[【][^()\[\]【】]*[)\]】]/g;
 /** かっこの中を取った名前（「多目的ホール（100）」→「多目的ホール」） */
-const bare = (s) => norm(s).replace(/[(（【\[][^()（）【】\[\]]*[)）】\]]/g, '').replace(/[(（【\[][^()（）【】\[\]]*[)）】\]]/g, '');
+const bare = (s) => norm(s).replace(BR, '').replace(BR, '');
+/** かっこだけ取った名前（「体育室（窓側）」→「体育室窓側」） */
+const flat = (s) => norm(s).replace(/[()\[\]【】]/g, '');
+const forms = (s) => [norm(s), bare(s), flat(s)];
+/** かっこの中の別名（「第1体育室（中体育室）」→「中体育室」） */
+const aliases = (s) => [...norm(s).matchAll(/[(\[【]([^()\[\]【】]+)[)\]】]/g)].map((m) => m[1]);
+/** 施設名の頭の「大阪市立」「大阪市」「オリセン」は無視する（予約サイトに出ないことがあるため） */
+const core = (s) => bare(s).replace(/^(大阪市立|大阪市|オリセン)/, '');
+const facSame = (a, b) => { const x = core(a); const y = core(b); return x === y || (Math.min(x.length, y.length) >= 4 && (x.endsWith(y) || y.endsWith(x))); };
+/** 部屋名が同じか（ゆれ・かっこの別名・「小練習室」→「小練習室10」のような番号違い・「301」→「301会議室」） */
+function roomSame(site, sheet) {
+  const a = forms(site); const b = forms(sheet);
+  if (a.some((x) => b.includes(x))) return true;
+  if (aliases(sheet).some((x) => a.includes(x))) return true;
+  const n = norm(sheet); const pr = bare(site);
+  if (pr && n.startsWith(pr) && /^[0-9〜~・,、-]+$/.test(n.slice(pr.length))) return true;
+  if (/^[0-9-]+$/.test(norm(site)) && n.startsWith(norm(site))) return true;
+  return false;
+}
+/** シートの行の中から「施設 部屋」に当たる行を探す（いくつも当たることがある） */
+export function finder(list) {
+  return (place) => {
+    const p = forms(place);
+    const hit = list.filter((r) => forms(r.fac + r.room).some((x) => p.includes(x)));
+    if (hit.length) return hit;
+    // 区切り（空白・「_」）のどこで施設と部屋に分けても試す
+    const cuts = [...String(place).matchAll(/[\s_]+/g)].map((m) => [m.index, m.index + m[0].length]);
+    const out = new Set();
+    for (const [a, b] of cuts) {
+      const pf = place.slice(0, a); const pr = place.slice(b);
+      for (const r of list) if (facSame(pf, r.fac) && roomSame(pr, r.room)) out.add(r);
+    }
+    return [...out];
+  };
+}
 
 /** CSV を読む（"…" の中のカンマ・改行もそのまま） */
 export function parseCsv(text) {
@@ -55,26 +90,27 @@ async function load(ward) {
   return list;
 }
 
-/** 「施設 部屋」に合う行を探して { area, mirror, mirror_note, fee } を返す（見つからなければ null）。area は広さ（㎡・わからなければ null） */
+/** 「施設 部屋」に合う行を探して { area, mirror, mirror_note, fee } を返す（見つからなければ null）。area は広さ（㎡・わからなければ null）
+ *  いくつも当たったとき（「小練習室」がシートでは小練習室10〜26 など）は、使える部屋の中で同じ値のものだけ返す */
 export async function roomInfoFor(ward) {
   const list = await load(ward);
   if (!list) return () => null;
-  const exact = new Map(); const loose = new Map();
-  for (const r of list) {
-    const k = norm(r.fac + r.room);
-    if (!exact.has(k)) exact.set(k, r);
-    const b = bare(r.fac + r.room);
-    if (!loose.has(b)) loose.set(b, r);
-  }
+  const find = finder(list);
+  const same = (rows, f) => { const v = rows.map(f); return v.every((x) => x === v[0]) ? v[0] : null; };
   return (place) => {
-    const r = exact.get(norm(place)) || loose.get(bare(place));
-    if (!r) return null;
+    const all = find(place);
+    const rows = all.filter((r) => !r.ng).length ? all.filter((r) => !r.ng) : all;
+    if (!rows.length) return null;
     // 「？」・空・「なし」「記載なし」などの中身のない説明は送らない
-    const mirror = ['〇', '△', '×'].includes(r.mirror) ? r.mirror : null;
-    const note = r.spec && !/^(なし|記載なし|-|)$/.test(r.spec) ? r.spec : null;
-    const fee = r.fee && r.fee !== '-' ? r.fee : null;
-    if (!r.area && !mirror && !note && !fee) return null;
-    return { area: r.area, mirror, mirror_note: note, fee };
+    const m = same(rows, (r) => r.mirror);
+    const mirror = ['〇', '△', '×'].includes(m) ? m : null;
+    const spec = same(rows, (r) => r.spec);
+    const note = spec && !/^(なし|記載なし|-|)$/.test(spec) ? spec : null;
+    const f = same(rows, (r) => r.fee);
+    const fee = f && f !== '-' ? f : null;
+    const area = same(rows, (r) => r.area);
+    if (!area && !mirror && !note && !fee) return null;
+    return { area, mirror, mirror_note: note, fee };
   };
 }
 
@@ -82,16 +118,19 @@ export async function roomInfoFor(ward) {
 export async function roomStatusFor(ward) {
   const list = await load(ward);
   if (!list) return () => 'ok';
-  const exact = new Map(); const loose = new Map();
-  for (const r of list) {
-    const k = norm(r.fac + r.room);
-    // 同じ名前が2行あるときは「使える」を優先
-    if (!exact.has(k) || !r.ng) exact.set(k, r);
-    const b = bare(r.fac + r.room);
-    if (!loose.has(b) || !r.ng) loose.set(b, r);
-  }
+  const find = finder(list);
   return (place) => {
-    const r = exact.get(norm(place)) || loose.get(bare(place));
-    return r ? (r.ng ? 'ng' : 'ok') : null;
+    const rows = find(place);
+    if (!rows.length) return null;
+    return rows.some((r) => !r.ng) ? 'ok' : 'ng';
   };
+}
+
+/** シートで「使える」なのに、今回の空きに一度も出てこなかった部屋（名前のずれを見つけるため） */
+export async function unseenFor(ward, places) {
+  const list = await load(ward);
+  if (!list) return [];
+  const find = finder(list);
+  const seen = new Set(places.flatMap((p) => find(p)));
+  return list.filter((r) => !r.ng && !seen.has(r)).map((r) => `${r.fac} ${r.room}${r.area ? `（${r.area}㎡）` : ''}`);
 }
