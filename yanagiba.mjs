@@ -224,7 +224,9 @@ export function match(slots, G, ward) {
       if (p.date !== g.date || hidden(G, g.team, ward, p.place, p.date)) continue;
       // まだ取れていない日は、いつもの条件の部屋だけ。空き検索は、その広さの部屋だけ
       if (g.search ? !inRange(p.area ?? null, g, p.cap ?? null) : p.usual === false) continue;
-      if (!g.search && tooBig(p.area ?? null, g.date, g.base)) continue;
+      // 広さがわかる部屋は、拠点と曜日の広さの条件（東京：平日100〜200㎡・土日祝150㎡以上／大阪：平日70〜200㎡・土日祝90㎡以上）に合うものだけ
+      //   （見張りごとの「いつもの条件」は予約サイトの広さで決めているので、シートの広さに直したあとで、ここでもう一度確かめる）
+      if (!g.search && p.area != null && !bigEnough(p.area, g.date, p.cap ?? null, g.base)) continue;
       const rs = p.times.map(range).filter(Boolean).sort((a, b) => a[0] - b[0]);
       const merged = [];
       for (const r of rs) {
