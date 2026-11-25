@@ -378,7 +378,11 @@ async function readFureai(hall, dates) {
   try {
     const p = await browser.newPage({ locale: 'ja-JP' });
     p.on('dialog', (d) => { console.log(`  （サイトのメッセージ）${d.message()}`); d.accept().catch(() => {}); });
-    const act = async (js) => { await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 60000 }), p.evaluate((c) => setTimeout(() => (0, eval)(c), 0), js)]); await p.waitForTimeout(500); };
+    const act = async (js) => {
+      try { await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 60000 }), p.evaluate((c) => setTimeout(() => (0, eval)(c), 0), js)]); }
+      catch (e) { throw new Error(`画面が進みません（${js.slice(0, 80)}）：${(await p.evaluate(() => document.body.innerText).catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)}`); }
+      await p.waitForTimeout(500);
+    };
     const calls = (re) => p.evaluate((r) => [...document.querySelectorAll('a,input')].map((e) => (e.getAttribute('onclick') || e.getAttribute('href') || '').replace(/^javascript:/, '').trim()).filter((x) => new RegExp(r).test(x)), re);
     await p.goto(hall.top, { waitUntil: 'networkidle' });
     await act('doAction(document.form1, gRsvWTransRsvMenuAction)');
