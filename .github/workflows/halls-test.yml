@@ -17,6 +17,8 @@ jobs:
           key: playwright-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps --only-shell chromium
       - run: node tools/probe-halls.mjs
+        env:
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
       - run: node halls/watch.mjs
         env:
           DEBUG: "1"
