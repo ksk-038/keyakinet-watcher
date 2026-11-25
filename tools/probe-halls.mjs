@@ -6,8 +6,6 @@ let h = j.pages?.at(-1)?.body || JSON.stringify(j).slice(0, 300);
 console.log('MP urls', j.pages?.map((p) => `${p.status} ${p.url}`).join(' | '));
 console.log('MP p1', opts(h, 'slPurpose1'));
 console.log('MP txt', h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 600));
-// 施設から探す
-j = await call([{ get: 'Wm_TopMenu.aspx' }, { get: 'Wm_ShisetsuKensaku.aspx?ActiveForm=Shisetsu' }]);
-h = j.pages?.at(-1)?.body || '';
-console.log('MS', h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 800));
-console.log('MS sel', [...h.matchAll(/<select[^>]*name="([^"]+)"/gi)].map((m) => m[1]).join(','), opts(h, 'slShisetsu'), opts(h, 'slBunrui'));
+j = await call([{ get: 'Wm_TopMenu.aspx' }, { get: 'Wm_ShisetsuKensaku.aspx?ActiveForm=Purpose' }, { submit: [['slPurpose1', '3'], ['cmdSelect2', '選択']] }]);
+h = j.pages?.at(-1)?.body || JSON.stringify(j).slice(0, 300);
+console.log('MP p2', opts(h, 'slPurpose2'));
