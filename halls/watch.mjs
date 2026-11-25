@@ -384,29 +384,32 @@ async function readFureai(hall, dates) {
       await p.waitForTimeout(500);
     };
     const calls = (re) => p.evaluate((r) => [...document.querySelectorAll('a,input')].map((e) => (e.getAttribute('onclick') || e.getAttribute('href') || '').replace(/^javascript:/, '').trim()).filter((x) => new RegExp(r).test(x)), re);
-    await p.goto(hall.top, { waitUntil: 'networkidle' });
-    await act('doAction(document.form1, gRsvWTransRsvMenuAction)');
-    await act('doPpsdSearchAction(document.form1, gRsvWTransInstSrchPpsdAction)');
-    await act(`sendPpsdCd(document.form1, gRsvWTransInstSrchPpsAction, '${hall.ppsd}','2')`);
-    await act(`doTransInstSrchBuildAction(document.form1, gRsvWTransInstSrchBuildAction, '${hall.ppsd}' , '${hall.pps}')`);
-    await act(`sendBldCd(document.form1, gRsvWTransInstSrchInstAction, '${hall.bld}')`);
-    // 施設を選ぶ画面が出たら、名前で選ぶ
-    if (/施設選択/.test(await p.evaluate(() => document.body.innerText))) {
-      const c = await p.evaluate((r) => [...document.querySelectorAll('a')].find((a) => new RegExp(r).test(a.textContent))?.getAttribute('href')?.replace(/^javascript:/, ''), hall.room);
-      if (!c) throw new Error(`施設「${hall.room}」が一覧にありません`);
-      await act(c);
-    }
-    const out = [];
+    // 最初から月の表までたどる（週の表から月の表へは戻れないので、日を選ぶたびにやり直す）
+    const openMonth = async (ym) => {
+      await p.goto(hall.top, { waitUntil: 'networkidle' });
+      await act('doAction(document.form1, gRsvWTransRsvMenuAction)');
+      await act('doPpsdSearchAction(document.form1, gRsvWTransInstSrchPpsdAction)');
+      await act(`sendPpsdCd(document.form1, gRsvWTransInstSrchPpsAction, '${hall.ppsd}','2')`);
+      await act(`doTransInstSrchBuildAction(document.form1, gRsvWTransInstSrchBuildAction, '${hall.ppsd}' , '${hall.pps}')`);
+      await act(`sendBldCd(document.form1, gRsvWTransInstSrchInstAction, '${hall.bld}')`);
+      if (/施設選択/.test(await p.evaluate(() => document.body.innerText))) {
+        const c = await p.evaluate((r) => [...document.querySelectorAll('a')].find((a) => new RegExp(r).test(a.textContent))?.getAttribute('href')?.replace(/^javascript:/, ''), hall.room);
+        if (!c) throw new Error(`施設「${hall.room}」が一覧にありません`);
+        await act(c);
+      }
+      await act(`moveCalender(document.form1, gRsvWInstSrchMonthVacantAction, ${ym.replace('-', '')}01)`);
+    };
     const seen = new Map();
     for (const ym of [...new Set(dates.map((d) => d.slice(0, 7)))]) {
-      await act(`moveCalender(document.form1, gRsvWInstSrchMonthVacantAction, ${ym.replace('-', '')}01)`);
       for (const d of dates.filter((x) => x.startsWith(ym))) {
         if (seen.has(d)) continue;
+        await openMonth(ym);
         const [y, m, dd] = d.split('-').map(Number);
         const sel = (await calls(`selectDay\\(document\\.form1, gRsvWInstSrchVacantAction, \\d+, ${y}, ${m}, ${dd}\\)`))[0];
         if (!sel) { seen.set(d, null); continue; } // 月の表で選べない日（受付期間外など）
         await act(sel);
         const cells = await p.evaluate(() => [...document.querySelectorAll('table.rsvakitable img[alt]')].map((i) => i.alt));
+        if (DEBUG) console.log(`  ${d}: ${cells.slice(0, 6).join(' / ')}`);
         for (const a of cells) {
           const mm = a.match(/^(\d+)月(\d+)日.曜日(午前|午後|夜間)(.+)$/);
           if (!mm) continue;
@@ -414,9 +417,9 @@ async function readFureai(hall, dates) {
           if (!seen.get(key)) seen.set(key, {});
           seen.get(key)[mm[3]] = mm[4];
         }
-        await act(`moveCalender(document.form1, gRsvWInstSrchMonthVacantAction, ${ym.replace('-', '')}01)`).catch(() => {});
       }
     }
+    const out = [];
     for (const d of dates) {
       const v = seen.get(d);
       const slots = {};
