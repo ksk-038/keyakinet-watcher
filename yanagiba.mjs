@@ -7,6 +7,7 @@ import fs from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import * as L from './lib.mjs';
+import { roomInfoFor } from './roominfo.mjs';
 
 const URL = 'https://jskulzunyckseeokgzax.supabase.co';
 // アプリにも入っている公開用の鍵（これだけでは何も読み書きできない。合言葉とセットで使う）
@@ -328,10 +329,12 @@ export async function report(G, { site, ward, url, stateDir = null }, slots) {
   if (memo) { try { last = JSON.parse(await fs.readFile(memo, 'utf8')); } catch { /* はじめて */ } }
   const sent = {};
   const rows = match(slots, G, ward);
+  // 部屋の鏡・利用費（スプレッドシートから。見つからない部屋はつけない）
+  const info = rows.length ? await roomInfoFor(ward) : () => null;
   for (const team of G.teams) {
     const mine = rows
       .filter((r) => r.team === team)
-      .map(({ team: _, ...r }) => ({ ...r, key: `${site}|${r.search_id ? `s:${r.search_id}|` : ''}${r.date}|${r.place}|${r.gap_time || ''}`, url: r.url || url }));
+      .map(({ team: _, ...r }) => ({ ...r, ...(info(r.place) || {}), key: `${site}|${r.search_id ? `s:${r.search_id}|` : ''}${r.date}|${r.place}|${r.gap_time || ''}`, url: r.url || url }));
     try {
       // 調べた日（空きが0件でも「調べた」とアプリでわかるように）
       const checked = [
