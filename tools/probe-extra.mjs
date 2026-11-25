@@ -10,8 +10,9 @@ async function dump(label) {
   for (const f of page.frames()) {
     const txt = await f.evaluate(() => document.body?.innerText || '').catch(() => '');
     const btn = await f.evaluate(() => [...document.querySelectorAll('a,input[type=button],input[type=submit],input[type=image],button,img[alt]')].map((a) => (a.innerText || a.value || a.alt || '').trim() + ' → ' + (a.getAttribute('href') || a.getAttribute('onclick') || '').slice(0, 120)).filter((s) => s.length > 4).slice(0, 50)).catch(() => []);
+    const inp = await f.evaluate(() => [...document.querySelectorAll('input[type=radio],input[type=checkbox]')].map((i) => `${i.type}:${i.name}=${i.value} 「${(document.querySelector(`label[for="${i.id}"]`)?.innerText || i.closest('label,td,li')?.innerText || '').trim().slice(0, 40)}」`).slice(0, 60)).catch(() => []);
     const sel = await f.evaluate(() => [...document.querySelectorAll('select')].map((s) => s.name + ': ' + [...s.options].map((o) => o.text.trim()).slice(0, 40).join(' | '))).catch(() => []);
-    console.log(`--- frame ${f.url()}\n${cut(txt, 1500)}\n[ボタン]\n${btn.join('\n')}\n[選択肢]\n${sel.join('\n')}`);
+    console.log(`--- frame ${f.url()}\n${cut(txt, 1500)}\n[ボタン]\n${btn.join('\n')}\n[選択肢]\n${sel.join('\n')}\n[チェック]\n${inp.join('\n')}`);
   }
 }
 async function press(words) {
@@ -30,9 +31,29 @@ try {
   await page.goto('https://reserve.opas.jp/sakai/Welcome.cgi', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForTimeout(3000);
   await dump('入口');
-  if (await press(['空き照会', '空き状況', '空状況', '空き施設', '施設の空き'])) {
-    await dump('1段目');
-    if (await press(['体育館', 'スポーツ', '屋内'])) { await dump('2段目'); if (await press(['大浜', '鴨谷', '初芝'])) await dump('3段目'); }
+  await press(['空き状況']);
+  // 「施設を指定する」→ 次へ
+  async function pick(text) {
+    for (const f of page.frames()) {
+      const l = f.locator(`label:has-text("${text}")`).first();
+      if (await l.count().catch(() => 0)) { await l.click().catch(() => {}); console.log(`→「${text}」を選ぶ`); return true; }
+    }
+    return false;
   }
+  await pick('施設を指定する');
+  await press(['次へ']);
+  await dump('施設の種類');
+  if (await pick('体育館') || await pick('屋内')) { await press(['次へ']); await dump('施設の一覧'); }
+  if (await pick('大浜体育館') || await pick('大浜')) { await press(['次へ']); await dump('部屋の一覧'); }
+  // 部屋を全部選んで次へ
+  for (const f of page.frames()) {
+    const boxes = f.locator('input[type=checkbox]');
+    const n = await boxes.count().catch(() => 0);
+    for (let k = 0; k < Math.min(n, 3); k++) await boxes.nth(k).check({ force: true }).catch(() => {});
+  }
+  await press(['次へ']);
+  await dump('空き表');
+  await press(['次へ', '翌週', '次の週']);
+  await dump('空き表2');
 } catch (e) { console.log('失敗', e.message); }
 await b.close();
