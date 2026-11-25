@@ -15,6 +15,14 @@ try {
   await pick(/演劇（公演/);
   console.log('KW kan', (await txt(p)).slice(0, 300), '\n', L.join('\n'));
   await pick(/宮前市民館/);
-  console.log('KW inst', (await txt(p)).slice(0, 300), '\n', L.join('\n'));
+  console.log('KW inst', (await txt(p)).slice(300, 1500));
+  await act('moveCalender(document.form1, gRsvWInstSrchMonthVacantAction, 20271101)');
+  console.log('KW m2711', (await txt(p)).slice(300, 1200));
+  await act('moveCalender(document.form1, gRsvWInstSrchMonthVacantAction, 20261201)');
+  L = await links(); console.log('KW m2612', L.filter((x) => /selectDay/.test(x)).slice(0, 5).join(' / '));
+  await pick(/selectDay\(document.form1, gRsvWInstSrchVacantAction, \d+, 2026, 12, \d+\)/);
+  console.log('KW week', p.url(), (await txt(p)).slice(300, 2500));
+  const h = await p.content(); const i = h.indexOf('午前');
+  console.log('KW weekhtml', h.slice(Math.max(0, i - 1500), i + 3000).replace(/\s+/g, ' '));
 } catch (e) { console.log('KW ERR', e.message.slice(0, 200)); }
 await b.close();
