@@ -174,3 +174,36 @@ export async function times(site, date, picks) {
 }
 
 export const used = () => bytes;
+
+// 横浜市のような新しい型（返事が Horizontal）：1週間分を、時間帯（1=午前 2=午後 3=夜間 0=全日）ごとに読む
+//   → [{ room, date, vacant: 'vacant'|'some'|'full', disp: 画面の表示（receptionClosed＝申込期間外 など） }]
+export async function weekH(site, start, tz) {
+  const lists2 = () => {
+    const o = [];
+    ['1日', '1週間', '2週間', '1ヶ月'].forEach((t, i) => o.push([`SearchCondition.DisplayTermList[${i}].Value`, i + 1], [`SearchCondition.DisplayTermList[${i}].Text`, t]));
+    ['横表示', 'カレンダー表示'].forEach((t, i) => o.push([`SearchCondition.DisplayCalendarList[${i}].Value`, i], [`SearchCondition.DisplayCalendarList[${i}].Text`, t]));
+    [['1', '午前'], ['2', '午後'], ['3', '夜間'], ['0', '全日']].forEach(([v, t], i) => o.push([`SearchCondition.TimeZoneList[${i}].Value`, v], [`SearchCondition.TimeZoneList[${i}].Text`, t]));
+    ['月', '火', '水', '木', '金', '土', '日'].forEach((t, i) => o.push([`SearchCondition.WeekList[${i}].Value`, i + 1], [`SearchCondition.WeekList[${i}].Text`, `${t}曜日`]));
+    o.push(['SearchCondition.WeekList[7].Value', 8], ['SearchCondition.WeekList[7].Text', '祝日']);
+    return o;
+  };
+  const head = (d, z) => [['SearchCondition.StartDate', d], ['SearchCondition.DisplayTerm', '2'], ['SearchCondition.DisplayCalendar', '0'], ['SearchCondition.TimeZone', String(z)]];
+  if (!site.modelH) {
+    await site.req('AvailabilityCheckApplySelectDays');
+    const j = parse(await site.req('AvailabilityCheckApplySelectDays/GetAvailability', site.form([...head(start, 0), ...lists2()])), '最初の空き状況');
+    site.modelH = (Array.isArray(j) ? j : [j]).find((x) => Array.isArray(x?.Horizontal))?.Horizontal;
+    if (!site.modelH) throw new Error('最初の空き状況が読めません（横浜型）');
+  }
+  const cur = [];
+  site.modelH.forEach((f, i) => (f.Common?.Rows || []).forEach((r, ri) => {
+    const a = `Horizontal[${i}].Common.Rows[${ri}]`;
+    (r.Cells || []).forEach((c, ci) => cur.push([`${a}.Cells[${ci}].IsChecked`, 'false'], [`${a}.Cells[${ci}].UseDate`, c.UseDate]));
+    cur.push([`${a}.Code`, r.Code], [`${a}.IsDisplayGroup`, r.IsDisplayGroup ? 'true' : 'false']);
+  }));
+  const j = parse(await site.req('AvailabilityCheckApplySelectDays/SearchCondition', site.form([...head(start, tz), ...lists2(), ...cur])), '日ごとの空き状況');
+  if (j?.[0]?.Result === 'Error') throw new Error(`日ごとの空き状況でエラー ${j[0].Information}（${start}）`);
+  site.modelH = (Array.isArray(j) ? j : [j]).find((x) => Array.isArray(x?.Horizontal))?.Horizontal || site.modelH;
+  const out = [];
+  for (const f of site.modelH) for (const r of f.Common?.Rows || []) for (const c of r.Cells || []) out.push({ room: (r.Name || '').trim(), date: c.UseDate.slice(0, 10), vacant: c.VacantStatus, disp: c.DisplayStatusForUser });
+  return out;
+}

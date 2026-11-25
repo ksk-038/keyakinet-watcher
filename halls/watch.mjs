@@ -510,9 +510,26 @@ async function readOec(hall, dates) {
   if (!picked.length && DEBUG) { const d = dec(html); const i = d.search(new RegExp(hall.facility)); console.log('  画面HTML: ' + d.slice(Math.max(0, i - 2500), i + 300).replace(/\s+/g, ' ')); }
   if (!picked.length) throw new Error(`施設「${hall.facility}」が一覧にありません（全${list.length}施設）`);
   await site.req('AvailabilityCheckApplySelectFacility/Next', site.form([...hidden.map(([k, v]) => [k, v]), ...picked.map((f) => [`SelectFacilities.Facilities[${f.idx}].IsChecked`, 'true']), ...picked.map((f, i) => [`SelectFacilities.Selected[${i}]`, f.value])]));
-  await site.req('AvailabilityCheckApplySelectDays');
   const roomRe = new RegExp(hall.room);
   const out = [];
+  // 横浜市のような新しい型：1週間ずつ、午前・午後・夜間それぞれの空きを読む
+  if (hall.horizontal) {
+    const got = new Map();
+    for (const st of [...new Set(dates.map((d) => (L.weekday(d) === '日' ? L.addDays(d, -1) : d)))]) {
+      for (const [tz, name] of [[1, '午前'], [2, '午後'], [3, '夜間']]) {
+        for (const c of await H.weekH(site, st, tz)) {
+          if (!roomRe.test(c.room)) continue;
+          if (DEBUG && dates.includes(c.date)) console.log(`  ${c.date} ${c.room} ${name}: ${c.vacant} / ${c.disp}`);
+          if (!got.has(c.date)) got.set(c.date, {});
+          const free = c.vacant === 'vacant' && c.disp !== 'closed' && (hall.closedOk || c.disp !== 'receptionClosed');
+          got.get(c.date)[name] = { free, mark: c.disp === 'closed' ? '休' : c.vacant === 'vacant' ? (c.disp === 'receptionClosed' ? '○' : '○') : c.vacant === 'some' ? '△' : '×' };
+        }
+      }
+    }
+    for (const d of dates) if (got.has(d)) out.push({ date: d, slots: got.get(d) });
+    return out;
+  }
+  await site.req('AvailabilityCheckApplySelectDays');
   for (const d of dates) {
     const { cells } = await H.day(site, d);
     const mine = cells.filter((c) => roomRe.test(c.room));
