@@ -8,7 +8,13 @@ try {
   const act = async (js) => { await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle' }), p.evaluate((c) => setTimeout(() => (0, eval)(c), 0), js)]); await p.waitForTimeout(800); };
   await act('doAction(document.form1, gRsvWTransRsvMenuAction)');
   await act('doPpsdSearchAction(document.form1, gRsvWTransInstSrchPpsdAction)');
-  console.log('KW ppsd', p.url(), (await txt(p)).slice(0, 1500));
-  console.log('KW ppsd-C', (await ctl(p)).slice(8, 70).join('\n'));
+  const links = async () => (await ctl(p)).filter((x) => /send|javascript/.test(x) && !/gRsvPawqa|gRsvWTransInstSrchVacantAction|Lot|UserRegist|Pawnc|SiteMap|Help|RsvMenu/.test(x));
+  await act("sendPpsdCd(document.form1, gRsvWTransInstSrchPpsAction, '210','2')");
+  let L = await links(); console.log('KW pps', L.join('\n'));
+  const pick = async (re) => { const x = L.find((y) => re.test(y)); if (!x) throw new Error('no ' + re + ' in ' + L.length); const js = x.split(' | ')[1].replace(/^javascript:/, '').trim().split(' ')[0]; await act(js.replace(/;$/, '')); L = await links(); };
+  await pick(/演劇/);
+  console.log('KW kan', (await txt(p)).slice(0, 300), '\n', L.join('\n'));
+  await pick(/宮前市民館/);
+  console.log('KW inst', (await txt(p)).slice(0, 300), '\n', L.join('\n'));
 } catch (e) { console.log('KW ERR', e.message.slice(0, 200)); }
 await b.close();
