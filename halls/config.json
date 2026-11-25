@@ -41,6 +41,17 @@
   },
   "halls": [
     {
+      "name": "きゅりあん 大ホール",
+      "city": "品川区",
+      "platform": "eprs",
+      "top": "https://www.cm9.eprs.jp/shinagawa/web/index.jsp",
+      "base": "https://www.cm9.eprs.jp/shinagawa/web/index.jsp",
+      "area": "きゅりあん",
+      "purpose": "演奏会・発表会・鑑賞会",
+      "room": "大ホール",
+      "note": "区民料金なら予算内（区外料金だと2枠とも25万超）"
+    },
+    {
       "name": "保谷こもれびホール メインホール",
       "city": "西東京市",
       "platform": "p-kashikan",
@@ -57,11 +68,62 @@
       "facility": "文化会館",
       "room": "^大ホール",
       "note": "市外の受付は11月分が2026/12/1〜、12月分が2027/1/4〜（窓口のみ・電話不可）"
+    },
+    {
+      "name": "タワーホール船堀 大ホール",
+      "city": "江戸川区",
+      "platform": "oec",
+      "base": "https://www.shisetsuyoyaku.city.edogawa.tokyo.jp/user/",
+      "purpose": {
+        "categoryCode": "7",
+        "useCode": "155",
+        "_": "会議・発表会等 → 発表会"
+      },
+      "facility": "船堀",
+      "room": "大ホール",
+      "note": "空き予約は利用月12か月前の25日12時から（えどねっと）。予約後10日以内に窓口で手続き"
+    },
+    {
+      "name": "武蔵野市民文化会館 大ホール",
+      "city": "武蔵野市",
+      "platform": "eprs",
+      "top": "https://yoyaku.musashino.or.jp/mnet/web/index.jsp",
+      "area": "武蔵野市民文化会館",
+      "purpose": "ダンス",
+      "room": "大ホール",
+      "note": "11月分は窓口で随時受付（3日前まで）。12月分は12/1必着で抽選申込→12/15〜窓口"
+    },
+    {
+      "name": "大田区民プラザ 大ホール",
+      "city": "大田区",
+      "platform": "uguisu",
+      "top": "https://www.yoyaku.city.ota.tokyo.jp/eshisetsu/menu/Welcome.cgi",
+      "kaikan": "^大田区民プラザ$",
+      "kaikanName": "大田区民プラザ",
+      "room": "大ホール",
+      "note": "ネット予約は不可（空き確認のみ）。空きの先着は窓口で申込と同時に支払い。12月分は〜12/1 抽選申込→12/23〜先着"
+    },
+    {
+      "name": "狛江エコルマホール",
+      "city": "狛江市",
+      "platform": "karuku",
+      "top": "https://sst1.ka-ruku.com/komae/month",
+      "shisetsu": "0010",
+      "note": "市外は12/15 9時〜先着（9時までに来館ならくじ）。空き状況はka-rukuで確認"
+    },
+    {
+      "name": "たましんRISURUホール 大ホール",
+      "city": "立川市",
+      "platform": "p-kashikan",
+      "base": "https://k5.p-kashikan.jp/tachikawa-city/",
+      "facility": "RISURU|市民会館",
+      "room": "^大ホール",
+      "note": "空きを先着→15日以内に窓口で現金払い。12月分は12/1抽選会→以降先着（立川市施設予約システム）"
     }
   ],
   "quietHours": {
     "from": 1,
     "to": 6
   },
-  "_メモ": "東大和市のハミングホールは、この予約システム（p-kashikan）に載っていないので見張れない（窓口・FAX）"
+  "_メモ": "東大和市のハミングホールは、この予約システム（p-kashikan）に載っていないので見張れない（窓口・FAX）。杉並区（さざんかねっと・セシオン杉並）は日本の外から開けず、今の中継では読めないので保留（区外の申込は2027/4/27〜なので急がない）。中野区（なかのZERO）は予約システムに機械よけ（Cloudflare Turnstile）があり読めないので保留。所沢ミューズは市の予約システム（ws-scs）に入っておらず監視不可（ミューズのサイトに「キャンセル待ち予約」あり）。調布（グリーンホール・くすのき）は2027年3月から新しい予約システムに移るため、いまは監視しない（くすのき 2027/9〜12月分の抽選は 2026/12/1〜20）"
 }

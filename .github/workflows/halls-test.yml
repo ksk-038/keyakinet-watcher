@@ -1,0 +1,26 @@
+name: ホール空き監視 動作確認（ブランチ用・LINEは送らない）
+on:
+  push:
+    branches: [halls-watch]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm install
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps --only-shell chromium
+      - run: node tools/probe-halls.mjs
+        env:
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
+      - run: node halls/watch.mjs
+        env:
+          DEBUG: "1"
+          FORCE: "1"
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}

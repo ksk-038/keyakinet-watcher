@@ -106,7 +106,201 @@ async function readPkashikan(hall, dates) {
   return out;
 }
 
-const READERS = { 'p-kashikan': readPkashikan };
+// しせつよやく（品川区など）: 館（どこで）と目的で検索し、部屋の7日分の表を読む。ブラウザを使う
+async function readEprs(hall, dates) {
+  const { chromium } = await import('playwright');
+  const S = await import('../shinjuku/scrape.mjs');
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ locale: 'ja-JP' });
+    page.on('dialog', (d) => { console.log(`  （サイトのメッセージ）${d.message()}`); d.dismiss().catch(() => {}); });
+    const roomRe = new RegExp(hall.room);
+    const out = [];
+    // 土曜はじまりで1週間ずつ（土日が同じ表に入る）
+    const starts = [...new Set(dates.map((d) => (L.weekday(d) === '日' ? L.addDays(d, -1) : d)))];
+    for (const st of starts) {
+      const r = await S.search(page, { top: hall.top, area: hall.area, purpose: hall.purpose, start: st, weekdays: ['土', '日'] });
+      const b = r.buildings.find((x) => x.name.includes(hall.area)) || r.buildings[0];
+      if (!b) throw new Error(`「${hall.area}」が検索結果にありません`);
+      const rooms = await S.selectBuilding(page, b.value);
+      if (DEBUG) console.log(`  部屋: ${rooms.map((x) => x.name).join('、')}`);
+      const room = rooms.filter((x) => roomRe.test(x.name)).sort((a, b2) => (b2.name.includes('全面') ? 1 : 0) - (a.name.includes('全面') ? 1 : 0))[0];
+      if (!room) throw new Error(`部屋「${hall.room}」がありません（${rooms.map((x) => x.name).join('、')}）`);
+      const cells = await S.readRoom(page, room.value);
+      for (const d of dates.filter((x) => x === st || x === L.addDays(st, 1))) {
+        const slots = {};
+        for (const c of cells.filter((x) => x.date === d)) {
+          const name = /午前/.test(c.label) ? '午前' : /午後/.test(c.label) ? '午後' : /夜/.test(c.label) ? '夜間' : c.label;
+          const free = /[○◯〇]|空き/.test(c.sym);
+          slots[name] = slots[name] == null ? { free, mark: c.sym || '?' } : { free: slots[name].free && free, mark: slots[name].mark + (c.sym || '?') };
+        }
+        if (DEBUG) console.log(`  ${d} ${room.name}: ${Object.entries(slots).map(([k, v]) => `${k}${v.mark}`).join(' ') || '（表なし）'}`);
+        if (Object.keys(slots).length) out.push({ date: d, slots });
+      }
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
+// 大田区 うぐいすネット（…/eshisetsu/）: 全施設から館を選ぶ → 部屋を選ぶ → 7日分の表（表示開始日を変えて読む）
+async function readUguisu(hall, dates) {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const p = await browser.newPage({ locale: 'ja-JP' });
+    p.on('dialog', (d) => { console.log(`  （サイトのメッセージ）${d.message()}`); d.accept().catch(() => {}); });
+    await p.goto(hall.top, { waitUntil: 'networkidle' });
+    if (/システム休止|受付時間外/.test(await p.evaluate(() => document.body.innerText))) throw new Error('システム休止中（午前2〜5時）');
+    await p.click('text=ログインせずに空き状況を検索'); await p.waitForTimeout(800);
+    await p.click('label[for=yoyakuMode_1]'); await p.waitForTimeout(800);
+    await p.click('label[for=jouken1_3]'); await p.waitForTimeout(800);
+    const kid = await p.evaluate((re) => [...document.querySelectorAll('input[name=catSel3]')].find((e) => new RegExp(re).test(document.querySelector(`label[for="${e.id}"]`)?.innerText || ''))?.id, hall.kaikan);
+    if (!kid) throw new Error(`館「${hall.kaikan}」が一覧にありません`);
+    await p.click(`label[for=${kid}]`); await p.waitForTimeout(500);
+    await p.click('#submitbutton'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(1000);
+    const rid = await p.evaluate((name) => [...document.querySelectorAll('input[name=checkMeisaiUniqKey]')].find((e) => (e.getAttribute('aria-label') || e.title || document.querySelector(`label[for="${e.id}"]`)?.innerText || '').trim() === `${name}を選択`)?.id, hall.kaikanName + hall.room);
+    if (!rid) throw new Error(`部屋「${hall.room}」が一覧にありません`);
+    await p.check(`#${rid}`); await p.waitForTimeout(300);
+    await p.click('#submitbutton'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(1000);
+    const out = [];
+    const starts = [...new Set(dates.map((d) => (L.weekday(d) === '日' ? L.addDays(d, -1) : d)))];
+    for (const st of starts) {
+      let ok = false;
+      for (let i = 0; i < 3 && !ok; i++) {
+        await p.fill('#startDate', st);
+        await Promise.all([p.waitForLoadState('networkidle'), p.click('button:has-text("選択した条件で表示")')]);
+        ok = await p.waitForSelector('table.box_calendar', { timeout: 15000 }).then(() => true, () => false);
+      }
+      const t = await p.evaluate(() => {
+        const tb = document.querySelector('table.box_calendar'); if (!tb) return null;
+        const rows = [...tb.querySelectorAll('tr')];
+        const days = [...rows[0].querySelectorAll('th')].slice(1).map((th) => th.querySelector('.day')?.innerText.replace(/\s+/g, '') || '');
+        return { days, rows: rows.slice(1).map((r) => ({ time: r.querySelector('th').innerText.trim(), cells: [...r.querySelectorAll('td')].map((td) => td.querySelector('img')?.alt || td.innerText.trim()) })) };
+      });
+      if (!t) throw new Error('空き状況の表が出ません');
+      for (const d of dates.filter((x) => x === st || x === L.addDays(st, 1))) {
+        const [, m, dd] = d.match(/^\d{4}-(\d{2})-(\d{2})/);
+        const col = t.days.indexOf(`${Number(m)}月${Number(dd)}日`);
+        if (col < 0) { if (DEBUG) console.log(`  ${d}: 表にありません（${t.days.join(' ')}）`); continue; }
+        const slots = {};
+        for (const r of t.rows) {
+          const h = Number(r.time.slice(0, 2));
+          const name = h < 12 ? '午前' : h < 17 ? '午後' : '夜間';
+          const alt = r.cells[col] || '';
+          const free = /空いて/.test(alt);
+          slots[name] = { free, mark: free ? '○' : /予約済/.test(alt) ? '×' : /抽選/.test(alt) ? '抽' : '-' };
+        }
+        out.push({ date: d, slots });
+      }
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
+// ka-ruku（狛江エコルマホールなど …/month）: 月別の表。30分ごとのマス（色）で、枠の中が全部「空き(base)」なら空き
+async function readKaruku(hall, dates) {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const p = await browser.newPage({ locale: 'ja-JP' });
+    await p.goto(hall.top, { waitUntil: 'networkidle' });
+    if (/メンテナンス中/.test(await p.evaluate(() => document.body.innerText))) throw new Error('メンテナンス中');
+    const out = [];
+    for (const ym of [...new Set(dates.map((d) => d.slice(0, 7).replace('-', '')))]) {
+      await p.selectOption('#selShisetsu', hall.shisetsu);
+      await p.selectOption('#selNengetu', ym);
+      await p.click('#searchMonth'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(1200);
+      for (const d of dates.filter((x) => x.slice(0, 7).replace('-', '') === ym)) {
+        const cells = await p.evaluate((id) => { const tr = document.getElementById(id); return tr ? [...tr.querySelectorAll('td.base, td.reserve, td.off, td[class]')].filter((td) => td.colSpan > 1).map((td) => [td.className, td.colSpan]) : null; }, `calendar${d.replace(/-/g, '')}`);
+        if (!cells) { if (DEBUG) console.log(`  ${d}: 表にありません`); continue; }
+        // 枠ごとに数える。「申込不可(off)」は枠の間の休憩時間などなので数えない
+        const cnt = {};
+        let min = 0;
+        for (const [cls, span] of cells) {
+          const name = min < 240 ? '午前' : min < 600 ? '午後' : '夜間';
+          const c = (cnt[name] ||= { base: 0, reserve: 0, off: 0, other: 0 });
+          c[cls in c ? cls : 'other'] += 1;
+          min += span;
+        }
+        const slots = {};
+        for (const [name, c] of Object.entries(cnt)) {
+          const free = c.base > 0 && !c.reserve && !c.other;
+          slots[name] = { free, mark: free ? '○' : c.reserve ? '×' : '-' };
+        }
+        out.push({ date: d, slots });
+      }
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
+// OEC の予約システム（えどねっと・文の京など。…/user/Home）: 利用目的で検索 → 施設を選ぶ → 日ごとの空き → 部屋の時間帯別空き
+async function readOec(hall, dates) {
+  const H = await import('../bunkyo/http.mjs');
+  const site = new H.Site(hall.base);
+  const home = await site.req('Home');
+  // 利用目的の番号（名前で指定したときは Home の一覧から探す）
+  const purpose = { ...hall.purpose };
+  if (purpose.useName) {
+    const u = home.replace(/\\u([0-9a-f]{4})/gi, (_, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&#x([0-9A-F]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)));
+    const all = [...u.matchAll(/"PurposeCategoryCode":(\d+),"PurposeCode":(\d+),"PurposeName":"([^"]+)"/g)];
+    const hit = all.find((m) => new RegExp(purpose.useName).test(m[3]));
+    if (!hit) throw new Error(`利用目的「${purpose.useName}」がありません（${all.map((m) => m[3]).slice(0, 40).join('、')}…）`);
+    [purpose.categoryCode, purpose.useCode] = [hit[1], hit[2]];
+    if (DEBUG) console.log(`  利用目的: ${hit[3]}（${hit[1]}-${hit[2]}）`);
+  }
+  await site.req('Home/SearchByPurpose', site.form([
+    ['HomeModel.SelectedPlaceClassCategory', '1'], ['HomeModel.CapacityFromByPlaceClass', ''], ['HomeModel.CapacityToByPlaceClass', ''],
+    ['HomeModel.SelectedPurposeCategory', purpose.categoryCode], ['HomeModel.SelectedPurpose', purpose.useCode],
+    ['HomeModel.CapacityFromByPurpose', ''], ['HomeModel.CapacityToByPurpose', ''], ['SelectedLanguageCode', '0'],
+  ]));
+  const html = await site.req('AvailabilityCheckApplySelectFacility');
+  const dec = (x) => x.replace(/&#x([0-9A-F]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&amp;/g, '&');
+  // 施設ごとの hidden（id が name より前に来るサイトもある）
+  const hidden = [...html.matchAll(/<input type="hidden"[^>]*?name="(SelectFacilities\.Facilities\[(\d+)\]\.SelectedFacility\.(?:Value|Text))"[^>]*?value="([^"]*)"/g)].map((m) => [m[1], dec(m[3]), m[2]]);
+  const list = [];
+  for (const [k, v, idx] of hidden) if (/Value$/.test(k)) list.push({ value: v, idx, name: hidden.find((h) => h[2] === idx && /Text$/.test(h[0]))?.[1] });
+  if (DEBUG) console.log(`  施設一覧: ${list.map((f) => f.name).join('、')}`);
+  const fre = new RegExp(hall.facility);
+  const picked = list.filter((f) => fre.test(f.name));
+  if (!picked.length && DEBUG) { const d = dec(html); const i = d.search(new RegExp(hall.facility)); console.log('  画面HTML: ' + d.slice(Math.max(0, i - 2500), i + 300).replace(/\s+/g, ' ')); }
+  if (!picked.length) throw new Error(`施設「${hall.facility}」が一覧にありません（全${list.length}施設）`);
+  await site.req('AvailabilityCheckApplySelectFacility/Next', site.form([...hidden.map(([k, v]) => [k, v]), ...picked.map((f) => [`SelectFacilities.Facilities[${f.idx}].IsChecked`, 'true']), ...picked.map((f, i) => [`SelectFacilities.Selected[${i}]`, f.value])]));
+  await site.req('AvailabilityCheckApplySelectDays');
+  const roomRe = new RegExp(hall.room);
+  const out = [];
+  for (const d of dates) {
+    const { cells } = await H.day(site, d);
+    const mine = cells.filter((c) => roomRe.test(c.room));
+    if (DEBUG) console.log(`  ${d}: ${cells.map((c) => `${c.room}[${c.status}]`).join(' / ') || '（表なし）'}`);
+    if (!mine.length) { console.log(`  ⚠️ ${d}: 部屋「${hall.room}」が表にありません`); continue; }
+    const c = mine[0];
+    const slots = {};
+    if (c.status === 'vacant' || c.status === 'some') {
+      for (const t of await H.times(site, d, [c])) {
+        if (!roomRe.test(t.room) || t.date !== d) continue;
+        const from = Number((t.time.match(/(\d+):(\d+)〜/) || [0, 0, 0]).slice(1).join(''));
+        const name = /午前/.test(t.time) ? '午前' : /午後/.test(t.time) ? '午後' : /夜/.test(t.time) ? '夜間' : from < 1200 ? '午前' : from < 1700 ? '午後' : '夜間';
+        const free = t.status === 'vacant';
+        const mark = free ? '○' : t.status === 'full' ? '×' : t.status === 'time-over' ? '-' : t.status === 'lot' ? '抽' : String(t.status);
+        slots[name] = slots[name] == null ? { free, mark } : { free: slots[name].free && free, mark: slots[name].mark + mark };
+      }
+    } else {
+      const mark = c.status === 'full' ? '×' : c.status === 'lot' ? '抽' : '-';
+      for (const n of ['午前', '午後', '夜間']) slots[n] = { free: false, mark };
+    }
+    out.push({ date: d, slots });
+  }
+  return out;
+}
+
+const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku };
 
 // その日に取れる組み合わせ（例: ["午前＋午後", "午後"]）
 export function okCombos(date, slots, combos) {
@@ -133,7 +327,7 @@ async function main() {
       const res = await READERS[hall.platform](hall, dates);
       for (const r of res) {
         const combos = okCombos(r.date, r.slots, config.combos);
-        table.push({ hall: `${hall.city} ${hall.name}`, date: r.date, slots: Object.fromEntries(Object.entries(r.slots).map(([k, v]) => [k, v.mark])), combos, url: hall.base });
+        table.push({ hall: `${hall.city} ${hall.name}`, date: r.date, slots: Object.fromEntries(Object.entries(r.slots).map(([k, v]) => [k, v.mark])), combos, url: hall.base || hall.top });
         console.log(`  ${L.label(r.date)} ${Object.entries(r.slots).map(([k, v]) => `${k}${v.mark}`).join(' ')}${combos.length ? ` → 取れる: ${combos.join('・')}` : ''}`);
         for (const c of combos) {
           const key = `${r.date}|${hall.name}|${c}`;
@@ -156,7 +350,7 @@ async function main() {
     }
     const lines = ['🎭 ざわめき祭のホールに空きが出ました'];
     for (const v of [...by.values()].sort((a, b) => a.date.localeCompare(b.date))) {
-      lines.push('', `■ ${L.label(v.date)} ${v.hall.city} ${v.hall.name}`, `  取れる枠: ${v.combos.join('／')}`, ...(v.hall.note ? [`  ${v.hall.note}`] : []), `  ${v.hall.base}`);
+      lines.push('', `■ ${L.label(v.date)} ${v.hall.city} ${v.hall.name}`, `  取れる枠: ${v.combos.join('／')}`, ...(v.hall.note ? [`  ${v.hall.note}`] : []), `  ${v.hall.base || v.hall.top}`);
     }
     await line(lines.join('\n'));
   }
