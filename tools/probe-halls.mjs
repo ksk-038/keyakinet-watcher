@@ -1,11 +1,16 @@
-const UA = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130', 'Accept-Language': 'ja' };
-const go = async (u, o = {}) => { try { const r = await fetch(u, { headers: { ...UA, ...(o.headers || {}) }, method: o.method || 'GET', body: o.body, redirect: 'follow', signal: AbortSignal.timeout(20000) }); const h = await r.text(); console.log('\nURL', r.status, r.url, h.length); return h; } catch (e) { console.log('\nERR', u, e.cause?.code || e.message); return ''; } };
-const txt = (h) => h.replace(/<(script|style)[\s\S]*?<\/\1>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-let h = await go('https://www.kcf.or.jp/yoyaku/shisetsu/');
-console.log('KCF ext', [...h.matchAll(/(href|src|action)="([^"]+)"/g)].map((m) => m[2]).filter((u) => /^https?:/.test(u) && !/kcf\.or\.jp|facebook|twitter|google|line\.me/.test(u)).join('\n '));
-console.log('KCF forms', (h.match(/<form[\s\S]{0,400}/gi) || []).join('\n---\n').slice(0, 1200));
-console.log('KCF tail', txt(h).slice(800, 2500));
-h = await go('https://www.sunpearl-arakawa.com/guide/vacant/');
-const main = h.slice(h.search(/<main|id="main|class="content/i));
-console.log('SPV ext', [...main.matchAll(/(href|src|data-src)="([^"]+)"/g)].map((m) => m[2]).filter((u) => !/\.(css|png|jpg|svg|gif)(\?|$)|facebook|twitter|hatena|line\.me|plus\.google/.test(u)).slice(0, 30).join('\n '));
-console.log('SPV text', txt(main).slice(0, 2500));
+import { chromium } from 'playwright';
+const b = await chromium.launch();
+const p = await b.newPage({ locale: 'ja-JP' });
+p.on('dialog', (d) => d.accept().catch(() => {}));
+const dump = async (tag) => {
+  const r = await p.evaluate(() => ({ u: location.href, t: document.body.innerText.replace(/\s+/g, ' ').slice(0, 700), a: [...document.querySelectorAll('a,input[type=button],input[type=submit],input[type=image],button')].map((e) => `${(e.textContent || e.value || e.alt || '').replace(/\s+/g, ' ').trim().slice(0, 20)}=${(e.getAttribute('onclick') || e.getAttribute('href') || '').slice(0, 110)}`).slice(0, 40) }));
+  console.log(`\n### ${tag} ${r.u}\n${r.t}\n  ${r.a.join('\n  ')}`);
+};
+try { await p.goto('https://sisetun.kcf.or.jp/web/', { waitUntil: 'networkidle', timeout: 40000 }); await dump('KCF top'); } catch (e) { console.log('KCF ERR', e.message.slice(0, 200)); }
+try {
+  await p.goto('https://shisetsu.city.arakawa.tokyo.jp/stagia/reserve/gin_menu', { waitUntil: 'networkidle', timeout: 40000 });
+  await dump('AR menu');
+  const imgs = await p.$$('input[type=image]');
+  if (imgs[1]) { await Promise.all([p.waitForNavigation({ timeout: 30000 }).catch(() => {}), imgs[1].click()]); await p.waitForTimeout(1500); await dump('AR next'); }
+} catch (e) { console.log('AR ERR', e.message.slice(0, 200)); }
+await b.close();
