@@ -35,7 +35,7 @@ const inRange = (area, q, cap = null) => area == null ? capOk(cap, q.min ?? 0) :
 export const searchHit = (G, date, area, cap = null) => (G.searches || []).some((q) => q.date === date && inRange(area, q, cap));
 
 // まだ取れていない日に見る部屋の広さ（拠点ごと）
-//   東京：土日祝 150㎡以上・平日 100〜200㎡　／　大阪：土日祝 100㎡以上・平日 50〜150㎡
+//   東京：土日祝 150㎡以上・平日 100〜200㎡　／　大阪：土日祝 90㎡以上・平日 70〜200㎡
 //   （平日練は人数が少ないので、広すぎる部屋は出さない）。広さ不明で定員だけある部屋は、定員で判断
 export const MIN_AREA = { 東京: { rest: 150, weekday: 100, weekdayMax: 200 }, 大阪: { rest: 90, weekday: 70, weekdayMax: 200 } };
 const areaRule = (base) => MIN_AREA[base] || MIN_AREA.東京;
