@@ -18,7 +18,7 @@ try {
   await p.waitForTimeout(800);
   const btns = await p.evaluate(() => [...document.querySelectorAll('button,a,input[type=button],input[type=submit]')].filter((e) => e.offsetParent).map((e) => (e.innerText || e.value || '').trim()).filter(Boolean));
   console.log('YK btns', btns.slice(0, 30).join(' / '));
-  await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }).catch(() => {}), p.locator('button', { hasText: /^\\s*次へ進む\\s*$/ }).last().click()]);
+  await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }).catch(() => {}), p.click('#test')]);
   await p.waitForTimeout(2000);
   console.log('YK days', p.url(), (await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 1500));
   console.log('YK days-C', (await p.evaluate(() => [...document.querySelectorAll('input,select,button')].filter((e) => e.offsetParent && e.type !== 'hidden').map((e) => `${e.tagName}#${e.id}[${e.name}=${(e.value || '').slice(0, 15)}] ${(e.innerText || '').trim().slice(0, 20)}`))).slice(0, 40).join('\n'));
