@@ -275,6 +275,35 @@
       "room": "^大ホール",
       "cal": "杉並公会堂",
       "note": "区外は利用月13か月前の16日8:45〜先着（利用日1か月前まで）。取消：6か月前の前日まで50%、以後100%"
+    },
+    {
+      "name": "江東区文化センター ホール",
+      "city": "江東区",
+      "platform": "rsvpath",
+      "top": "https://sisetun.kcf.or.jp/web/",
+      "entry": [
+        "doAction(document.formWTransInstSrchVacantAction, gRsvWTransInstSrchVacantAction)",
+        "doAction(document.formWTransInstSrchPpsdAction, gRsvWTransInstSrchPpsdAction)"
+      ],
+      "path": [
+        "^式典$",
+        "^すべて$",
+        "^江東区文化センター$"
+      ],
+      "room": "^ホール$",
+      "cal": "江東区文化センター",
+      "note": "511席。抽選は13か月前の20日〜12か月前の1日、先着は12か月前の3日13:00〜（利用30日前まで）"
+    },
+    {
+      "name": "サンパール荒川 大ホール",
+      "city": "荒川区",
+      "platform": "stagia",
+      "top": "https://shisetsu.city.arakawa.tokyo.jp/stagia/reserve/gin_menu",
+      "kind": "^文化施設",
+      "facility": "^サンパール荒川$",
+      "room": "大ホール",
+      "cal": "サンパール荒川",
+      "note": "975席。区外は利用月11か月前の最初の営業日から先着（利用5日前まで）"
     }
   ],
   "quietHours": {

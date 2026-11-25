@@ -555,7 +555,109 @@ async function readOec(hall, dates) {
   return out;
 }
 
-export const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku, olympic: readOlympic, pf489: readPf489, aserv: readAserv, fureai: readFureai, rikuu: readRikuu };
+
+// 江東区文化コミュニティ財団など（rsvW系・館の月表→日表で部屋ごとの行を読む）
+async function readRsvPath(hall, dates) {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const p = await browser.newPage({ locale: 'ja-JP' });
+    p.on('dialog', (d) => d.accept().catch(() => {}));
+    const norm = (x) => x.replace(/\(?\(_dom == 3\) \? document\.layers\['disp'\]\.document\.(\w+) : document\.\w+ ?\)?/g, 'document.$1');
+    const act = async (js) => {
+      try { await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 60000 }), p.evaluate((c) => setTimeout(() => (0, eval)(c), 0), js)]); }
+      catch (e) { throw new Error(`画面が進みません（${norm(js).slice(0, 80)}）`); }
+      await p.waitForTimeout(500);
+    };
+    const links = () => p.evaluate(() => [...document.querySelectorAll('a,input')].map((a) => ({ t: (a.textContent || a.value || a.alt || '').replace(/\s+/g, ' ').trim(), h: (a.getAttribute('href') || a.getAttribute('onclick') || '').replace(/^javaScript:/i, '') })).filter((x) => x.h));
+    const openMonth = async (ym) => {
+      await p.goto(hall.top, { waitUntil: 'networkidle' });
+      for (const js of hall.entry) await act(js);
+      for (const re of hall.path) {
+        const x = (await links()).find((a) => new RegExp(re).test(a.t));
+        if (!x) throw new Error(`「${re}」が画面にありません`);
+        await act(x.h);
+      }
+      const mv = (await links()).find((a) => /moveCalender/.test(a.h));
+      if (!mv) throw new Error('月の表が開けません');
+      await act(mv.h.replace(/20\d\d(0[1-9]|1[0-2])01/, `${ym.replace('-', '')}01`));
+    };
+    const out = [];
+    for (const d of dates) {
+      const [y, m, dd] = d.split('-').map(Number);
+      await openMonth(d.slice(0, 7));
+      const sel = (await links()).find((a) => new RegExp(`selectDay\\(document\\.\\w+, gRsvWInstSrchVacantAction, \\d+, ${y}, ${m}, ${dd}\\)`).test(norm(a.h)));
+      const slots = {};
+      let marks = [];
+      if (sel) {
+        await act(sel.h);
+        const rows = await p.evaluate(() => [...document.querySelectorAll('tr')].map((r) => ({ name: (r.cells[0]?.innerText || '').replace(/\s+/g, ''), alts: [...r.querySelectorAll('img[alt]')].map((i) => i.alt) })));
+        marks = rows.find((r) => new RegExp(hall.room).test(r.name) && r.alts.length >= 3)?.alts || [];
+        if (DEBUG) console.log(`  ${d}: ${marks.join(' / ') || '（部屋の行が見つかりません）'}`);
+      } else if (DEBUG) console.log(`  ${d}: 月の表で選べない日（全部予約あり・受付期間外など）`);
+      ['午前', '午後', '夜間'].forEach((k, i) => {
+        const t = marks[i] || '';
+        slots[k] = { free: /^空き$/.test(t), mark: /^空き$/.test(t) ? '○' : /予約あり/.test(t) ? '×' : sel ? '-' : '×' };
+      });
+      out.push({ date: d, slots });
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
+// 荒川区 施設予約システム（stagia）
+async function readStagia(hall, dates) {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const p = await browser.newPage({ locale: 'ja-JP' });
+    p.on('dialog', (d) => d.accept().catch(() => {}));
+    const nav = async (fn) => { await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 40000 }).catch(() => {}), fn()]); await p.waitForTimeout(600); };
+    await p.goto(hall.top, { waitUntil: 'networkidle' });
+    await nav(async () => (await p.$$('input[type=image]'))[1].click()); // 多機能操作
+    await nav(() => p.click('text=空き状況の確認'));
+    const pick = async (sel, label, fn) => {
+      const v = await p.evaluate(([s, l]) => [...document.querySelector(s).options].find((o) => new RegExp(l).test(o.text.trim()))?.value, [sel, label]);
+      if (v == null) throw new Error(`「${label}」が選べません`);
+      await p.selectOption(sel, v);
+      await nav(() => p.evaluate(fn));
+    };
+    await pick('select[name=g_bunruicd_1_show]', hall.kind, 'submitBunrui1()');
+    await pick('select[name=g_bunruicd_2_show]', hall.facility, 'submitBunrui2()');
+    if (await p.$('select[name=riyosmk]')) await pick('select[name=riyosmk]', hall.purpose || '.', 'changed()');
+    await pick('select[name=g_basyocd]', hall.facility, 'btnOK_3()');
+    const out = [];
+    for (const d of dates) {
+      const [y, m, dd] = d.split('-');
+      const ok = await p.evaluate(([y, m, dd]) => {
+        const set = (id, v, fn) => { const s = document.getElementById(id); if (![...s.options].some((o) => o.value === v)) return false; s.value = v; if (fn) window[fn](); return true; };
+        return set('YYYY', y, 'changeYear') && set('MM', String(Number(m)), 'changeDay') && set('DD', String(Number(dd)));
+      }, [y, m, dd]).catch(() => false);
+      const slots = {};
+      let cells = [];
+      if (ok) {
+        await nav(() => p.click('#btnOK'));
+        const rows = await p.evaluate(() => [...document.querySelectorAll('table tr')].map((r) => [...r.cells].map((c) => (c.innerText.trim() || [...c.querySelectorAll('img')].map((i) => i.alt).join('/')).replace(/\s+/g, ''))));
+        const head = (await p.evaluate(() => document.body.innerText)).match(/令和(\d+)年(\d+)月(\d+)日/);
+        const same = head && 2018 + Number(head[1]) === Number(y) && Number(head[2]) === Number(m) && Number(head[3]) === Number(dd);
+        cells = (same && rows.find((r) => new RegExp(hall.room).test(r[0]))?.slice(1)) || [];
+        if (DEBUG) console.log(`  ${d}: ${cells.join(' / ') || '（表示できず）'}`);
+      } else if (DEBUG) console.log(`  ${d}: まだ表示できない日`);
+      ['午前', '午後', '夜間'].forEach((k, i) => {
+        const t = (cells[i] || '').normalize('NFKC');
+        slots[k] = { free: /^[OＯ○〇]$/.test(t), mark: /^[OＯ○〇]$/.test(t) ? '○' : /^[XＸ×]$/.test(t) ? '×' : '-' };
+      });
+      out.push({ date: d, slots });
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
+export const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku, olympic: readOlympic, pf489: readPf489, aserv: readAserv, fureai: readFureai, rikuu: readRikuu, rsvpath: readRsvPath, stagia: readStagia };
 
 // その日に取れる組み合わせ（例: ["午前＋午後", "午後"]）
 export function okCombos(date, slots, combos) {
