@@ -626,37 +626,42 @@ async function readStagia(hall, dates) {
     const p = await browser.newPage({ locale: 'ja-JP' });
     p.on('dialog', (d) => d.accept().catch(() => {}));
     const nav = async (fn) => { await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 40000 }).catch(() => {}), fn()]); await p.waitForTimeout(600); };
-    await p.goto(hall.top, { waitUntil: 'networkidle' });
-    await nav(async () => (await p.$$('input[type=image]'))[1].click()); // 多機能操作
-    await nav(() => p.click('text=空き状況の確認'));
     const pick = async (sel, label, fn) => {
       const v = await p.evaluate(([s, l]) => [...document.querySelector(s).options].find((o) => new RegExp(l).test(o.text.trim()))?.value, [sel, label]);
       if (v == null) throw new Error(`「${label}」が選べません`);
       await p.selectOption(sel, v);
       await nav(() => p.evaluate(fn));
     };
-    await pick('select[name=g_bunruicd_1_show]', hall.kind, 'submitBunrui1()');
-    await pick('select[name=g_bunruicd_2_show]', hall.facility, 'submitBunrui2()');
-    if (await p.$('select[name=riyosmk]')) await pick('select[name=riyosmk]', hall.purpose || '.', 'changed()');
-    await pick('select[name=g_basyocd]', hall.facility, 'btnOK_3()');
-    if (await p.$('select[name=g_heyacd]')) {
-      const ops = await p.evaluate(() => [...document.heyaform.g_heyacd.options].map((o) => o.value));
-      await p.selectOption('select[name=g_heyacd]', ops);
-      await nav(() => p.evaluate('heyaOK()'));
-    }
+    const noMonth = new Set();
+    const openSearch = async () => {
+      await p.goto(hall.top, { waitUntil: 'networkidle' });
+      await nav(async () => (await p.$$('input[type=image]'))[1].click()); // 多機能操作
+      await nav(() => p.click('text=空き状況の確認'));
+      await pick('select[name=g_bunruicd_1_show]', hall.kind, 'submitBunrui1()');
+      await pick('select[name=g_bunruicd_2_show]', hall.facility, 'submitBunrui2()');
+      if (await p.$('select[name=riyosmk]')) await pick('select[name=riyosmk]', hall.purpose || '.', 'changed()');
+      await pick('select[name=g_basyocd]', hall.facility, 'btnOK_3()');
+      if (await p.$('select[name=g_heyacd]')) {
+        const ops = await p.evaluate(() => [...document.heyaform.g_heyacd.options].map((o) => o.value));
+        await p.selectOption('select[name=g_heyacd]', ops);
+        await nav(() => p.evaluate('heyaOK()'));
+      }
+    };
     const out = [];
     for (const d of dates) {
       const [y, m, dd] = d.split('-');
-      let ok = true;
-      for (const [id, v] of [['#YYYY', y], ['#MM', m], ['#DD', dd]]) {
+      let ok = !noMonth.has(d.slice(0, 7));
+      if (ok) await openSearch(); // 結果画面からは検索し直せないので、日ごとに最初から
+      for (const [id, v] of ok ? [['#YYYY', y], ['#MM', m], ['#DD', dd]] : []) {
         const val = await p.evaluate(([id, v]) => [...(document.querySelector(id)?.options || [])].map((o) => o.value).find((o) => Number(o) === Number(v)), [id, v]);
-        if (val == null) { ok = false; break; }
+        if (!ok) break;
+        if (val == null) { ok = false; if (id !== '#DD') noMonth.add(d.slice(0, 7)); break; }
         await p.selectOption(id, val);
       }
       const slots = {};
       let cells = [];
       if (ok) {
-        await nav(() => p.click('form[name=formDate] input[type=image], #btnOK'));
+        await nav(() => p.click('#btnOK'));
         const rows = await p.evaluate(() => [...document.querySelectorAll('table tr')].map((r) => [...r.cells].map((c) => (c.innerText.trim() || [...c.querySelectorAll('img')].map((i) => i.alt).join('/')).replace(/\s+/g, ''))));
         const head = (await p.evaluate(() => document.body.innerText)).match(/令和(\d+)年(\d+)月(\d+)日/);
         const same = head && 2018 + Number(head[1]) === Number(y) && Number(head[2]) === Number(m) && Number(head[3]) === Number(dd);
