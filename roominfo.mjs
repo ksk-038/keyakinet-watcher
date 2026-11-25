@@ -130,10 +130,10 @@ export async function roomStatusFor(ward) {
 }
 
 /** シートで「使える」なのに、今回の空きに一度も出てこなかった部屋（名前のずれを見つけるため） */
-export async function unseenFor(ward, places) {
+export async function unseenFor(ward, places, minArea = 0) {
   const list = await load(ward);
   if (!list) return [];
   const find = finder(list);
   const seen = new Set(places.flatMap((p) => find(p)));
-  return list.filter((r) => !r.ng && !seen.has(r)).map((r) => `${r.fac} ${r.room}${r.area ? `（${r.area}㎡）` : ''}`);
+  return list.filter((r) => !r.ng && !seen.has(r) && (r.area == null || r.area >= minArea)).map((r) => `${r.fac} ${r.room}${r.area ? `（${r.area}㎡）` : ''}`);
 }
