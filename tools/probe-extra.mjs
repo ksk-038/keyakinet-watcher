@@ -40,20 +40,9 @@ try {
     }
     return false;
   }
-  await pick('施設を指定する');
-  await press(['次へ']);
-  await dump('施設の種類');
-  if (await pick('体育館') || await pick('屋内')) { await press(['次へ']); await dump('施設の一覧'); }
-  if (await pick('大浜体育館') || await pick('大浜')) { await press(['次へ']); await dump('部屋の一覧'); }
-  // 部屋を全部選んで次へ
-  for (const f of page.frames()) {
-    const boxes = f.locator('input[type=checkbox]');
-    const n = await boxes.count().catch(() => 0);
-    for (let k = 0; k < Math.min(n, 3); k++) await boxes.nth(k).check({ force: true }).catch(() => {});
-  }
-  await press(['次へ']);
-  await dump('空き表');
-  await press(['次へ', '翌週', '次の週']);
-  await dump('空き表2');
+  const html = await page.content();
+  const k = html.indexOf('施設を指定する');
+  console.log('HTML周り:\n' + html.slice(Math.max(0, k - 2500), k + 1500));
+  console.log('フォーム:', await page.evaluate(() => [...document.forms].map((f) => f.name + ' ' + f.action + ' [' + [...f.elements].map((e) => e.name + '=' + e.value).join(', ') + ']').join('\n')));
 } catch (e) { console.log('失敗', e.message); }
 await b.close();
