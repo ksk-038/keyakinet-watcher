@@ -1,5 +1,8 @@
-const r = await fetch('https://www.city.sumida.lg.jp/sisetu_info/sisetuyoyaku.html', { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36', 'Accept-Language': 'ja' } });
-console.log('SUMIDA', r.status, (await r.text()).slice(0, 400));
-for (const u of ['https://www.shisetsuyoyaku.city.sumida.lg.jp/user/Home', 'https://sumida-shisetsu.jp/user/Home', 'https://www.yoyaku.city.sumida.lg.jp/user/Home']) {
-  try { const x = await fetch(u, { signal: AbortSignal.timeout(15000) }); console.log('TRY', x.status, x.url, (await x.text()).length); } catch (e) { console.log('TRY ERR', u, e.cause?.code || e.message); }
-}
+const RELAY = 'https://jskulzunyckseeokgzax.supabase.co/functions/v1/jp-relay';
+const r = await fetch(RELAY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, body: JSON.stringify({ secret: process.env.YANAGIBA_SECRET, base: 'https://k5.p-kashikan.jp/tachikawa-city/', enc: 'utf8', steps: [{ get: 'Top' }, { post: 'SrchSst', data: 'op=SrchSst&UseYM=202711&UseDay=27&UseDate=20271127&ShisetsuCode=003', keep: true }] }) });
+const j = await r.json();
+const h = j.pages?.at(-1) || JSON.stringify(j).slice(0, 500);
+const t = h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+console.log('LEN', h.length);
+for (const m of t.matchAll(/.{0,120}[●×○△－].{0,120}/g)) console.log('CTX', m[0]);
+const i = h.indexOf('大ホール'); console.log('CELL', h.slice(i - 200, i + 1800).replace(/\s+/g, ' '));
