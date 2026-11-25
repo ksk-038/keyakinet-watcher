@@ -40,9 +40,34 @@ try {
     }
     return false;
   }
-  const html = await page.content();
-  const k = html.indexOf('施設を指定する');
-  console.log('HTML周り:\n' + html.slice(Math.max(0, k - 2500), k + 1500));
-  console.log('フォーム:', await page.evaluate(() => [...document.forms].map((f) => f.name + ' ' + f.action + ' [' + [...f.elements].map((e) => e.name + '=' + e.value).join(', ') + ']').join('\n')));
+  // O-PAS は表の行を押して進む
+  async function rows(label) {
+    const r = await page.evaluate(() => [...document.querySelectorAll('#mmaincolumn tr, #mmaincolumn li, #mmaincolumn label')].map((t) => t.innerText.replace(/\s+/g, ' ').trim() + ((t.getAttribute('onclick') || '') ? '  ◀押せる' : '')).filter((x) => x).slice(0, 80));
+    const inp = await page.evaluate(() => [...document.querySelectorAll('#mmaincolumn input:not([type=hidden]), #mmaincolumn select')].map((i) => `${i.type}:${i.name}=${i.value}`).slice(0, 40));
+    const btn = await page.evaluate(() => [...document.querySelectorAll('img[alt]')].map((i) => i.alt).filter((a) => /次|前|週|月|検索|表示|確定|選択/.test(a)));
+    console.log(`\n##### ${label}\n${r.join('\n')}\n[入力] ${inp.join(' , ')}\n[ボタン] ${btn.join(' , ')}`);
+  }
+  async function row(text) {
+    const l = page.locator(`#mmaincolumn tr:has-text("${text}"), #mmaincolumn li:has-text("${text}")`).first();
+    if (!(await l.count())) { console.log(`「${text}」なし`); return false; }
+    console.log(`→「${text}」`); await l.click().catch((e) => console.log(e.message.slice(0, 80)));
+    await page.waitForLoadState('domcontentloaded').catch(() => {}); await page.waitForTimeout(2500); return true;
+  }
+  async function img(alt) {
+    const l = page.locator(`img[alt*="${alt}"]`).first();
+    if (!(await l.count())) { console.log(`ボタン「${alt}」なし`); return false; }
+    console.log(`→ボタン「${alt}」`); await l.click().catch((e) => console.log(e.message.slice(0, 80)));
+    await page.waitForTimeout(3000); return true;
+  }
+  await row('施設を指定する'); await rows('A');
+  if (await row('体育館')) await rows('B');
+  if (await row('大浜')) await rows('C');
+  // チェックの付く画面なら全部付けて次へ
+  const cb = page.locator('#mmaincolumn input[type=checkbox]');
+  for (let k = 0; k < Math.min(await cb.count(), 10); k++) await cb.nth(k).check({ force: true }).catch(() => {});
+  if (!(await img('次へ'))) await row('競技場') || await row('アリーナ');
+  await rows('D');
+  await img('次へ'); await rows('E');
+  console.log('本文:', cut(await page.evaluate(() => document.querySelector('#mmaincolumn')?.innerText || ''), 3000));
 } catch (e) { console.log('失敗', e.message); }
 await b.close();
