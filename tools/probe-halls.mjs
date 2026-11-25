@@ -1,24 +1,22 @@
 import { chromium } from 'playwright';
 const b = await chromium.launch();
-const opts = (p, n) => p.evaluate((n) => [...document.querySelectorAll(`select[name=${n}] option`)].map((o) => `${o.value}:${o.text.trim()}`), n);
+const txt = async (p) => (await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ');
 try {
   const p = await b.newPage({ locale: 'ja-JP' });
   p.on('dialog', (d) => { console.log('KM dialog', d.message()); d.accept(); });
   await p.goto('https://reserve.aserv.jp/k-mil/jyoken.do', { waitUntil: 'networkidle' });
-  for (const kan of ['かめありリリオホール', 'かつしかシンフォニーヒルズ']) {
-    await p.selectOption('select[name=kanCode]', { label: kan }); await p.waitForTimeout(1500);
-    console.log('KM skubun', kan, (await opts(p, 'skubunCode')).join(' '));
-  }
   await p.selectOption('select[name=kanCode]', { label: 'かめありリリオホール' }); await p.waitForTimeout(1500);
-  const sk = (await opts(p, 'skubunCode')).find((x) => /ホール/.test(x))?.split(':')[0];
-  if (sk) { await p.selectOption('select[name=skubunCode]', sk); await p.waitForTimeout(1500); }
-  console.log('KM shisetsu', (await opts(p, 'shisetsuCode')).join(' '));
-  console.log('KM date html', await p.evaluate(() => document.querySelector('#selectDate')?.outerHTML));
-  console.log('KM buttons', (await p.evaluate(() => [...document.querySelectorAll('a,button,input[type=button],input[type=submit],img')].filter((e) => e.offsetParent).map((e) => `${e.tagName} ${(e.innerText || e.value || e.alt || '').trim().slice(0, 20)} | ${(e.getAttribute('onclick') || e.getAttribute('href') || '').slice(0, 80)}`))).join('\n'));
+  await p.selectOption('select[name=skubunCode]', '4'); await p.waitForTimeout(1500);
+  await p.selectOption('select[name=shisetsuCode]', '16'); await p.waitForTimeout(800);
+  await Promise.all([p.waitForLoadState('networkidle'), p.evaluate(() => sendData('20271127'))]); await p.waitForTimeout(2000);
+  console.log('KM res', p.url(), (await txt(p)).slice(0, 2500));
+  console.log('KM tbl', (await p.evaluate(() => [...document.querySelectorAll('table')].map((t) => t.innerText.replace(/\s+/g, ' ').slice(0, 600)).filter((s) => /リリオ|午前|午後|夜間|○|×/.test(s)).slice(0, 4).join(' ||| '))));
 } catch (e) { console.log('KM ERR', e.message.slice(0, 200)); }
 try {
   const p = await b.newPage({ locale: 'ja-JP' });
   await p.goto('https://www.fureai-net.city.kawasaki.jp/user/view/user/homeIndex.html', { waitUntil: 'networkidle' });
-  console.log('KW btns', (await p.evaluate(() => [...document.querySelectorAll('a#goBtn, a#login, a#easyurl, a#multiurl')].map((a) => `${a.id} ${(a.innerText || [...a.querySelectorAll('img')].map((i) => i.alt).join('/')).trim().slice(0, 30)} | ${(a.getAttribute('onclick') || a.getAttribute('href') || '').slice(0, 120)}`))).join('\n'));
+  await Promise.all([p.waitForLoadState('networkidle'), p.evaluate(() => doMenuBtn('FACILITY'))]); await p.waitForTimeout(1500);
+  console.log('KW fac', p.url(), (await txt(p)).slice(0, 1500));
+  console.log('KW fac-C', (await p.evaluate(() => [...document.querySelectorAll('a,input,select,button')].filter((e) => e.offsetParent && e.type !== 'hidden').map((e) => `${e.tagName}#${e.id}[${e.name || ''}] ${(e.innerText || e.value || '').trim().slice(0, 25)} | ${(e.getAttribute('onclick') || e.getAttribute('href') || '').slice(0, 90)} ${e.tagName === 'SELECT' ? [...e.options].map((o) => o.text.trim()).slice(0, 20).join('/') : ''}`))).slice(0, 50).join('\n'));
 } catch (e) { console.log('KW ERR', e.message.slice(0, 200)); }
 await b.close();
