@@ -1,33 +1,18 @@
-import { chromium } from 'playwright';
-const B = 'https://www.shisetsu.city.yokohama.lg.jp/user/';
-const b = await chromium.launch();
-const ctx = await b.newContext({ locale: 'ja-JP' });
-const p = await ctx.newPage();
-const logs = [];
-p.on('request', (r) => { if (r.method() === 'POST') logs.push(`${r.url().replace(B, '')} :: ${(r.postData() || '').slice(0, 1500)}`); });
-p.on('response', async (r) => { if (/SelectDays\//.test(r.url())) { try { logs.push(`RESP ${r.url().replace(B, '')} ${r.status()} ${(await r.text()).slice(0, 300)}`); } catch {} } });
-try {
-  await p.goto(B + 'Home', { waitUntil: 'networkidle' });
-  const tok = await p.evaluate(() => document.querySelector('input[name=__RequestVerificationToken]')?.value);
-  const f = { 'HomeModel.SelectedPlaceClassCategory': '1', 'HomeModel.CapacityFromByPlaceClass': '', 'HomeModel.CapacityToByPlaceClass': '', 'HomeModel.SelectedPurposeCategory': '2', 'HomeModel.SelectedPurpose': '107', 'HomeModel.CapacityFromByPurpose': '', 'HomeModel.CapacityToByPurpose': '', SelectedLanguageCode: '0', __RequestVerificationToken: tok };
-  const r = await ctx.request.post(B + 'Home/SearchByPurpose', { form: f, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-  console.log('YK sbp', r.status(), (await r.text()).slice(0, 200));
-  await p.goto(B + 'AvailabilityCheckApplySelectFacility', { waitUntil: 'networkidle' });
-  const lab = await p.evaluate(() => { const l = [...document.querySelectorAll('label')].find((x) => /関内ホール/.test(x.textContent)); const id = l?.getAttribute('for'); const i = id && document.getElementById(id); if (i && !i.checked) i.click(); return `${l?.textContent.trim()} for=${id} checked=${i?.checked}`; });
-  console.log('YK fac', lab);
-  await p.waitForTimeout(800);
-  const btns = await p.evaluate(() => [...document.querySelectorAll('button,a,input[type=button],input[type=submit]')].filter((e) => e.offsetParent).map((e) => (e.innerText || e.value || '').trim()).filter(Boolean));
-  console.log('YK btns', btns.slice(0, 30).join(' / '));
-  await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }).catch(() => {}), p.click('#test')]);
-  await p.waitForTimeout(2000);
-  console.log('YK days', p.url(), (await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 1500));
-  console.log('YK days-C', (await p.evaluate(() => [...document.querySelectorAll('input,select,button')].filter((e) => e.offsetParent && e.type !== 'hidden').map((e) => `${e.tagName}#${e.id}[${e.name}=${(e.value || '').slice(0, 15)}] ${(e.innerText || '').trim().slice(0, 20)}`))).slice(0, 40).join('\n'));
-  logs.length = 0;
-  const nb = p.locator('button', { hasText: /次|翌|>/ });
-  console.log('YK nextbtns', await nb.count());
-  await p.locator('button', { hasText: /2週|次の|翌/ }).first().click({ timeout: 5000 }).catch((e) => console.log('YK no next', e.message.slice(0, 80)));
-  await p.waitForTimeout(3000);
-  console.log('YK after', (await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 800));
-} catch (e) { console.log('YK ERR', e.message.slice(0, 200)); }
-console.log('YK logs\n' + logs.join('\n'));
-await b.close();
+const H = await import('../bunkyo/http.mjs');
+const site = new H.Site('https://www.shisetsu.city.yokohama.lg.jp/user/');
+await site.req('Home');
+await site.req('Home/SearchByPurpose', site.form([['HomeModel.SelectedPlaceClassCategory', '1'], ['HomeModel.CapacityFromByPlaceClass', ''], ['HomeModel.CapacityToByPlaceClass', ''], ['HomeModel.SelectedPurposeCategory', '2'], ['HomeModel.SelectedPurpose', '107'], ['HomeModel.CapacityFromByPurpose', ''], ['HomeModel.CapacityToByPurpose', ''], ['SelectedLanguageCode', '0']]));
+const html = await site.req('AvailabilityCheckApplySelectFacility');
+const hidden = [...html.matchAll(/<input type="hidden"[^>]*?name="(SelectFacilities\.Facilities\[(\d+)\]\.SelectedFacility\.(?:Value|Text))"[^>]*?value="([^"]*)"/g)].map((m) => [m[1], m[3], m[2]]);
+const v = hidden.find((h) => /Text$/.test(h[0]) && /関内ホール/.test(h[1].replace(/&#x([0-9A-F]+);/gi, (_, x) => String.fromCodePoint(parseInt(x, 16)))));
+const val = hidden.find((h) => h[2] === v[2] && /Value$/.test(h[0]))[1];
+await site.req('AvailabilityCheckApplySelectFacility/Next', site.form([...hidden.map(([k, x]) => [k, x]), [`SelectFacilities.Facilities[${v[2]}].IsChecked`, 'true'], ['SelectFacilities.Selected[0]', val]]));
+await site.req('AvailabilityCheckApplySelectDays');
+const terms = []; ['1日', '1週間', '2週間', '1ヶ月'].forEach((t, i) => terms.push([`SearchCondition.DisplayTermList[${i}].Value`, i + 1], [`SearchCondition.DisplayTermList[${i}].Text`, t]));
+for (const d of ['2026-12-05', '2027-11-27']) {
+  const t = await site.req('AvailabilityCheckApplySelectDays/ChangePeriod', site.form([['SearchCondition.StartDate', d], ['SearchCondition.DisplayTerm', '2'], ['SearchCondition.DisplayCalendar', '0'], ['SearchCondition.TimeZone', '0'], ...terms]));
+  const j = JSON.parse(t);
+  const hz = j?.[0]?.Horizontal?.[0];
+  console.log('YKJ', d, Object.keys(hz || {}).join(','));
+  console.log('YKJ2', JSON.stringify(hz).replace(/"FacilityNewsList":\[[^\]]*\],/, '').slice(0, 2500));
+}
