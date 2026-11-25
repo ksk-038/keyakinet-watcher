@@ -37,7 +37,7 @@ export const searchHit = (G, date, area, cap = null) => (G.searches || []).some(
 // まだ取れていない日に見る部屋の広さ（拠点ごと）
 //   東京：土日祝 150㎡以上・平日 100〜200㎡　／　大阪：土日祝 100㎡以上・平日 50〜150㎡
 //   （平日練は人数が少ないので、広すぎる部屋は出さない）。広さ不明で定員だけある部屋は、定員で判断
-export const MIN_AREA = { 東京: { rest: 150, weekday: 100, weekdayMax: 200 }, 大阪: { rest: 100, weekday: 50, weekdayMax: 150 } };
+export const MIN_AREA = { 東京: { rest: 150, weekday: 100, weekdayMax: 200 }, 大阪: { rest: 90, weekday: 70, weekdayMax: 200 } };
 const areaRule = (base) => MIN_AREA[base] || MIN_AREA.東京;
 export const minAreaFor = (date, base = '東京') => areaRule(base)[isRestDay(date) ? 'rest' : 'weekday'];
 export const maxAreaFor = (date, base = '東京') => (isRestDay(date) ? null : areaRule(base).weekdayMax ?? null);
@@ -333,7 +333,7 @@ export async function sheetOnly(ward, slots) {
   if (none.size) console.log(`部屋の照合（${ward}）シートにない部屋: ${JSON.stringify([...none])}`);
   if (ng.size) console.log(`部屋の照合（${ward}）シートで利用不可の部屋: ${JSON.stringify([...ng])}`);
   // シートで使える部屋のうち、今回の空きに一度も出てこなかった広い部屋（予約で埋まっているだけのことも多い。名前のずれ・見張りの対象外を見つけるため）
-  const big = OSAKA_WARDS.includes(ward) ? 50 : 100;
+  const big = OSAKA_WARDS.includes(ward) ? 70 : 100;
   const unseen = (await unseenFor(ward, slots.map((s) => s.place), big));
   if (unseen.length) console.log(`部屋の照合（${ward}）シートで使える${big}㎡以上か広さ不明の部屋のうち、今回の空きに出てこなかった部屋: ${JSON.stringify(unseen)}`);
   if (process.env.SHEET_ONLY === '0') return;
