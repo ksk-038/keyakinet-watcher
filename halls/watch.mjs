@@ -327,6 +327,50 @@ async function readPf489(hall, dates) {
   return out;
 }
 
+// 葛飾区の文化施設（reserve.aserv.jp/k-mil）: 館・区分・施設を選んで日付を入れると、4日分の午前・午後・夜間が出る（色付き＝予約不可）
+async function readAserv(hall, dates) {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const p = await browser.newPage({ locale: 'ja-JP' });
+    p.on('dialog', (d) => { console.log(`  （サイトのメッセージ）${d.message()}`); d.accept().catch(() => {}); });
+    await p.goto(hall.top, { waitUntil: 'networkidle' });
+    const choose = async (name, re) => {
+      const v = await p.evaluate(([n, r]) => [...document.querySelectorAll(`select[name=${n}] option`)].find((o) => o.value !== '-1' && new RegExp(r).test(o.text.trim()))?.value, [name, re]);
+      if (!v) throw new Error(`「${re}」が選択肢にありません（${name}）`);
+      await p.selectOption(`select[name=${name}]`, v); await p.waitForTimeout(1200);
+    };
+    await choose('kanCode', hall.kan);
+    await choose('skubunCode', hall.kubun);
+    await choose('shisetsuCode', hall.room);
+    const out = [];
+    const got = new Map();
+    for (const d of dates) {
+      if (got.has(d)) continue;
+      const ymd = d.replace(/-/g, '');
+      await p.evaluate((v) => { document.getElementById('selectDate').value = v; }, d.replace(/-/g, '/'));
+      await Promise.all([p.waitForLoadState('networkidle'), p.evaluate((v) => window.sendData(v), ymd)]);
+      await p.waitForTimeout(800);
+      const rows = await p.evaluate(() => [...document.querySelectorAll('#calBox .calList')].map((r) => ({
+        date: (r.querySelector('.shisetsuName')?.textContent || '').match(/\d{4}\/\d{2}\/\d{2}/)?.[0],
+        cells: [...r.querySelectorAll('div[title]')].filter((c) => /^\d+:\d{8}:\d$/.test(c.title)).map((c) => ({ k: Number(c.title.split(':')[2]), ng: c.id === 'stFuka' })),
+      })));
+      for (const r of rows) if (r.date) got.set(r.date.replace(/\//g, '-'), r.cells);
+      if (!rows.length && DEBUG) console.log(`  ${d}: 表が出ません（${(await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 200)}）`);
+    }
+    for (const d of dates) {
+      const cells = got.get(d);
+      if (!cells) continue;
+      const slots = {};
+      for (const c of cells) slots[['午前', '午後', '夜間'][c.k]] = { free: !c.ng, mark: c.ng ? '×' : '○' };
+      out.push({ date: d, slots });
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
 // OEC の予約システム（えどねっと・文の京など。…/user/Home）: 利用目的で検索 → 施設を選ぶ → 日ごとの空き → 部屋の時間帯別空き
 async function readOec(hall, dates) {
   const H = await import('../bunkyo/http.mjs');
@@ -387,7 +431,7 @@ async function readOec(hall, dates) {
   return out;
 }
 
-export const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku, olympic: readOlympic, pf489: readPf489 };
+export const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku, olympic: readOlympic, pf489: readPf489, aserv: readAserv };
 
 // その日に取れる組み合わせ（例: ["午前＋午後", "午後"]）
 export function okCombos(date, slots, combos) {
