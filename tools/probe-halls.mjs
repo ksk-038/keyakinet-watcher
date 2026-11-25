@@ -1,0 +1,11 @@
+const RELAY = 'https://jskulzunyckseeokgzax.supabase.co/functions/v1/jp-relay';
+const call = async (steps) => (await (await fetch(RELAY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, body: JSON.stringify({ secret: process.env.YANAGIBA_SECRET, base: 'https://www.pf489.com/machida/mobile/', steps }) })).json());
+let j = await call([{ get: 'Wm_TopMenu.aspx' }, { get: 'Wm_ShisetsuKensaku.aspx?ActiveForm=Shisetsu' }]);
+let h = j.pages.at(-1).body;
+const inp = [...h.matchAll(/<input\b[^>]*>/gi)].map((m) => m[0]).filter((x) => !/hidden/.test(x));
+console.log('MS inputs', inp.join(' '));
+const tname = (inp.find((x) => /type="?text/i.test(x) || !/type=/i.test(x)) || '').match(/name="([^"]+)"/)?.[1];
+const bname = (inp.find((x) => /submit/i.test(x) && /検索/.test(x)) || '').match(/name="([^"]+)"/)?.[1];
+j = await call([{ get: 'Wm_TopMenu.aspx' }, { get: 'Wm_ShisetsuKensaku.aspx?ActiveForm=Shisetsu' }, { submit: [[tname, '市民ホール'], [bname, '[6]検索']] }]);
+h = j.pages.at(-1).body || JSON.stringify(j).slice(0, 300);
+console.log('MS res', tname, bname, j.pages?.map((p) => p.url).join(' | '), h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 800));

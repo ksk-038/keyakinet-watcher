@@ -265,7 +265,7 @@ async function readOlympic(hall, dates) {
   for (const d of dates) {
     const mine = cells.filter((c) => c.date === d && re.test(c.room || '') && ['午前', '午後', '夜間'].includes(c.kubun));
     if (!mine.length) { if (DEBUG) console.log(`  ${d}: ページにありません`); continue; }
-    out.push({ date: d, slots: Object.fromEntries(mine.map((c) => [c.kubun, { free: c.sym === '○', mark: c.sym || '-' }])) });
+    out.push({ date: d, slots: Object.fromEntries(mine.map((c) => [c.kubun, { free: c.sym === '○', mark: (c.sym || '-').replace('－', '-') }])) });
   }
   return out;
 }
