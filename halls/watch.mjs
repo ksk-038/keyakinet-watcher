@@ -563,7 +563,7 @@ async function readRsvPath(hall, dates) {
   try {
     const p = await browser.newPage({ locale: 'ja-JP' });
     p.on('dialog', (d) => d.accept().catch(() => {}));
-    const norm = (x) => x.replace(/\(?\(_dom == 3\) \? document\.layers\['disp'\]\.document\.(\w+) : document\.\w+ ?\)?/g, 'document.$1');
+    const norm = (x) => x.replace(/\(_dom == 3\) \? document\.layers\['disp'\]\.document\.(\w+) : document\.\w+/g, 'document.$1').replace(/\(\(document\.(\w+) ?\)/g, '(document.$1');
     const act = async (js) => {
       try { await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 60000 }), p.evaluate((c) => setTimeout(() => (0, eval)(c), 0), js)]); }
       catch (e) { throw new Error(`画面が進みません（${norm(js).slice(0, 80)}）`); }
@@ -586,7 +586,7 @@ async function readRsvPath(hall, dates) {
     for (const d of dates) {
       const [y, m, dd] = d.split('-').map(Number);
       await openMonth(d.slice(0, 7));
-      const sel = (await links()).find((a) => new RegExp(`selectDay\\(document\\.\\w+, gRsvWInstSrchVacantAction, \\d+, ${y}, ${m}, ${dd}\\)`).test(norm(a.h)));
+      const sel = (await links()).find((a) => new RegExp(`selectDay\\(document\\.\\w+ ?, gRsvWInstSrchVacantAction, \\d+, ${y}, ${m}, ${dd}\\)`).test(norm(a.h)));
       const slots = {};
       let marks = [];
       if (sel) {
@@ -631,10 +631,12 @@ async function readStagia(hall, dates) {
     const out = [];
     for (const d of dates) {
       const [y, m, dd] = d.split('-');
-      const ok = await p.evaluate(([y, m, dd]) => {
-        const set = (id, v, fn) => { const s = document.getElementById(id); if (![...s.options].some((o) => o.value === v)) return false; s.value = v; if (fn) window[fn](); return true; };
-        return set('YYYY', y, 'changeYear') && set('MM', String(Number(m)), 'changeDay') && set('DD', String(Number(dd)));
-      }, [y, m, dd]).catch(() => false);
+      let ok = true;
+      for (const [id, v] of [['#YYYY', y], ['#MM', m], ['#DD', dd]]) {
+        const val = await p.evaluate(([id, v]) => [...(document.querySelector(id)?.options || [])].map((o) => o.value).find((o) => Number(o) === Number(v)), [id, v]);
+        if (val == null) { ok = false; break; }
+        await p.selectOption(id, val);
+      }
       const slots = {};
       let cells = [];
       if (ok) {
@@ -643,7 +645,7 @@ async function readStagia(hall, dates) {
         const head = (await p.evaluate(() => document.body.innerText)).match(/令和(\d+)年(\d+)月(\d+)日/);
         const same = head && 2018 + Number(head[1]) === Number(y) && Number(head[2]) === Number(m) && Number(head[3]) === Number(dd);
         cells = (same && rows.find((r) => new RegExp(hall.room).test(r[0]))?.slice(1)) || [];
-        if (DEBUG) console.log(`  ${d}: ${cells.join(' / ') || '（表示できず）'}`);
+        if (DEBUG) console.log(`  ${d}: ${cells.join(' / ') || `（表示できず：${head?.[0]} ${rows.map((r) => r.join('|')).filter((r) => /ホール/.test(r)).join(' ／ ').slice(0, 200)}）`}`);
       } else if (DEBUG) console.log(`  ${d}: まだ表示できない日`);
       ['午前', '午後', '夜間'].forEach((k, i) => {
         const t = (cells[i] || '').normalize('NFKC');
