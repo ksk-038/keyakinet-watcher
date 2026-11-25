@@ -327,7 +327,7 @@ async function main() {
       const res = await READERS[hall.platform](hall, dates);
       for (const r of res) {
         const combos = okCombos(r.date, r.slots, config.combos);
-        table.push({ hall: `${hall.city} ${hall.name}`, date: r.date, slots: Object.fromEntries(Object.entries(r.slots).map(([k, v]) => [k, v.mark])), combos, url: hall.base || hall.top });
+        table.push({ hall: `${hall.city} ${hall.name}`, date: r.date, slots: Object.fromEntries(Object.entries(r.slots).map(([k, v]) => [k, v.mark])), combos, url: hall.base || hall.top, cal: hall.cal || hall.name.split(' ')[0] });
         console.log(`  ${L.label(r.date)} ${Object.entries(r.slots).map(([k, v]) => `${k}${v.mark}`).join(' ')}${combos.length ? ` → 取れる: ${combos.join('・')}` : ''}`);
         for (const c of combos) {
           const key = `${r.date}|${hall.name}|${c}`;
