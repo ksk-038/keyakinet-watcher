@@ -219,6 +219,16 @@
       "name": "麻生市民館 大ホール",
       "city": "川崎市",
       "bld": "1240"
+    },
+    {
+      "name": "小金井 宮地楽器ホール 大ホール",
+      "city": "小金井市",
+      "platform": "p-kashikan",
+      "base": "https://p-kashikan.jp/koganei/",
+      "facility": ".",
+      "room": "^大ホール",
+      "cal": "小金井 宮地楽器ホール",
+      "note": "市外の先着（窓口）"
     }
   ],
   "quietHours": {
