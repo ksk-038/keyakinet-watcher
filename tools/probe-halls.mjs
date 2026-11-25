@@ -1,8 +1,10 @@
 const RELAY = 'https://jskulzunyckseeokgzax.supabase.co/functions/v1/jp-relay';
-for (const v of ['2', '4', '7', '8', '11']) {
-  const steps = [{ get: 'gin_menu' }, { submit: [], form: 'gin_init' }, { submit: [], form: 'gin_z_dest_sel' }, { submit: [['riyosmk', v]], form: 'gin_z_amenity_sel', replace: true }];
-  const r = await fetch(RELAY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, body: JSON.stringify({ secret: process.env.YANAGIBA_SECRET, base: 'https://yoyaku.saf-ticket.jp/cultos/reserve/', enc: 'utf8', steps }) });
-  const j = await r.json();
-  const h = j.pages?.at(-1)?.body || '';
-  console.log('SAFP', v, [...h.matchAll(/onClicks\('\d+'\)"[^>]*title="([^"]+)"/g)].map((m) => m[1]).join('、'));
-}
+const call = async (steps) => (await (await fetch(RELAY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, body: JSON.stringify({ secret: process.env.YANAGIBA_SECRET, base: 'https://yoyaku.saf-ticket.jp/cultos/reserve/', enc: 'utf8', steps }) })).json());
+const base = [{ get: 'gin_menu' }, { submit: [], form: 'gin_init' }, { submit: [], form: 'gin_z_dest_sel' }, { submit: [['riyosmk', '4']], form: 'gin_z_amenity_sel', replace: true }];
+let j = await call(base);
+let h = j.pages.at(-1).body;
+const sel = Object.fromEntries([...h.matchAll(/<SELECT[^>]*name="(\w+)"[^>]*>\s*<OPTION value="([^"]*)"/gi)].map((m) => [m[1], m[2]]));
+console.log('SAFSEL', JSON.stringify(sel));
+j = await call([...base, { submit: Object.entries(sel), form: 'gin_z_room_sel' }]);
+h = j.pages.at(-1).body || JSON.stringify(j).slice(0, 300);
+console.log('SAFTXT', h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<!--[\s\S]*?-->/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').slice(0, 1500));
