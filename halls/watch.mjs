@@ -655,7 +655,10 @@ async function readStagia(hall, dates) {
       for (const [id, v] of ok ? [['#YYYY', y], ['#MM', m], ['#DD', dd]] : []) {
         const val = await p.evaluate(([id, v]) => [...(document.querySelector(id)?.options || [])].map((o) => o.value).find((o) => Number(o) === Number(v)), [id, v]);
         if (!ok) break;
-        if (val == null) { ok = false; if (id !== '#DD') noMonth.add(d.slice(0, 7)); break; }
+        if (val == null) {
+          if (DEBUG) console.log(`  ${d}: ${id} に ${v} がない（${await p.evaluate((i) => [...(document.querySelector(i)?.options || [])].map((o) => o.value).join(','), id)}）${(await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 150)}`);
+          ok = false; if (id !== '#DD') noMonth.add(d.slice(0, 7)); break;
+        }
         await p.selectOption(id, val);
       }
       const slots = {};
