@@ -183,6 +183,42 @@
       "room": ".",
       "cal": "かつしかシンフォニーヒルズ",
       "note": "予約は窓口・電話のみ（利用日の18か月前から。03-5670-2222）"
+    },
+    {
+      "platform": "fureai",
+      "top": "https://www.fureai-net.city.kawasaki.jp/web/",
+      "ppsd": "210",
+      "pps": "210090",
+      "room": "大ホール",
+      "cal": "川崎市",
+      "note": "空き状況のみ公開（予約は抽選参加カード・窓口）。2027/3/16 に新しいふれあいネットへ切り替え",
+      "name": "宮前市民館 大ホール",
+      "city": "川崎市",
+      "bld": "1210"
+    },
+    {
+      "platform": "fureai",
+      "top": "https://www.fureai-net.city.kawasaki.jp/web/",
+      "ppsd": "210",
+      "pps": "210090",
+      "room": "大ホール",
+      "cal": "川崎市",
+      "note": "空き状況のみ公開（予約は抽選参加カード・窓口）。2027/3/16 に新しいふれあいネットへ切り替え",
+      "name": "多摩市民館 大ホール",
+      "city": "川崎市",
+      "bld": "1230"
+    },
+    {
+      "platform": "fureai",
+      "top": "https://www.fureai-net.city.kawasaki.jp/web/",
+      "ppsd": "210",
+      "pps": "210090",
+      "room": "大ホール",
+      "cal": "川崎市",
+      "note": "空き状況のみ公開（予約は抽選参加カード・窓口）。2027/3/16 に新しいふれあいネットへ切り替え",
+      "name": "麻生市民館 大ホール",
+      "city": "川崎市",
+      "bld": "1240"
     }
   ],
   "quietHours": {
