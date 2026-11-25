@@ -8,12 +8,26 @@ const DEBUG = process.env.DEBUG === '1';
 let bytes = 0;
 
 export class Site {
-  constructor(base = BASE) { this.base = base; this.jar = new Map(); this.token = null; }
+  // relay: { url, secret } を渡すと、日本の中継（jp-relay の1回ずつモード）を通して開く（日本の外から開けないサイト用）
+  constructor(base = BASE, relay = null) { this.base = base; this.relay = relay; this.jar = new Map(); this.token = null; }
+  async _fetch(url, init) {
+    if (!this.relay) return fetch(url, init);
+    const headers = { ...init.headers };
+    let body = init.body;
+    if (body instanceof FormData) { body = new URLSearchParams([...body].map(([k, v]) => [k, String(v)])).toString(); headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'; }
+    const r = await fetch(this.relay.url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, signal: init.signal,
+      body: JSON.stringify({ secret: this.relay.secret, raw: { url: String(url), method: init.method, headers, body: body ?? null } }),
+    });
+    const j = await r.json().catch(async () => ({ error: `${r.status}` }));
+    if (j.error) throw new Error(`中継でエラー（${j.error}）`);
+    return { status: j.status, ok: j.status >= 200 && j.status < 300, url: String(url), headers: { get: (k) => (k.toLowerCase() === 'location' ? j.location : null), getSetCookie: () => j.setCookie }, text: async () => j.body };
+  }
   cookie() { return [...this.jar].map(([k, v]) => `${k}=${v}`).join('; '); }
   async req(path, form = null) {
     for (let i = 0; i < 3; i++) {
       try {
-        const r = await fetch(new URL(path, this.base), {
+        const r = await this._fetch(new URL(path, this.base), {
           method: form ? 'POST' : 'GET',
           headers: { Cookie: this.cookie(), 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'ja', ...(form ? { 'X-Requested-With': 'XMLHttpRequest' } : {}) },
           body: form || undefined,

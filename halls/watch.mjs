@@ -243,7 +243,7 @@ async function readKaruku(hall, dates) {
 // OEC の予約システム（えどねっと・文の京など。…/user/Home）: 利用目的で検索 → 施設を選ぶ → 日ごとの空き → 部屋の時間帯別空き
 async function readOec(hall, dates) {
   const H = await import('../bunkyo/http.mjs');
-  const site = new H.Site(hall.base);
+  const site = new H.Site(hall.base, hall.relay ? { url: RELAY, secret: SECRET } : null);
   const home = await site.req('Home');
   // 利用目的の番号（名前で指定したときは Home の一覧から探す）
   const purpose = { ...hall.purpose };
@@ -327,7 +327,7 @@ async function main() {
       const res = await READERS[hall.platform](hall, dates);
       for (const r of res) {
         const combos = okCombos(r.date, r.slots, config.combos);
-        table.push({ hall: `${hall.city} ${hall.name}`, date: r.date, slots: Object.fromEntries(Object.entries(r.slots).map(([k, v]) => [k, v.mark])), combos, url: hall.base || hall.top });
+        table.push({ hall: `${hall.city} ${hall.name}`, date: r.date, slots: Object.fromEntries(Object.entries(r.slots).map(([k, v]) => [k, v.mark])), combos, url: hall.base || hall.top, cal: hall.cal || hall.name.split(' ')[0] });
         console.log(`  ${L.label(r.date)} ${Object.entries(r.slots).map(([k, v]) => `${k}${v.mark}`).join(' ')}${combos.length ? ` → 取れる: ${combos.join('・')}` : ''}`);
         for (const c of combos) {
           const key = `${r.date}|${hall.name}|${c}`;
