@@ -37,6 +37,10 @@ function roomSame(site, sheet) {
 /** シートの行の中から「施設 部屋」に当たる行を探す（いくつも当たることがある） */
 export function finder(list) {
   return (place) => {
+    // まったく同じ名前 → かっこを外すと同じ名前、の順に探す（「体育室（半面）」を「体育室」の全面と取り違えないように）
+    const n = norm(place);
+    const same = list.filter((r) => norm(r.fac + r.room) === n);
+    if (same.length) return same;
     const p = forms(place);
     const hit = list.filter((r) => forms(r.fac + r.room).some((x) => p.includes(x)));
     if (hit.length) return hit;
