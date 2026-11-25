@@ -7,14 +7,14 @@ import fs from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import * as L from './lib.mjs';
-import { roomInfoFor } from './roominfo.mjs';
+import { roomInfoFor, roomStatusFor, unseenFor } from './roominfo.mjs';
 
 const URL = 'https://jskulzunyckseeokgzax.supabase.co';
 // アプリにも入っている公開用の鍵（これだけでは何も読み書きできない。合言葉とセットで使う）
 const KEY = 'sb_publishable_ntwO028pVspqA_RiGkYhXg_8Y4d0D9U';
 const SECRET = process.env.YANAGIBA_SECRET;
 
-async function rpc(fn, body) {
+export async function rpc(fn, body) {
   const r = await fetch(`${URL}/rest/v1/rpc/${fn}`, {
     method: 'POST',
     headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
@@ -322,16 +322,36 @@ export function lineOk(s, G, ward, all = null) {
 // アプリに送る（その区の分をまるごと。なくなった空きはアプリ側で消える）
 //   stateDir があれば、前回送った中身を覚えておき、変わっていないときは送らない（Supabase の通信量を節約）
 //   ただし6時間に1回は、変わっていなくても送る（「調べた時刻」を新しくするため）
+// シートで「使える」にしている部屋だけを残す（slots をその場で減らす。このあとの LINE の判定も同じ配列を使うため）
+//   シートにない部屋も外す（ログに出すので、シートに足す）。SHEET_ONLY が '0' のときは外さず、ログに出すだけ
+const OSAKA_WARDS = ['大阪市', '寝屋川市', '守口市', '門真市'];
+export async function sheetOnly(ward, slots) {
+  if (!slots?.length) return;
+  const st = await roomStatusFor(ward);
+  const none = new Set(); const ng = new Set();
+  for (const s of slots) { const v = st(s.place); if (v === null) none.add(s.place); else if (v === 'ng') ng.add(s.place); }
+  if (none.size) console.log(`部屋の照合（${ward}）シートにない部屋: ${JSON.stringify([...none])}`);
+  if (ng.size) console.log(`部屋の照合（${ward}）シートで利用不可の部屋: ${JSON.stringify([...ng])}`);
+  // シートで使える部屋のうち、今回の空きに一度も出てこなかった広い部屋（予約で埋まっているだけのことも多い。名前のずれ・見張りの対象外を見つけるため）
+  const big = OSAKA_WARDS.includes(ward) ? 50 : 100;
+  const unseen = (await unseenFor(ward, slots.map((s) => s.place), big));
+  if (unseen.length) console.log(`部屋の照合（${ward}）シートで使える${big}㎡以上か広さ不明の部屋のうち、今回の空きに出てこなかった部屋: ${JSON.stringify(unseen)}`);
+  if (process.env.SHEET_ONLY === '0') return;
+  const keep = slots.filter((s) => st(s.place) === 'ok');
+  slots.splice(0, slots.length, ...keep);
+}
+
 export async function report(G, { site, ward, url, stateDir = null }, slots) {
+  await sheetOnly(ward, slots);
   if (!SECRET || G.gaps == null) return;
   const memo = stateDir ? `${stateDir}/yanagiba-${site}.json` : null;
   let last = {};
   if (memo) { try { last = JSON.parse(await fs.readFile(memo, 'utf8')); } catch { /* はじめて */ } }
   const sent = {};
   // 部屋の広さ・鏡・利用費（スプレッドシートから。見つからない部屋はつけない）
-  //   予約サイトで広さがわからない部屋は、シートの広さを使う（広さの条件にもかける）
+  //   広さはシートの広さを優先する（シートにないときは予約サイトの広さ）。広さの条件にもかける
   const info = slots.length ? await roomInfoFor(ward) : () => null;
-  const sized = slots.map((s) => (s.area == null && info(s.place)?.area ? { ...s, area: info(s.place).area } : s));
+  const sized = slots.map((s) => (info(s.place)?.area ? { ...s, area: info(s.place).area } : s));
   const rows = match(sized, G, ward);
   const extra = (place) => { const x = info(place); return x ? { mirror: x.mirror, mirror_note: x.mirror_note, fee: x.fee } : {}; };
   for (const team of G.teams) {

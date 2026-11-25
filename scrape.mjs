@@ -131,7 +131,15 @@ export async function openFacilityGrid(page, config) {
     console.log(`施設名を含む要素: ${await page.evaluate((n) => [...document.querySelectorAll('*')].filter((e) => e.children.length === 0 && (e.textContent || e.value || '').includes(n)).map((e) => e.outerHTML.slice(0, 200)).slice(0, 5).join(' || '), config.facilities[0])}`);
     throw new Error('施設一覧で対象施設が1つも見つかりません');
   }
-  if (missing.length) console.warn(`⚠ 一覧に見つからなかった施設: ${missing.join('、')}`);
+  if (missing.length) {
+    console.warn(`⚠ 一覧に見つからなかった施設: ${missing.join('、')}`);
+    // 名前が少し違うだけかもしれないので、頭の3文字が同じ施設名を出す（config の名前を直すため）
+    const near = await page.evaluate((names) => [...document.querySelectorAll('*')]
+      .filter((e) => e.children.length === 0)
+      .map((e) => (e.textContent || '').trim())
+      .filter((t) => t.length < 40 && names.some((n) => t.normalize('NFKC').includes(n.normalize('NFKC').slice(0, 3)))), missing);
+    console.warn(`  似た名前の施設: ${[...new Set(near)].join('、') || 'なし'}`);
+  }
   await snap(page, 'facility-selected');
   await clickText(page, '次へ進む', { last: true });
   await assertNoError(page);
