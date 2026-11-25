@@ -398,9 +398,10 @@ async function readFureai(hall, dates) {
       await act(`sendPpsdCd(document.form1, gRsvWTransInstSrchPpsAction, '${hall.ppsd}','2')`);
       await act(`doTransInstSrchBuildAction(document.form1, gRsvWTransInstSrchBuildAction, '${hall.ppsd}' , '${hall.pps}')`);
       await act(`sendBldCd(document.form1, gRsvWTransInstSrchInstAction, '${hall.bld}')`);
-      if (/施設選択/.test(await p.evaluate(() => document.body.innerText))) {
-        const c = await p.evaluate((r) => [...document.querySelectorAll('a')].find((a) => new RegExp(r).test(a.textContent))?.getAttribute('href')?.replace(/^javascript:/, ''), hall.room);
-        if (!c) throw new Error(`施設「${hall.room}」が一覧にありません`);
+      if (/施設を?選択/.test(await p.evaluate(() => document.body.innerText))) {
+        const links = await p.evaluate(() => [...document.querySelectorAll('a,input[type=button],input[type=checkbox]')].map((a) => ({ t: (a.textContent || a.value || a.title || a.id || '').replace(/\s+/g, ' ').trim(), h: (a.getAttribute('href') || a.getAttribute('onclick') || '').replace(/^javascript:/, '') })));
+        const c = links.find((a) => new RegExp(hall.room).test(a.t) && /send|doTrans|Inst/.test(a.h))?.h;
+        if (!c) throw new Error(`施設「${hall.room}」が一覧にありません（${links.filter((a) => a.h).slice(0, 30).map((a) => `${a.t}=${a.h.slice(0, 70)}`).join(' / ')}）`);
         await act(c);
       }
       await act(`moveCalender(document.form1, gRsvWInstSrchMonthVacantAction, ${ym.replace('-', '')}01)`);
