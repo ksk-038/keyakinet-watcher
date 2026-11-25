@@ -9,5 +9,5 @@ console.log('MP inputs', [...h.matchAll(/<(input|select|form)\b[^>]*>/gi)].map((
 console.log('MP txt', h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 600));
 j = await call([{ get: 'Wm_TopMenu.aspx' }, { get: 'Wm_ShisetsuKensaku.aspx?ActiveForm=Purpose' }, { submit: [['slPurpose1', '3'], ['cmdSelect2', '選択']] }]);
 h = j.pages?.at(-1)?.body || JSON.stringify(j).slice(0, 300);
-console.log('MP sel2', [...h.matchAll(/<select[\s\S]*?<\/select>/gi)].map((m) => m[0].replace(/\s+/g, ' ').slice(0, 1200)).join(' ||| '));
+{ const i = h.indexOf('演劇'); console.log('MP sel2', h.slice(Math.max(0, i - 1500), i + 200).replace(/\s+/g, ' ')); }
 console.log('MP p2', opts(h, 'slPurpose2'), j.pages?.map((p) => `${p.status} ${p.url}`).join(' | '), h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 500));
