@@ -63,7 +63,7 @@ function buildMessage(slots, title = `🎉 ${NAME}に空きが出ました`) {
     lines.push('', `📅 ${L.label(date)}`);
     for (const [room, times] of byDate.get(date)) lines.push(`・${room}`, `  ${L.joinTimes(times)}`);
   }
-  lines.push('', `予約: ${TOP}（予約には堺市の体育館で利用者登録が必要）`);
+  lines.push('', `予約: ${TOP}`);
   return lines.join('\n');
 }
 
