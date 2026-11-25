@@ -1,13 +1,14 @@
 // 部屋の「鏡の有無・鏡の仕様・利用費」を、東京・大阪のスプレッドシートから読む
-//   シートは「リンクを知っている人は見られる」にしてある。B 施設名・C 部屋名・E 広さ・F 鏡有無・G 鏡の仕様・H 利用費・J メモ（「利用不可」で始まる部屋は使えない）
+//   シートは「リンクを知っている人は見られる」にしてある（書き出しの CSV で読む）。B 施設名・C 部屋名・E 広さ・F 鏡有無・G 鏡の仕様・H 利用費・J メモ（「利用不可」で始まる部屋は使えない）
 //   読めなかったときは空っぽを返す（空きの送信はそのまま続ける）
 const TOKYO = '1jOgQENb9M80Sc3dQ93zaWosGwWlYZsPWXZMRvpucxUA';
 const OSAKA = '1FJFTK0abUW2NF-4PhCCfJwELtoOJVaSMd4wSGyPSKTc';
-// 区・市の名前 → [シート, タブの名前]（タブがない区はシートを読まない。名前違いのタブを読むと別の区の表が返ってくるため）
+// 区・市の名前 → [シート, タブの番号（gid）]（タブがない区はシートを読まない）
+//   タブの番号はシートの URL の「#gid=」の数字。タブを作り直したら直す
 const TABS = {
-  世田谷区: [TOKYO, '世田谷区'], 文京区: [TOKYO, '文京区'], 新宿区: [TOKYO, '新宿区'], 品川区: [TOKYO, '品川区'], 板橋区: [TOKYO, '板橋区'],
-  オリンピックセンター: [TOKYO, 'オリセン'],
-  大阪市: [OSAKA, '大阪市'], 寝屋川市: [OSAKA, '寝屋川市'], 守口市: [OSAKA, '守口市'], 門真市: [OSAKA, '門真市'],
+  世田谷区: [TOKYO, 1531277077], 文京区: [TOKYO, 772434078], 新宿区: [TOKYO, 399230372], 品川区: [TOKYO, 738777137], 板橋区: [TOKYO, 1002541949],
+  オリンピックセンター: [TOKYO, 1777001],
+  大阪市: [OSAKA, 1422547724], 寝屋川市: [OSAKA, 312326896], 守口市: [OSAKA, 943925217], 門真市: [OSAKA, 1436876227],
 };
 
 /** 名前のゆれをそろえる（全角・半角、空白、「_」） */
@@ -74,14 +75,16 @@ async function load(ward) {
   if (cache.has(ward)) return cache.get(ward);
   let list = null;
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${t[0]}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(t[1])}&tq=${encodeURIComponent('select B, C, E, F, G, H, J')}`;
+    // 「書き出し」で読む（シートに絞り込みをかけていても、隠れた行まで全部読める）
+    const url = `https://docs.google.com/spreadsheets/d/${t[0]}/export?format=csv&gid=${t[1]}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     if (/^\s*</.test(text)) throw new Error('シートが公開されていない（ログイン画面が返ってきた）');
+    // A No・B 施設名・C 部屋名・D 利用目的・E 広さ・F 鏡有無・G 鏡の仕様・H 利用費・I 定員・J メモ
     list = parseCsv(text)
-      .filter((r) => r[0] && r[0] !== '施設名')
-      .map(([fac, room, area, mirror, spec, fee, memo]) => ({ fac, room, ng: /^\s*利用不可/.test(memo || ''), area: Number(String(area || '').replace(/,/g, '')) || null, mirror: (mirror || '').trim(), spec: (spec || '').trim(), fee: (fee || '').trim() }));
+      .filter((r) => r[1] && r[1] !== '施設名')
+      .map((r) => ({ fac: r[1], room: r[2] || '', ng: /^\s*利用不可/.test(r[9] || ''), area: Number(String(r[4] || '').replace(/,/g, '')) || null, mirror: (r[5] || '').trim(), spec: (r[6] || '').trim(), fee: (r[7] || '').trim() }));
     console.log(`部屋の表（${ward}）: ${list.length}部屋`);
   } catch (e) {
     console.warn(`⚠ 部屋の表（${ward}）が読めません: ${e.message}`);
