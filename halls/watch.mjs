@@ -280,7 +280,12 @@ async function readPf489(hall, dates) {
     if (j.error) throw new Error(`中継でエラー（${j.error}）`);
     return j.pages;
   };
-  const pre = [
+  // 施設の名前で探す（search があるとき）か、使用目的で探す
+  const pre = hall.search ? [
+    { get: 'Wm_TopMenu.aspx' },
+    { get: 'Wm_ShisetsuKensaku.aspx?ActiveForm=Shisetsu' },
+    { submit: [['txtSSName$txt', hall.search], ['cmdNext1', '[6]検索']] },
+  ] : [
     { get: 'Wm_TopMenu.aspx' },
     { get: 'Wm_ShisetsuKensaku.aspx?ActiveForm=Purpose' },
     { submit: [['slPurpose1', hall.purpose.cat], ['cmdSelect2', '選択']] },
