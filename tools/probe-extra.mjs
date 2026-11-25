@@ -59,19 +59,31 @@ try {
     console.log(`→ボタン「${alt}」`); await l.click().catch((e) => console.log(e.message.slice(0, 80)));
     await page.waitForTimeout(3000); return true;
   }
-  await row('施設を指定する');
-  const GYMS = ['初芝体育館', '金岡公園体育館', '家原大池体育館', '美原体育館', '美原Ｂ＆Ｇ', '原池公園体育館', '美原総合スポーツセンター', 'Ｊグリーン堺', '大浜体育館・大浜武道館', '鴨谷体育館'];
-  for (const g of GYMS) {
-    if (!(await row(g))) continue;
-    await rows(g);
-    if (g !== '鴨谷体育館') await img('前に戻る');
+  // 1) 利用目的から：どんな目的があるか
+  await row('利用目的から絞り込む'); await rows('目的 大分類');
+  const big = await page.evaluate(() => [...document.querySelectorAll('#mmaincolumn tr[onclick]')].map((t) => t.innerText.trim()));
+  for (const b of big.filter((x) => /ダンス|体操|レク|軽運動|その他|舞踊|健康|ニュー/.test(x))) {
+    await row(b); await rows('目的 小分類：' + b);
+    const small = await page.evaluate(() => [...document.querySelectorAll('#mmaincolumn tr[onclick]')].map((t) => t.innerText.trim()));
+    const d = small.find((x) => /ダンス/.test(x));
+    if (d) { await row(d); await rows('ダンスで出る施設'); await img('前に戻る'); }
+    await img('前に戻る');
   }
-  await img('全て選択'); await img('次に進む');
+  await img('前に戻る');
+  // 2) 施設から：鴨谷の空き表まで
+  await row('施設を指定する'); await row('鴨谷体育館'); await img('全て選択'); await img('次に進む');
+  for (let step = 0; step < 3; step++) {
+    const first = await page.evaluate(() => [...document.querySelectorAll('#mmaincolumn tr[onclick]')].map((t) => t.innerText.trim()));
+    console.log('段', step, page.url(), first.join(' | '));
+    if (!first.length) break;
+    await row(first.find((x) => /ダンス|体操|レク/.test(x)) || first[0]);
+    if (await page.locator('img[alt*="全て選択"]').count()) { await img('全て選択'); await img('次に進む'); }
+  }
   console.log('URL', page.url());
-  console.log('空き表 本文:\n' + cut(await page.evaluate(() => document.querySelector('#mmaincolumn')?.innerText || document.body.innerText), 4000));
+  console.log('空き表 本文:\n' + cut(await page.evaluate(() => document.querySelector('#mmaincolumn')?.innerText || document.body.innerText), 3500));
   const h = await page.evaluate(() => (document.querySelector('#mmaincolumn') || document.body).innerHTML);
   const k = h.search(/<table/);
-  console.log('空き表 HTML:\n' + h.slice(k, k + 5000).replace(/\s{2,}/g, ' '));
-  await rows('空き表の行');
+  console.log('空き表 HTML:\n' + h.slice(k, k + 4500).replace(/\s{2,}/g, ' '));
+  console.log('[ボタン]', (await page.evaluate(() => [...document.querySelectorAll('img[alt]')].map((i) => i.alt))).join(' , '));
 } catch (e) { console.log('失敗', e.message); }
 await b.close();
