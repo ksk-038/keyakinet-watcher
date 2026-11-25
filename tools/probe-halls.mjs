@@ -13,19 +13,19 @@ try {
   const r = await ctx.request.post(B + 'Home/SearchByPurpose', { form: f, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
   console.log('YK sbp', r.status(), (await r.text()).slice(0, 200));
   await p.goto(B + 'AvailabilityCheckApplySelectFacility', { waitUntil: 'networkidle' });
-  const lab = await p.evaluate(() => { const l = [...document.querySelectorAll('label')].find((x) => /関内ホール/.test(x.textContent)); if (l) l.click(); return l?.textContent.trim(); });
+  const lab = await p.evaluate(() => { const l = [...document.querySelectorAll('label')].find((x) => /関内ホール/.test(x.textContent)); const id = l?.getAttribute('for'); const i = id && document.getElementById(id); if (i && !i.checked) i.click(); return `${l?.textContent.trim()} for=${id} checked=${i?.checked}`; });
   console.log('YK fac', lab);
   await p.waitForTimeout(800);
   const btns = await p.evaluate(() => [...document.querySelectorAll('button,a,input[type=button],input[type=submit]')].filter((e) => e.offsetParent).map((e) => (e.innerText || e.value || '').trim()).filter(Boolean));
   console.log('YK btns', btns.slice(0, 30).join(' / '));
-  await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }).catch(() => {}), p.click('text=次へ進む')]);
+  await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }).catch(() => {}), p.locator('button', { hasText: /^\\s*次へ進む\\s*$/ }).last().click()]);
   await p.waitForTimeout(2000);
   console.log('YK days', p.url(), (await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 1500));
   console.log('YK days-C', (await p.evaluate(() => [...document.querySelectorAll('input,select,button')].filter((e) => e.offsetParent && e.type !== 'hidden').map((e) => `${e.tagName}#${e.id}[${e.name}=${(e.value || '').slice(0, 15)}] ${(e.innerText || '').trim().slice(0, 20)}`))).slice(0, 40).join('\n'));
-  // 日付を変えて表示
-  const di = await p.$('input[type=date], input[name*="Date"], input[id*="date" i]');
-  if (di) { await di.fill('2027-01-09').catch(async () => { await di.evaluate((e) => { e.value = '2027/01/09'; e.dispatchEvent(new Event('change', { bubbles: true })); }); }); }
-  await p.click('text=表示', { timeout: 5000 }).catch((e) => console.log('YK no 表示', e.message.slice(0, 80)));
+  logs.length = 0;
+  const nb = p.locator('button', { hasText: /次|翌|>/ });
+  console.log('YK nextbtns', await nb.count());
+  await p.locator('button', { hasText: /2週|次の|翌/ }).first().click({ timeout: 5000 }).catch((e) => console.log('YK no next', e.message.slice(0, 80)));
   await p.waitForTimeout(3000);
   console.log('YK after', (await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 800));
 } catch (e) { console.log('YK ERR', e.message.slice(0, 200)); }
