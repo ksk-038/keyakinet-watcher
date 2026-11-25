@@ -1,5 +1,5 @@
 // 部屋の「鏡の有無・鏡の仕様・利用費」を、東京・大阪のスプレッドシートから読む
-//   シートは「リンクを知っている人は見られる」にしてある。B 施設名・C 部屋名・F 鏡有無・G 鏡の仕様・H 利用費
+//   シートは「リンクを知っている人は見られる」にしてある。B 施設名・C 部屋名・E 広さ・F 鏡有無・G 鏡の仕様・H 利用費
 //   読めなかったときは空っぽを返す（空きの送信はそのまま続ける）
 const TOKYO = '1jOgQENb9M80Sc3dQ93zaWosGwWlYZsPWXZMRvpucxUA';
 const OSAKA = '1FJFTK0abUW2NF-4PhCCfJwELtoOJVaSMd4wSGyPSKTc';
@@ -39,14 +39,14 @@ async function load(ward) {
   if (cache.has(ward)) return cache.get(ward);
   let list = null;
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${t[0]}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(t[1])}&tq=${encodeURIComponent('select B, C, F, G, H')}`;
+    const url = `https://docs.google.com/spreadsheets/d/${t[0]}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(t[1])}&tq=${encodeURIComponent('select B, C, E, F, G, H')}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     if (/^\s*</.test(text)) throw new Error('シートが公開されていない（ログイン画面が返ってきた）');
     list = parseCsv(text)
       .filter((r) => r[0] && r[0] !== '施設名')
-      .map(([fac, room, mirror, spec, fee]) => ({ fac, room, mirror: (mirror || '').trim(), spec: (spec || '').trim(), fee: (fee || '').trim() }));
+      .map(([fac, room, area, mirror, spec, fee]) => ({ fac, room, area: Number(String(area || '').replace(/,/g, '')) || null, mirror: (mirror || '').trim(), spec: (spec || '').trim(), fee: (fee || '').trim() }));
     console.log(`部屋の表（${ward}）: ${list.length}部屋`);
   } catch (e) {
     console.warn(`⚠ 部屋の表（${ward}）が読めません: ${e.message}`);
@@ -55,7 +55,7 @@ async function load(ward) {
   return list;
 }
 
-/** 「施設 部屋」に合う行を探して { mirror, mirror_note, fee } を返す（見つからなければ null） */
+/** 「施設 部屋」に合う行を探して { area, mirror, mirror_note, fee } を返す（見つからなければ null）。area は広さ（㎡・わからなければ null） */
 export async function roomInfoFor(ward) {
   const list = await load(ward);
   if (!list) return () => null;
@@ -73,7 +73,7 @@ export async function roomInfoFor(ward) {
     const mirror = ['〇', '△', '×'].includes(r.mirror) ? r.mirror : null;
     const note = r.spec && !/^(なし|記載なし|-|)$/.test(r.spec) ? r.spec : null;
     const fee = r.fee && r.fee !== '-' ? r.fee : null;
-    if (!mirror && !note && !fee) return null;
-    return { mirror, mirror_note: note, fee };
+    if (!r.area && !mirror && !note && !fee) return null;
+    return { area: r.area, mirror, mirror_note: note, fee };
   };
 }

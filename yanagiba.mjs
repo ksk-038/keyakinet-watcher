@@ -328,13 +328,16 @@ export async function report(G, { site, ward, url, stateDir = null }, slots) {
   let last = {};
   if (memo) { try { last = JSON.parse(await fs.readFile(memo, 'utf8')); } catch { /* はじめて */ } }
   const sent = {};
-  const rows = match(slots, G, ward);
-  // 部屋の鏡・利用費（スプレッドシートから。見つからない部屋はつけない）
-  const info = rows.length ? await roomInfoFor(ward) : () => null;
+  // 部屋の広さ・鏡・利用費（スプレッドシートから。見つからない部屋はつけない）
+  //   予約サイトで広さがわからない部屋は、シートの広さを使う（広さの条件にもかける）
+  const info = slots.length ? await roomInfoFor(ward) : () => null;
+  const sized = slots.map((s) => (s.area == null && info(s.place)?.area ? { ...s, area: info(s.place).area } : s));
+  const rows = match(sized, G, ward);
+  const extra = (place) => { const x = info(place); return x ? { mirror: x.mirror, mirror_note: x.mirror_note, fee: x.fee } : {}; };
   for (const team of G.teams) {
     const mine = rows
       .filter((r) => r.team === team)
-      .map(({ team: _, ...r }) => ({ ...r, ...(info(r.place) || {}), key: `${site}|${r.search_id ? `s:${r.search_id}|` : ''}${r.date}|${r.place}|${r.gap_time || ''}`, url: r.url || url }));
+      .map(({ team: _, ...r }) => ({ ...r, ...extra(r.place), key: `${site}|${r.search_id ? `s:${r.search_id}|` : ''}${r.date}|${r.place}|${r.gap_time || ''}`, url: r.url || url }));
     try {
       // 調べた日（空きが0件でも「調べた」とアプリでわかるように）
       const checked = [
