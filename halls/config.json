@@ -238,6 +238,19 @@
       "room": "^大ホール$",
       "cal": "東大和市民会館",
       "note": "一般の先着（来館優先・FAX可）。12月分は12/15 9時〜。オンライン仮予約は登録者のみ"
+    },
+    {
+      "name": "市民会館おおみや 大ホール",
+      "city": "さいたま市",
+      "platform": "fureai",
+      "top": "https://saitama.rsv.ws-scs.jp/web/",
+      "entry": "canLogin(document.form1, gRsvWTransInstSrchVacantAction)",
+      "ppsd": "200",
+      "pps": "200150",
+      "bld": "6021",
+      "room": "大ホール",
+      "cal": "おおみや",
+      "note": "市外主催者は抽選会（12/1）。さいたま市施設予約システムで空きを確認"
     }
   ],
   "quietHours": {

@@ -335,10 +335,16 @@ async function readAserv(hall, dates) {
     const p = await browser.newPage({ locale: 'ja-JP' });
     p.on('dialog', (d) => { console.log(`  （サイトのメッセージ）${d.message()}`); d.accept().catch(() => {}); });
     await p.goto(hall.top, { waitUntil: 'networkidle' });
+    // 選ぶと画面を読み直すことがあるので、読み直しが終わるのを待ってから次へ
     const choose = async (name, re) => {
-      const v = await p.evaluate(([n, r]) => [...document.querySelectorAll(`select[name=${n}] option`)].find((o) => o.value !== '-1' && new RegExp(r).test(o.text.trim()))?.value, [name, re]);
+      let v;
+      for (let i = 0; i < 5 && !v; i++) {
+        v = await p.evaluate(([n, r]) => [...document.querySelectorAll(`select[name=${n}] option`)].find((o) => o.value !== '-1' && new RegExp(r).test(o.text.trim()))?.value, [name, re]).catch(() => null);
+        if (!v) await p.waitForTimeout(1000);
+      }
       if (!v) throw new Error(`「${re}」が選択肢にありません（${name}）`);
-      await p.selectOption(`select[name=${name}]`, v); await p.waitForTimeout(1200);
+      await p.selectOption(`select[name=${name}]`, v);
+      await p.waitForLoadState('networkidle').catch(() => {}); await p.waitForTimeout(1500);
     };
     await choose('kanCode', hall.kan);
     await choose('skubunCode', hall.kubun);
@@ -387,7 +393,7 @@ async function readFureai(hall, dates) {
     // 最初から月の表までたどる（週の表から月の表へは戻れないので、日を選ぶたびにやり直す）
     const openMonth = async (ym) => {
       await p.goto(hall.top, { waitUntil: 'networkidle' });
-      await act('doAction(document.form1, gRsvWTransRsvMenuAction)');
+      await act(hall.entry || 'doAction(document.form1, gRsvWTransRsvMenuAction)');
       await act('doPpsdSearchAction(document.form1, gRsvWTransInstSrchPpsdAction)');
       await act(`sendPpsdCd(document.form1, gRsvWTransInstSrchPpsAction, '${hall.ppsd}','2')`);
       await act(`doTransInstSrchBuildAction(document.form1, gRsvWTransInstSrchBuildAction, '${hall.ppsd}' , '${hall.pps}')`);
@@ -446,10 +452,16 @@ async function readRikuu(hall, dates) {
     await post("__doPostBack('btnUserEntry','')");
     const v = await p.evaluate((r) => [...document.querySelectorAll('#ddlShisetsu option')].find((o) => new RegExp(r).test(o.text))?.value, hall.room);
     if (!v) throw new Error(`施設「${hall.room}」が一覧にありません`);
-    if ((await p.inputValue('#ddlShisetsu')) !== v) await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle' }).catch(() => {}), p.selectOption('#ddlShisetsu', v)]);
+    // 画面の一部だけを書き換える作り（ページは移動しない）なので、値が変わるのを待つ
+    if ((await p.inputValue('#ddlShisetsu')) !== v) { await p.selectOption('#ddlShisetsu', v); await p.waitForLoadState('networkidle'); await p.waitForTimeout(1500); }
     const got = new Map();
     for (const ym of [...new Set(dates.map((d) => d.slice(0, 7).replace('-', '/')))]) {
-      for (let i = 0; i < 24 && (await p.inputValue('#txtDate')) < ym; i++) await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle' }), p.click('#btnAfter')]);
+      for (let i = 0; i < 24 && (await p.inputValue('#txtDate')) < ym; i++) {
+        const before = await p.inputValue('#txtDate');
+        await p.click('#btnAfter');
+        await p.waitForFunction((b) => document.querySelector('#txtDate')?.value && document.querySelector('#txtDate').value !== b, before, { timeout: 30000 });
+        await p.waitForLoadState('networkidle'); await p.waitForTimeout(300);
+      }
       if ((await p.inputValue('#txtDate')) !== ym) { if (DEBUG) console.log(`  ${ym} の月に進めません`); continue; }
       const rows = await p.evaluate(() => [...document.querySelectorAll('tr')].map((tr) => [...tr.querySelectorAll('td,th')].map((c) => c.innerText.trim())).filter((r) => /^\d{4}\/\d{2}\/\d{2}/.test(r[0] || '')));
       for (const r of rows) got.set(r[0].slice(0, 10).replace(/\//g, '-'), r.slice(1, 4));
