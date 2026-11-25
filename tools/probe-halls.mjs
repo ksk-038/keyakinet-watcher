@@ -1,7 +1,9 @@
-const go = async (u) => { try { const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130', 'Accept-Language': 'ja' }, redirect: 'follow', signal: AbortSignal.timeout(20000) }); const buf = Buffer.from(await r.arrayBuffer()); const cs = (r.headers.get('content-type') || '').match(/charset=([\w-]+)/i)?.[1] || buf.toString('latin1').match(/charset=["']?([\w-]+)/i)?.[1] || 'utf-8'; let h; try { h = new TextDecoder(cs.toLowerCase().replace(/^(x-)?s(hift)?[-_]?jis$/, 'shift_jis')).decode(buf); } catch { h = buf.toString(); } console.log('\nURL', r.status, r.url, h.length, cs); return h; } catch (e) { console.log('\nERR', u, e.cause?.code || e.message); return ''; } };
-const text = (h, n) => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').slice(0, n);
-let h = await go('https://yoyaku.nyc.niye.go.jp/users/culture_R.html');
-console.log('OLY rooms', [...new Set([...h.matchAll(/ROWSPAN[^>]*>([\s\S]*?)<\/TD>/gi)].map((m) => m[1].replace(/<[^>]+>/g, '').trim()))].join(' / '));
-console.log('OLY months', [...h.matchAll(/<A NAME=[^>]*>(\d{4}年\d{1,2}月)/gi)].map((m) => m[1]).join(' '));
-h = await go('https://www.pf489.com/machida/'); console.log('MACHI', text(h, 800)); console.log([...h.matchAll(/<(a|form|frame|iframe)\b[^>]*>([^<]{0,30})/gi)].map((m) => m[0].replace(/\s+/g, ' ').slice(0, 200)).slice(0, 30).join('\n'));
-for (const u of ['https://www.pf-yoyaku.com/User/ageo', 'https://www.pf-yoyaku.com/User/ageo/Home', 'https://www.pf-yoyaku.com/']) { h = await go(u); console.log('AGEO', text(h, 300)); }
+const RELAY = 'https://jskulzunyckseeokgzax.supabase.co/functions/v1/jp-relay';
+const raw = async (url) => { const r = await fetch(RELAY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, body: JSON.stringify({ secret: process.env.YANAGIBA_SECRET, raw: { url } }) }); return r.json().catch(() => ({ error: r.status })); };
+const text = (h, n) => (h || '').replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').slice(0, n);
+const tags = (h) => [...(h || '').matchAll(/<(a|form|frame|iframe|input|select)\b[^>]*>([^<]{0,30})/gi)].map((m) => m[0].replace(/\s+/g, ' ').slice(0, 220)).slice(0, 40).join('\n');
+for (const u of ['https://www.pf489.com/machida/', 'https://www.pf-yoyaku.com/User/ageo/']) {
+  const j = await raw(u);
+  console.log('\nRAW', u, j.status, j.location, j.error || '', (j.body || '').length);
+  console.log('TXT', text(j.body, 900)); console.log(tags(j.body));
+}

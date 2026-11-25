@@ -119,6 +119,16 @@
       "facility": "RISURU|市民会館",
       "room": "^大ホール",
       "note": "空きを先着→15日以内に窓口で現金払い。12月分は12/1抽選会→以降先着（立川市施設予約システム）"
+    },
+    {
+      "name": "国立オリンピックセンター 大ホール",
+      "city": "渋谷区",
+      "platform": "olympic",
+      "page": "https://yoyaku.nyc.niye.go.jp/users/culture_R.html",
+      "top": "https://yoyaku.nyc.niye.go.jp/users/culture.html",
+      "room": "^大ホール",
+      "cal": "オリンピックセンター",
+      "note": "青少年関係者として先着（使う日の1年前の同日から）。取消料：6か月前の前日まで50%、以後100%"
     }
   ],
   "quietHours": {

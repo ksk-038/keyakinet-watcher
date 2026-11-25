@@ -240,6 +240,36 @@ async function readKaruku(hall, dates) {
   }
 }
 
+// オリンピックセンター（カルチャー棟の空き状況ページ。13か月分が1ページに入っている）
+async function readOlympic(hall, dates) {
+  const r = await fetch(hall.page, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(60000) });
+  if (!r.ok) throw new Error(`空き状況のページが ${r.status}`);
+  const html = await r.text();
+  const T = (h) => h.replace(/<BR>/gi, '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+  const cells = [];
+  for (const t of html.split(/<A NAME=/i).slice(1)) {
+    const ym = t.match(/^(\d{4})年(\d{1,2})月/);
+    if (!ym) continue;
+    const head = t.match(/<TR[^>]*>([\s\S]*?)<\/TR>/i)?.[1] || '';
+    const days = [...head.matchAll(/<TH ALIGN=CENTER>([\s\S]*?)<\/TH>/gi)].map((m) => Number(T(m[1])));
+    let room = null;
+    for (const tr of t.matchAll(/<TR BGCOLOR=[^>]*>([\s\S]*?)<\/TR>/gi)) {
+      const tds = [...tr[1].matchAll(/<TD([^>]*)>([\s\S]*?)<\/TD>/gi)];
+      if (/ROWSPAN/i.test(tds[0]?.[1] || '')) room = T(tds.shift()[2]);
+      const kubun = T(tds.shift()?.[2] || '');
+      tds.forEach((td, i) => { if (days[i]) cells.push({ room, kubun, date: `${ym[1]}-${ym[2].padStart(2, '0')}-${String(days[i]).padStart(2, '0')}`, sym: T(td[2]) }); });
+    }
+  }
+  const re = new RegExp(hall.room);
+  const out = [];
+  for (const d of dates) {
+    const mine = cells.filter((c) => c.date === d && re.test(c.room || '') && ['午前', '午後', '夜間'].includes(c.kubun));
+    if (!mine.length) { if (DEBUG) console.log(`  ${d}: ページにありません`); continue; }
+    out.push({ date: d, slots: Object.fromEntries(mine.map((c) => [c.kubun, { free: c.sym === '○', mark: c.sym || '-' }])) });
+  }
+  return out;
+}
+
 // OEC の予約システム（えどねっと・文の京など。…/user/Home）: 利用目的で検索 → 施設を選ぶ → 日ごとの空き → 部屋の時間帯別空き
 async function readOec(hall, dates) {
   const H = await import('../bunkyo/http.mjs');
@@ -300,7 +330,7 @@ async function readOec(hall, dates) {
   return out;
 }
 
-const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku };
+const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku, olympic: readOlympic };
 
 // その日に取れる組み合わせ（例: ["午前＋午後", "午後"]）
 export function okCombos(date, slots, combos) {
