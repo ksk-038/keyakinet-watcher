@@ -354,13 +354,24 @@ async function readAserv(hall, dates) {
     for (const d of dates) {
       if (got.has(d)) continue;
       const ymd = d.replace(/-/g, '');
-      await p.evaluate((v) => { document.getElementById('selectDate').value = v; }, d.replace(/-/g, '/'));
-      await Promise.all([p.waitForLoadState('networkidle'), p.evaluate((v) => window.sendData(v), ymd)]);
-      await p.waitForTimeout(800);
-      const rows = await p.evaluate(() => [...document.querySelectorAll('#calBox .calList')].map((r) => ({
-        date: (r.querySelector('.shisetsuName')?.textContent || '').match(/\d{4}\/\d{2}\/\d{2}/)?.[0],
-        cells: [...r.querySelectorAll('div[title]')].filter((c) => /^\d+:\d{8}:\d$/.test(c.title)).map((c) => ({ k: Number(c.title.split(':')[2]), ng: c.id === 'stFuka' })),
-      })));
+      let rows = [];
+      for (let i = 0; i < 3; i++) {
+        try { // 日付を送ると画面ごと読み直すことがあるので、途中で消えたら待ってやり直す
+          await p.waitForLoadState('networkidle').catch(() => {});
+          await p.evaluate((v) => { document.getElementById('selectDate').value = v; }, d.replace(/-/g, '/'));
+          await Promise.all([p.waitForLoadState('networkidle'), p.evaluate((v) => window.sendData(v), ymd)]);
+          await p.waitForTimeout(1200);
+          await p.waitForLoadState('networkidle').catch(() => {});
+          rows = await p.evaluate(() => [...document.querySelectorAll('#calBox .calList')].map((r) => ({
+            date: (r.querySelector('.shisetsuName')?.textContent || '').match(/\d{4}\/\d{2}\/\d{2}/)?.[0],
+            cells: [...r.querySelectorAll('div[title]')].filter((c) => /^\d+:\d{8}:\d$/.test(c.title)).map((c) => ({ k: Number(c.title.split(':')[2]), ng: c.id === 'stFuka' })),
+          })));
+          break;
+        } catch (e) {
+          if (i === 2) throw e;
+          await p.waitForTimeout(3000);
+        }
+      }
       for (const r of rows) if (r.date) got.set(r.date.replace(/\//g, '-'), r.cells);
       if (!rows.length && DEBUG) console.log(`  ${d}: 表が出ません（${(await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 200)}）`);
     }
@@ -628,6 +639,11 @@ async function readStagia(hall, dates) {
     await pick('select[name=g_bunruicd_2_show]', hall.facility, 'submitBunrui2()');
     if (await p.$('select[name=riyosmk]')) await pick('select[name=riyosmk]', hall.purpose || '.', 'changed()');
     await pick('select[name=g_basyocd]', hall.facility, 'btnOK_3()');
+    if (await p.$('select[name=g_heyacd]')) {
+      const ops = await p.evaluate(() => [...document.heyaform.g_heyacd.options].map((o) => o.value));
+      await p.selectOption('select[name=g_heyacd]', ops);
+      await nav(() => p.evaluate('heyaOK()'));
+    }
     const out = [];
     for (const d of dates) {
       const [y, m, dd] = d.split('-');
