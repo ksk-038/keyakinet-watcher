@@ -519,7 +519,12 @@ async function main() {
   for (const hall of config.halls) {
     console.log(`▶ ${hall.city} ${hall.name}`);
     try {
-      const res = await READERS[hall.platform](hall, dates);
+      // 画面の切り替わりなどでたまに失敗するので、1回だけやり直す
+      const res = await READERS[hall.platform](hall, dates).catch(async (e) => {
+        console.log(`  （やり直します：${e.message.slice(0, 80)}）`);
+        await new Promise((r) => setTimeout(r, 5000));
+        return READERS[hall.platform](hall, dates);
+      });
       for (const r of res) {
         const combos = okCombos(r.date, r.slots, config.combos);
         table.push({ hall: `${hall.city} ${hall.name}`, date: r.date, slots: Object.fromEntries(Object.entries(r.slots).map(([k, v]) => [k, v.mark])), combos, url: hall.base || hall.top, cal: hall.cal || hall.name.split(' ')[0] });
