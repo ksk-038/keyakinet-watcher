@@ -59,15 +59,19 @@ try {
     console.log(`→ボタン「${alt}」`); await l.click().catch((e) => console.log(e.message.slice(0, 80)));
     await page.waitForTimeout(3000); return true;
   }
-  await row('施設を指定する'); await rows('A');
-  if (await row('体育館')) await rows('B');
-  if (await row('大浜')) await rows('C');
-  // チェックの付く画面なら全部付けて次へ
-  const cb = page.locator('#mmaincolumn input[type=checkbox]');
-  for (let k = 0; k < Math.min(await cb.count(), 10); k++) await cb.nth(k).check({ force: true }).catch(() => {});
-  if (!(await img('次へ'))) await row('競技場') || await row('アリーナ');
-  await rows('D');
-  await img('次へ'); await rows('E');
-  console.log('本文:', cut(await page.evaluate(() => document.querySelector('#mmaincolumn')?.innerText || ''), 3000));
+  await row('施設を指定する');
+  const GYMS = ['初芝体育館', '金岡公園体育館', '家原大池体育館', '美原体育館', '美原Ｂ＆Ｇ', '原池公園体育館', '美原総合スポーツセンター', 'Ｊグリーン堺', '大浜体育館・大浜武道館', '鴨谷体育館'];
+  for (const g of GYMS) {
+    if (!(await row(g))) continue;
+    await rows(g);
+    if (g !== '鴨谷体育館') await img('前に戻る');
+  }
+  await img('全て選択'); await img('次に進む');
+  console.log('URL', page.url());
+  console.log('空き表 本文:\n' + cut(await page.evaluate(() => document.querySelector('#mmaincolumn')?.innerText || document.body.innerText), 4000));
+  const h = await page.evaluate(() => (document.querySelector('#mmaincolumn') || document.body).innerHTML);
+  const k = h.search(/<table/);
+  console.log('空き表 HTML:\n' + h.slice(k, k + 5000).replace(/\s{2,}/g, ' '));
+  await rows('空き表の行');
 } catch (e) { console.log('失敗', e.message); }
 await b.close();
