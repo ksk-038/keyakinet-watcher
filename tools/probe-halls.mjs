@@ -1,21 +1,10 @@
-import { chromium } from 'playwright';
-const b = await chromium.launch();
-const p = await b.newPage({ locale: 'ja-JP' });
-p.on('dialog', (d) => { console.log('DIALOG', d.message()); d.accept().catch(() => {}); });
-try {
-  await p.goto('https://yoyaku.city.toda.saitama.jp/yoyaku/', { waitUntil: 'networkidle', timeout: 40000 });
-  console.log('FORM', (await p.evaluate(() => [...document.querySelectorAll('input,select,button')].filter((e) => e.type !== 'hidden').map((e) => `${e.tagName}:${e.type}:${e.name}:${e.id}:${(e.value || e.innerText || '').slice(0, 20)}`).filter((s) => !/selectedMokuteki|headerMenu/.test(s)))).slice(0, 60).join('\n'));
-  await p.selectOption('select[name="searchingOption:displayPeriod"]', { label: '1ヵ月' }).catch((e) => console.log('per', e.message.slice(0, 80)));
-  await p.selectOption('select[name="searchingOption:selectedBasho"]', { label: '戸田市文化会館' }).catch((e) => console.log('bas', e.message.slice(0, 80)));
-  await p.waitForTimeout(1500);
-  console.log('FORM2', (await p.evaluate(() => [...document.querySelectorAll('input,select,button')].filter((e) => e.type !== 'hidden' && e.offsetParent).map((e) => `${e.tagName}:${e.type}:${e.name}:${e.id}:${(e.value || e.innerText || '').slice(0, 20)}`).filter((s) => !/selectedMokuteki|headerMenu/.test(s)))).join('\n'));
-  const go = p.locator('button,input[type=submit],a').filter({ hasText: /検索/ });
-  console.log('gocount', await go.count(), await go.allInnerTexts());
-  console.log('AFTERBASHO', (await p.evaluate(() => document.body.innerText.replace(/\s+/g, ' '))).slice(0, 1500));
-} catch (e) { console.log('TODA ERR', e.message.slice(0, 300)); }
-try {
-  for (const u of ['https://www.pf-yoyaku.com/User/asaka', 'https://www.pf-yoyaku.com/User/Asaka/Home', 'https://www.pf-yoyaku.com/']) { const r2 = await p.goto(u, { waitUntil: 'networkidle', timeout: 30000 }).catch(() => null); console.log('ASK', u, r2?.status(), p.url(), (await p.evaluate(() => document.body.innerText.replace(/\s+/g, ' ')).catch(() => '')).slice(0, 300), [...(await p.content()).matchAll(/href="([^"]*asaka[^"]*)"/gi)].map((m) => m[1]).slice(0, 5)); }
-  const r = await p.goto('https://www.pf-yoyaku.com/User/asaka/Home', { waitUntil: 'networkidle', timeout: 40000 });
-  console.log('ASAKA', r.status(), p.url(), !!(await p.$('.cf-turnstile, iframe[src*="challenges.cloudflare"], script[src*="turnstile"]')), (await p.evaluate(() => document.body.innerText.replace(/\s+/g, ' '))).slice(0, 600));
-} catch (e) { console.log('ASAKA ERR', e.message.slice(0, 200)); }
-await b.close();
+const RELAY = 'https://jskulzunyckseeokgzax.supabase.co/functions/v1/jp-relay';
+for (const url of ['https://www.pf-yoyaku.com/User/asaka/Home', 'https://www.pf-yoyaku.com/User/asaka/', 'https://www.pf-yoyaku.com/User/ageo/Home']) {
+  try {
+    const r = await fetch(RELAY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, body: JSON.stringify({ secret: process.env.YANAGIBA_SECRET, raw: { url, method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130', 'Accept-Language': 'ja' } } }), signal: AbortSignal.timeout(60000) });
+    const j = await r.json();
+    const b = j.body || '';
+    console.log('\nRELAY', url, j.status, j.location || '', b.length, /turnstile|challenges\.cloudflare/i.test(b) ? 'TURNSTILE' : '', b.replace(/<(script|style)[\s\S]*?<\/\1>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 500));
+    console.log('  links', [...b.matchAll(/href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/\.css|\.ico|#/.test(h)).slice(0, 20).join(' '));
+  } catch (e) { console.log('ERR', url, e.message); }
+}
