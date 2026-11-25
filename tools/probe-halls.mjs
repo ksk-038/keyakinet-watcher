@@ -1,8 +1,7 @@
-const RELAY = 'https://jskulzunyckseeokgzax.supabase.co/functions/v1/jp-relay';
-const r = await fetch(RELAY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-region': 'ap-northeast-1' }, body: JSON.stringify({ secret: process.env.YANAGIBA_SECRET, base: 'https://k5.p-kashikan.jp/tachikawa-city/', enc: 'utf8', steps: [{ get: 'Top' }, { post: 'SrchSst', data: 'op=SrchSst&UseYM=202711&UseDay=27&UseDate=20271127&ShisetsuCode=003', keep: true }] }) });
-const j = await r.json();
-const h = j.pages?.at(-1) || JSON.stringify(j).slice(0, 500);
-const t = h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
-console.log('LEN', h.length);
-for (const m of t.matchAll(/.{0,120}[●×○△－].{0,120}/g)) console.log('CTX', m[0]);
-const i = h.indexOf('大ホール'); console.log('CELL', h.slice(i - 200, i + 1800).replace(/\s+/g, ' '));
+const go = async (u) => { try { const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120', 'Accept-Language': 'ja' }, redirect: 'follow', signal: AbortSignal.timeout(20000) }); const h = await r.text(); console.log('\nURL', r.status, r.url, h.length); return h; } catch (e) { console.log('\nERR', u, e.cause?.code || e.message); return ''; } };
+let h = await go('https://yoyaku03.city.sumida.lg.jp/user/Home');
+const u = h.replace(/\\u([0-9a-f]{4})/gi, (_, x) => String.fromCodePoint(parseInt(x, 16))).replace(/&#x([0-9A-F]+);/gi, (_, x) => String.fromCodePoint(parseInt(x, 16)));
+console.log('SUMI-P', [...u.matchAll(/"PurposeCategoryCode":(\d+),"PurposeCode":(\d+),"PurposeName":"([^"]+)"/g)].map((m) => `${m[1]}-${m[2]}${m[3]}`).join(' ').slice(0, 1500), /Turnstile|turnstile/.test(h) ? 'TURNSTILE' : '');
+h = await go('https://yoyaku.saf-ticket.jp/cultos/reserve/gin_menu');
+console.log('SAF', h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 1500));
+console.log('SAF-T', [...h.matchAll(/<(a|form|select|option|input)\b[^>]*>([^<]{0,30})/gi)].map((m) => m[0].replace(/\s+/g, ' ').slice(0, 180)).slice(0, 50).join('\n'));
