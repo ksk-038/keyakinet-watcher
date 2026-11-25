@@ -656,7 +656,7 @@ async function readStagia(hall, dates) {
       const slots = {};
       let cells = [];
       if (ok) {
-        await nav(() => p.click('#btnOK'));
+        await nav(() => p.click('form[name=formDate] input[type=image], #btnOK'));
         const rows = await p.evaluate(() => [...document.querySelectorAll('table tr')].map((r) => [...r.cells].map((c) => (c.innerText.trim() || [...c.querySelectorAll('img')].map((i) => i.alt).join('/')).replace(/\s+/g, ''))));
         const head = (await p.evaluate(() => document.body.innerText)).match(/令和(\d+)年(\d+)月(\d+)日/);
         const same = head && 2018 + Number(head[1]) === Number(y) && Number(head[2]) === Number(m) && Number(head[3]) === Number(dd);
