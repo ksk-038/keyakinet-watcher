@@ -48,14 +48,17 @@ function updateCalendar(ss, rows, at) {
     if (!m) return;
     const mine = rows.filter((r) => r.cal && hallText.indexOf(r.cal) >= 0 && Number(r.date.slice(5, 7)) === Number(m[1]));
     if (!mine.length) return;
-    const lines = mine.sort((x, y) => x.date.localeCompare(y.date)).map((r) => {
+    // 1つの行に複数のホールが入るとき（川崎の3市民館など）は、ホール名を先頭につける
+    const many = new Set(mine.map((r) => r.hall)).size > 1;
+    const lines = mine.sort((x, y) => (x.hall || '').localeCompare(y.hall || '') || x.date.localeCompare(y.date)).map((r) => {
       const d = new Date(`${r.date}T00:00:00+09:00`);
       const label = `${d.getMonth() + 1}/${d.getDate()}(${wd[d.getDay()]})`;
       const free = ['午前', '午後', '夜間'].filter((k) => /[●〇○]|空き/.test(r.slots[k] || ''));
       const vals = ['午前', '午後', '夜間'].map((k) => r.slots[k]).filter((v) => v != null);
-      if (free.length) return `${label} ${free.join('・')} 空き`;
-      if (vals.length && vals.every((v) => v === '-')) return `${label} 受付前`;
-      return `${label} ×`;
+      const pre = many ? `${String(r.hall || '').replace(/^\S+\s/, '').replace(/ 大ホール$/, '')} ` : '';
+      if (free.length) return `${pre}${label} ${free.join('・')} 空き`;
+      if (vals.length && vals.every((v) => v === '-')) return `${pre}${label} 受付前`;
+      return `${pre}${label} ×`;
     });
     sh.getRange(5 + i, col).setValue(lines.join('\n'));
   });
