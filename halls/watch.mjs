@@ -327,6 +327,114 @@ async function readPf489(hall, dates) {
   return out;
 }
 
+// 葛飾区の文化施設（reserve.aserv.jp/k-mil）: 館・区分・施設を選んで日付を入れると、4日分の午前・午後・夜間が出る（色付き＝予約不可）
+async function readAserv(hall, dates) {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const p = await browser.newPage({ locale: 'ja-JP' });
+    p.on('dialog', (d) => { console.log(`  （サイトのメッセージ）${d.message()}`); d.accept().catch(() => {}); });
+    await p.goto(hall.top, { waitUntil: 'networkidle' });
+    const choose = async (name, re) => {
+      const v = await p.evaluate(([n, r]) => [...document.querySelectorAll(`select[name=${n}] option`)].find((o) => o.value !== '-1' && new RegExp(r).test(o.text.trim()))?.value, [name, re]);
+      if (!v) throw new Error(`「${re}」が選択肢にありません（${name}）`);
+      await p.selectOption(`select[name=${name}]`, v); await p.waitForTimeout(1200);
+    };
+    await choose('kanCode', hall.kan);
+    await choose('skubunCode', hall.kubun);
+    await choose('shisetsuCode', hall.room);
+    const out = [];
+    const got = new Map();
+    for (const d of dates) {
+      if (got.has(d)) continue;
+      const ymd = d.replace(/-/g, '');
+      await p.evaluate((v) => { document.getElementById('selectDate').value = v; }, d.replace(/-/g, '/'));
+      await Promise.all([p.waitForLoadState('networkidle'), p.evaluate((v) => window.sendData(v), ymd)]);
+      await p.waitForTimeout(800);
+      const rows = await p.evaluate(() => [...document.querySelectorAll('#calBox .calList')].map((r) => ({
+        date: (r.querySelector('.shisetsuName')?.textContent || '').match(/\d{4}\/\d{2}\/\d{2}/)?.[0],
+        cells: [...r.querySelectorAll('div[title]')].filter((c) => /^\d+:\d{8}:\d$/.test(c.title)).map((c) => ({ k: Number(c.title.split(':')[2]), ng: c.id === 'stFuka' })),
+      })));
+      for (const r of rows) if (r.date) got.set(r.date.replace(/\//g, '-'), r.cells);
+      if (!rows.length && DEBUG) console.log(`  ${d}: 表が出ません（${(await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 200)}）`);
+    }
+    for (const d of dates) {
+      const cells = got.get(d);
+      if (!cells) continue;
+      const slots = {};
+      for (const c of cells) slots[['午前', '午後', '夜間'][c.k]] = { free: !c.ng, mark: c.ng ? '×' : '○' };
+      out.push({ date: d, slots });
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
+// 川崎市 ふれあいネット（簡易版 /web/）: 予約 → 利用目的から → 分類 → 目的 → 館 →（施設）→ 月の表 → 日を選ぶと1週間の午前・午後・夜間
+async function readFureai(hall, dates) {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const p = await browser.newPage({ locale: 'ja-JP' });
+    p.on('dialog', (d) => { console.log(`  （サイトのメッセージ）${d.message()}`); d.accept().catch(() => {}); });
+    const act = async (js) => {
+      try { await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 60000 }), p.evaluate((c) => setTimeout(() => (0, eval)(c), 0), js)]); }
+      catch (e) { throw new Error(`画面が進みません（${js.slice(0, 80)}）：${(await p.evaluate(() => document.body.innerText).catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)}`); }
+      await p.waitForTimeout(500);
+    };
+    const calls = (re) => p.evaluate((r) => [...document.querySelectorAll('a,input')].map((e) => (e.getAttribute('onclick') || e.getAttribute('href') || '').replace(/^javascript:/, '').trim()).filter((x) => new RegExp(r).test(x)), re);
+    // 最初から月の表までたどる（週の表から月の表へは戻れないので、日を選ぶたびにやり直す）
+    const openMonth = async (ym) => {
+      await p.goto(hall.top, { waitUntil: 'networkidle' });
+      await act('doAction(document.form1, gRsvWTransRsvMenuAction)');
+      await act('doPpsdSearchAction(document.form1, gRsvWTransInstSrchPpsdAction)');
+      await act(`sendPpsdCd(document.form1, gRsvWTransInstSrchPpsAction, '${hall.ppsd}','2')`);
+      await act(`doTransInstSrchBuildAction(document.form1, gRsvWTransInstSrchBuildAction, '${hall.ppsd}' , '${hall.pps}')`);
+      await act(`sendBldCd(document.form1, gRsvWTransInstSrchInstAction, '${hall.bld}')`);
+      if (/施設選択/.test(await p.evaluate(() => document.body.innerText))) {
+        const c = await p.evaluate((r) => [...document.querySelectorAll('a')].find((a) => new RegExp(r).test(a.textContent))?.getAttribute('href')?.replace(/^javascript:/, ''), hall.room);
+        if (!c) throw new Error(`施設「${hall.room}」が一覧にありません`);
+        await act(c);
+      }
+      await act(`moveCalender(document.form1, gRsvWInstSrchMonthVacantAction, ${ym.replace('-', '')}01)`);
+    };
+    const seen = new Map();
+    for (const ym of [...new Set(dates.map((d) => d.slice(0, 7)))]) {
+      for (const d of dates.filter((x) => x.startsWith(ym))) {
+        if (seen.has(d)) continue;
+        await openMonth(ym);
+        const [y, m, dd] = d.split('-').map(Number);
+        const sel = (await calls(`selectDay\\(document\\.form1, gRsvWInstSrchVacantAction, \\d+, ${y}, ${m}, ${dd}\\)`))[0];
+        if (!sel) { seen.set(d, null); continue; } // 月の表で選べない日（受付期間外など）
+        await act(sel);
+        const cells = await p.evaluate(() => [...document.querySelectorAll('table.rsvakitable img[alt]')].map((i) => i.alt));
+        if (DEBUG) console.log(`  ${d}: ${cells.slice(0, 6).join(' / ')}`);
+        for (const a of cells) {
+          const mm = a.match(/^(\d+)月(\d+)日.曜日(午前|午後|夜間)(.+)$/);
+          if (!mm) continue;
+          const key = `${y + (Number(mm[1]) < m ? 1 : 0)}-${mm[1].padStart(2, '0')}-${mm[2].padStart(2, '0')}`;
+          if (!seen.get(key)) seen.set(key, {});
+          seen.get(key)[mm[3]] = mm[4];
+        }
+      }
+    }
+    const out = [];
+    for (const d of dates) {
+      const v = seen.get(d);
+      const slots = {};
+      for (const k of ['午前', '午後', '夜間']) {
+        const t = v?.[k] || '';
+        slots[k] = { free: /^空き$/.test(t), mark: /^空き$/.test(t) ? '○' : /予約あり/.test(t) ? '×' : '-' };
+      }
+      out.push({ date: d, slots });
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
 // OEC の予約システム（えどねっと・文の京など。…/user/Home）: 利用目的で検索 → 施設を選ぶ → 日ごとの空き → 部屋の時間帯別空き
 async function readOec(hall, dates) {
   const H = await import('../bunkyo/http.mjs');
@@ -387,7 +495,7 @@ async function readOec(hall, dates) {
   return out;
 }
 
-export const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku, olympic: readOlympic, pf489: readPf489 };
+export const READERS = { 'p-kashikan': readPkashikan, eprs: readEprs, oec: readOec, uguisu: readUguisu, karuku: readKaruku, olympic: readOlympic, pf489: readPf489, aserv: readAserv, fureai: readFureai };
 
 // その日に取れる組み合わせ（例: ["午前＋午後", "午後"]）
 export function okCombos(date, slots, combos) {
@@ -411,7 +519,12 @@ async function main() {
   for (const hall of config.halls) {
     console.log(`▶ ${hall.city} ${hall.name}`);
     try {
-      const res = await READERS[hall.platform](hall, dates);
+      // 画面の切り替わりなどでたまに失敗するので、1回だけやり直す
+      const res = await READERS[hall.platform](hall, dates).catch(async (e) => {
+        console.log(`  （やり直します：${e.message.slice(0, 80)}）`);
+        await new Promise((r) => setTimeout(r, 5000));
+        return READERS[hall.platform](hall, dates);
+      });
       for (const r of res) {
         const combos = okCombos(r.date, r.slots, config.combos);
         table.push({ hall: `${hall.city} ${hall.name}`, date: r.date, slots: Object.fromEntries(Object.entries(r.slots).map(([k, v]) => [k, v.mark])), combos, url: hall.base || hall.top, cal: hall.cal || hall.name.split(' ')[0] });
