@@ -5,8 +5,9 @@ const ctl = (p) => p.evaluate(() => [...document.querySelectorAll('a,input,selec
 try {
   const p = await b.newPage({ locale: 'ja-JP' });
   await p.goto('https://www.fureai-net.city.kawasaki.jp/web/', { waitUntil: 'networkidle' });
-  await Promise.all([p.waitForLoadState('networkidle'), p.evaluate(() => doAction(document.form1, gRsvWTransRsvMenuAction))]);
-  await Promise.all([p.waitForLoadState('networkidle'), p.evaluate(() => doPpsdSearchAction(document.form1, gRsvWTransInstSrchPpsdAction))]); await p.waitForTimeout(1000);
+  const act = async (js) => { await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle' }), p.evaluate((c) => setTimeout(() => (0, eval)(c), 0), js)]); await p.waitForTimeout(800); };
+  await act('doAction(document.form1, gRsvWTransRsvMenuAction)');
+  await act('doPpsdSearchAction(document.form1, gRsvWTransInstSrchPpsdAction)');
   console.log('KW ppsd', p.url(), (await txt(p)).slice(0, 1500));
   console.log('KW ppsd-C', (await ctl(p)).slice(8, 70).join('\n'));
 } catch (e) { console.log('KW ERR', e.message.slice(0, 200)); }
