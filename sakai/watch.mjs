@@ -92,9 +92,14 @@ async function readTable(page, today) {
     let hall = '';
     for (const el of document.querySelectorAll('#facilitiesbox h3.kaikan_title, #facilitiesbox table[summary*="空き状況"]')) {
       if (el.tagName === 'H3') { hall = el.innerText.trim(); continue; }
-      const room = el.querySelector('.shisetu_name')?.innerText.trim() || '';
-      const days = [...el.querySelectorAll('p.day')].map((p) => p.innerText.replace(/\s+/g, ''));
+      // 1つの表に、同じ館の部屋が「部屋名の行 → 日付の行 → 時間の行」の順に続けて入っている
+      let room = '';
+      let days = [];
       for (const tr of el.querySelectorAll('tr')) {
+        const nm = tr.querySelector('.shisetu_name');
+        if (nm) { room = nm.innerText.trim(); continue; }
+        const ds = [...tr.querySelectorAll('p.day')];
+        if (ds.length) { days = ds.map((p) => p.innerText.replace(/\s+/g, '')); continue; }
         const t = tr.querySelector('td.facmdstime');
         if (!t) continue;
         const cells = [...tr.querySelectorAll('td')].slice(1);
