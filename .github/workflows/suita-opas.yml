@@ -1,0 +1,77 @@
+name: 吹田市 体育館（オーパス） 空き監視
+
+on:
+  schedule:
+    - cron: "49 0-14/2,22 * * *"   # 予備（ふだんは YANAGIBA の Supabase から2時間おき・日本時間7〜23時台。先着予約が始まる時刻にも動く）
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: "読み取った中身をログに出す（動作確認用）"
+        type: boolean
+        default: true
+      notify_all:
+        description: "今の空きを（通知済みの分も含めて）全部LINEに送る"
+        type: boolean
+        default: false
+      test_notify:
+        description: "LINEにテスト通知だけ送る"
+        type: boolean
+        default: false
+
+concurrency:
+  group: suita-opas-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install
+      - name: ブラウザを前回の保存から戻す（毎回ダウンロードしない）
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps --only-shell chromium
+
+      - name: 前回の通知記録を復元
+        uses: actions/cache/restore@v4
+        with:
+          path: state-suita-opas
+          key: suita-opas-state-${{ github.run_id }}
+          restore-keys: suita-opas-state-
+
+      - name: 監視実行
+        env:
+          DEBUG: ${{ inputs.debug && '1' || '0' }}
+          FORCE: ${{ github.event_name != 'schedule' && '1' || '0' }}
+          TEST_NOTIFY: ${{ inputs.test_notify && '1' || '0' }}
+          NOTIFY_ALL: ${{ inputs.notify_all && '1' || '0' }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
+          DEBUG_DIR: debug-suita-opas
+        run: node suita-opas/watch.mjs
+
+      - name: 通知記録を保存
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state-suita-opas
+          key: suita-opas-state-${{ github.run_id }}
+
+      - name: スクショをアップロード
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-screens-suita-opas
+          path: debug-suita-opas/
+          if-no-files-found: ignore
+          retention-days: 3

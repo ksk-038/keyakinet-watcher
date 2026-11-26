@@ -21,7 +21,7 @@
     "includeUnlabeled": true
   },
   "_excludeRoomWords": "同じ部屋の別の使い方（舞台あり・カラオケあり）と、半分だけ・別々に借りる分は外す",
-  "excludeRoomWords": ["和室", "舞台を使用", "舞台有", "カラオケ有り", "半面", "個別"],
+  "excludeRoomWords": ["和室", "舞台を使用", "舞台使用", "舞台有", "カラオケ有り", "半面", "個別"],
   "notifyMarks": ["○", "△"],
   "quietHours": { "from": 1, "to": 6 }
 }
