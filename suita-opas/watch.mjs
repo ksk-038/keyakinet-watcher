@@ -151,6 +151,7 @@ async function scan(browser, dates, G, today) {
       await button(page, '全て選択');
       if (!(await button(page, '次に進む'))) throw new Error('「次に進む」が押せません');
       console.log(`【${path.join(' → ')}】`);
+      let prevEnd = null;
       for (let pageNo = 0; pageNo < 20; pageNo++) {
         const cells = await readTable(page, today);
         if (!cells.length) throw new Error('空き表が読めません');
@@ -168,7 +169,9 @@ async function scan(browser, dates, G, today) {
           const usual = G.dates.has(c.date) && Y.bigEnough(area, c.date, null, BASE);
           open.push({ label: c.label, area, cap: null, date: c.date, time: c.time, usual });
         }
-        if (ds.at(-1) >= last) break;
+        // 予約サイトで見られるいちばん先まで来たら（「次の7日分」を押しても同じ7日が出る）やめる
+        if (ds.at(-1) >= last || ds.at(-1) === prevEnd) break;
+        prevEnd = ds.at(-1);
         if (!(await button(page, '次の7日分'))) break;
       }
     }
@@ -215,6 +218,7 @@ async function main() {
   }
 
   const placed = open.map((s) => ({ ...s, place: s.label }));
+  if (DEBUG) console.log(`見張る日の空き（YANAGIBAの条件をかける前）: ${placed.length}コマ ${placed.slice(0, 15).map((s) => `${L.label(s.date)} ${s.label} ${s.time}`).join(' / ')}`);
   await Y.report(G, { site: 'suita-opas', ward: NAME, url: TOP, stateDir: STATE_DIR }, placed);
   open = placed.filter((s) => Y.lineOk(s, G, NAME, placed));
   const key = (s) => `${s.date}|${s.label}|${s.time}`;
