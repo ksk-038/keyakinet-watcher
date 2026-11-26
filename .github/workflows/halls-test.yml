@@ -18,6 +18,8 @@ jobs:
       - run: npx playwright install --with-deps --only-shell chromium
       - run: node tools/probe-halls.mjs
         continue-on-error: true
+        env:
+          YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
       - run: node halls/watch.mjs
         env:
           DEBUG: "1"
