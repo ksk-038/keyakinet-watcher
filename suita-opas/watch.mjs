@@ -166,7 +166,8 @@ async function scan(browser, dates, G, today) {
           if (seen.has(k)) continue;
           seen.add(k);
           const area = areaOf(c.label);
-          const usual = G.dates.has(c.date) && Y.bigEnough(area, c.date, null, BASE);
+          // 広さがわからない部屋（体育館の部屋はほとんど広さが書いていない）も、まだ取れていない日の候補に出す
+          const usual = G.dates.has(c.date) && (area == null || Y.bigEnough(area, c.date, null, BASE));
           open.push({ label: c.label, area, cap: null, date: c.date, time: c.time, usual });
         }
         // 予約サイトで見られるいちばん先まで来たら（「次の7日分」を押しても同じ7日が出る）やめる
