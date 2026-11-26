@@ -627,6 +627,10 @@ async function readStagia(hall, dates) {
     p.on('dialog', (d) => d.accept().catch(() => {}));
     const nav = async (fn) => { await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 40000 }).catch(() => {}), fn()]); await p.waitForTimeout(600); };
     const pick = async (sel, label, fn) => {
+      // 画面の表示が遅いことがあるので、選択肢が出るまで待つ
+      await p.waitForSelector(sel, { timeout: 30000 }).catch(async () => {
+        throw new Error(`画面に選択肢が出ません（${(await p.evaluate(() => document.body.innerText).catch(() => '')).replace(/\s+/g, ' ').slice(0, 80)}）`);
+      });
       const v = await p.evaluate(([s, l]) => [...document.querySelector(s).options].find((o) => new RegExp(l).test(o.text.trim()))?.value, [sel, label]);
       if (v == null) throw new Error(`「${label}」が選べません`);
       await p.selectOption(sel, v);
@@ -710,6 +714,11 @@ async function main() {
   const errors = [];
   for (const hall of config.halls) {
     console.log(`▶ ${hall.city} ${hall.name}`);
+    const jstHour = (new Date().getUTCHours() + 9) % 24;
+    if (hall.openFrom != null && jstHour < hall.openFrom) {
+      console.log(`  予約システムの受付時間前（${hall.openFrom}時〜）なので今回は見ない`);
+      continue;
+    }
     try {
       // 画面の切り替わりなどでたまに失敗するので、1回だけやり直す
       const res = await READERS[hall.platform](hall, dates).catch(async (e) => {
