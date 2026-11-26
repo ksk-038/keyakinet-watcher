@@ -1,0 +1,27 @@
+{
+  "_説明": "吹田市（公共施設予約・照会システム）用。板橋区・門真市と同じ仕組みのサイト。利用目的ではなく部屋の種類で分かれているので、ホールと大きめの会議室（大会議室・集会室・練習室・多目的など）だけを見張る。ここを書き換えると見張る条件が変わります",
+  "top": "https://suita-shisetsuyoyaku.growone.net/eshisetsu/menu/Welcome.cgi",
+  "watch": {
+    "weekdays": [],
+    "monthsAhead": 2,
+    "dates": [],
+    "excludeDates": []
+  },
+  "searches": [
+    { "category": "ホール", "genre": "ホール（１５０名以上）" },
+    { "category": "ホール", "genre": "ホール（１４９名以下）" },
+    {
+      "category": "会議室・和室", "genre": "会議室・和室（２０名以上）",
+      "_only": "この検索は部屋が多い（小さい会議室もふくむ）ので、名前にこの言葉がある部屋だけ見張る",
+      "only": ["大会議室", "大広間", "集会室", "練習室", "多目的", "同時", "全面", "2室", "マルチホール"]
+    }
+  ],
+  "roomFilter": {
+    "minArea": 120,
+    "includeUnlabeled": true
+  },
+  "_excludeRoomWords": "同じ部屋の別の使い方（舞台あり・カラオケあり）と、半分だけ・別々に借りる分は外す",
+  "excludeRoomWords": ["和室", "舞台を使用", "舞台有", "カラオケ有り", "半面", "個別"],
+  "notifyMarks": ["○", "△"],
+  "quietHours": { "from": 1, "to": 6 }
+}

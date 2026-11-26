@@ -327,7 +327,7 @@ export function lineOk(s, G, ward, all = null) {
 //   ただし6時間に1回は、変わっていなくても送る（「調べた時刻」を新しくするため）
 // シートで「使える」にしている部屋だけを残す（slots をその場で減らす。このあとの LINE の判定も同じ配列を使うため）
 //   シートにない部屋も外す（ログに出すので、シートに足す）。SHEET_ONLY が '0' のときは外さず、ログに出すだけ
-const OSAKA_WARDS = ['大阪市', '寝屋川市', '守口市', '門真市', '堺市'];
+const OSAKA_WARDS = ['大阪市', '寝屋川市', '守口市', '門真市', '堺市', '吹田市'];
 export async function sheetOnly(ward, slots) {
   if (!slots?.length) return;
   const st = await roomStatusFor(ward);
