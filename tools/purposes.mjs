@@ -119,11 +119,79 @@ async function pf489(base) {
   }
 }
 
+// ---------- 吹田市（下調べ）：トップ画面の中身を出す ----------
+async function dumpTop(page, url) {
+  try {
+    const r = await page.goto(url, { waitUntil: 'load', timeout: 60000 });
+    console.log(`=== ${url} → ${r?.status()} ${page.url()}`);
+    const t = await page.evaluate(() => ({
+      text: document.body.innerText.replace(/\s+/g, ' ').slice(0, 1500),
+      imgs: [...document.querySelectorAll('img[alt]')].map((i) => i.alt).filter(Boolean).slice(0, 40),
+      links: [...document.querySelectorAll('a')].map((a) => `${a.innerText.trim()}=>${a.getAttribute('href')}`).filter((x) => x.length < 160).slice(0, 60),
+    }));
+    console.log(`文字: ${t.text}\n画像: ${t.imgs.join(' / ')}\nリンク: ${t.links.join(' | ')}`);
+    return true;
+  } catch (e) { console.log(`=== ${url} 開けず: ${e.message.slice(0, 120)}`); return false; }
+}
+
+// ---------- オーパス（吹田市など）：利用目的の一覧と、ダンス・体操系で出てくる部屋 ----------
+async function opasStyle(tops) {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  const page = await (await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo' })).newPage();
+  page.on('dialog', (d) => d.accept().catch(() => {}));
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  let top = null;
+  for (const u of tops) if (await dumpTop(page, u) && (await page.locator('img[alt*="空き状況照会"]').count())) { top = u; break; }
+  if (!top) { console.log('オーパスの入口が見つかりません'); await browser.close(); return; }
+  const rows = () => page.evaluate(() => [...document.querySelectorAll('#mmaincolumn tr[onclick]')].map((t) => t.innerText.replace(/\s+/g, ' ').trim()).filter(Boolean));
+  const click = async (sel) => { await page.locator(sel).first().click(); await page.waitForLoadState('domcontentloaded').catch(() => {}); await sleep(1500); };
+  const pick = async (text) => { const ok = await page.evaluate((p) => { const tr = [...document.querySelectorAll('#mmaincolumn tr[onclick]')].find((t) => t.innerText.replace(/\s+/g, ' ').trim() === p); if (tr) tr.click(); return !!tr; }, text); await page.waitForLoadState('domcontentloaded').catch(() => {}); await sleep(1500); return ok; };
+  const toMenu = async () => {
+    await page.goto(top, { waitUntil: 'domcontentloaded', timeout: 60000 }); await sleep(1500);
+    await click('img[alt*="空き状況照会"]');
+    await page.locator('#mmaincolumn tr[onclick]:has-text("利用目的から絞り込む")').first().click();
+    await page.waitForLoadState('domcontentloaded').catch(() => {}); await sleep(1500);
+  };
+  await toMenu();
+  const cats = await rows();
+  console.log(`利用目的（大）: ${cats.join(' / ')}`);
+  const WANT = /ダンス|体操|エクササイズ|ヨガ|バレエ|舞踊|エアロ|フィットネス|レクリエーション|多目的|軽運動|体育|トレーニング/;
+  for (const c of cats) {
+    try {
+      await toMenu();
+      if (!(await pick(c))) continue;
+      const subs = (await rows()).filter((x) => !cats.includes(x));
+      console.log(`【${c}】${subs.join(' / ')}`);
+      for (const g of subs.filter((x) => WANT.test(x) || WANT.test(c))) {
+        await toMenu(); await pick(c);
+        if (!(await pick(g))) continue;
+        const names = await page.evaluate(() => [...document.querySelectorAll('#mmaincolumn tr')].map((t) => t.innerText.replace(/\s+/g, ' ').trim()).filter((t) => t && t.length < 80));
+        console.log(`  ${c} → ${g}: ${names.slice(0, 40).join(' / ')}`);
+        for (const n of names) add(n, `${c} → ${g}`);
+      }
+    } catch (e) { console.log(`  ${c}: 開けず ${e.message.slice(0, 100)}`); }
+  }
+  await browser.close();
+}
+
+const SUITA = 'https://suita-shisetsuyoyaku.growone.net/eshisetsu/menu/Welcome.cgi';
+async function suitaTop() {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  const page = await (await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo' })).newPage();
+  for (const u of [SUITA, 'https://suita-shisetsuyoyaku.growone.net/eshisetsu/']) await dumpTop(page, u);
+  await browser.close();
+}
+
 const SITES = {
   itabashi: () => itaStyle('https://www.itabashi-shisetsu-yoyaku.jp/eshisetsu/menu/Welcome.cgi'),
   kadoma: () => itaStyle('https://shisetsu-yoyaku.jp/kadoma/menu/Welcome.cgi'),
   moriguchi: () => pf489('https://www4.pf489.com/moriguchi/mobile/'),
   neyagawa: () => pf489('https://www4.pf489.com/Neyagawa/mobile/'),
+  // 吹田市：公共施設予約・照会システム（板橋区と同じ仕組みか確かめる）と、スポーツ施設のオーパス
+  suita: async () => { await suitaTop(); await itaStyle(SUITA); },
+  'suita-opas': () => opasStyle(['https://reserve.opas.jp/suita/Welcome.cgi', 'https://reserve.opas.jp/suita/Welcom.cgi', 'https://www.opas.jp/suita/', 'https://www.opas.jp/']),
 };
 if (!SITES[which]) { console.log(`使い方: node tools/purposes.mjs ${Object.keys(SITES).join('|')}`); process.exit(1); }
 try { await SITES[which](); } finally { await save(); }
