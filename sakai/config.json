@@ -1,0 +1,8 @@
+{
+  "_説明": "堺市（スポーツ施設情報システム オーパス）用。利用目的「ダンス」で出てくる体育館の部屋だけを見張る。ここを書き換えると見張る条件が変わります",
+  "top": "https://reserve.opas.jp/sakai/Welcome.cgi",
+  "watch": { "weekdays": [], "monthsAhead": 3, "dates": [], "excludeDates": [] },
+  "purpose": ["ダンス・エクササイズ", "ダンス"],
+  "slots": ["午前", "午後Ａ", "午後Ｂ", "夜間"],
+  "quietHours": { "from": 1, "to": 6 }
+}

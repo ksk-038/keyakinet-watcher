@@ -65,7 +65,8 @@ export async function load(watch, today, ward) {
     if (far > end) console.log(`先着予約が始まっている ${L.label(far)} まで見ます（${L.label(end)} より先は、先着が始まっている施設だけ）`);
     const forBase = (team, base) => {
       const rs = rules.filter((r) => r.team === team && nf(r.ward) === nf(ward));
-      if (!rs.length) return !base || /東京/.test(base);
+      // きまりがない区・市は、大阪の市なら大阪の練習、それ以外は東京の練習
+      if (!rs.length) return OSAKA_WARDS.includes(ward) ? base === '大阪' : !base || /東京/.test(base);
       return rs.some((r) => !r.base || !base || r.base === base);
     };
     const gaps = list.flatMap((x) =>
@@ -224,7 +225,9 @@ export function match(slots, G, ward) {
       if (p.date !== g.date || hidden(G, g.team, ward, p.place, p.date)) continue;
       // まだ取れていない日は、いつもの条件の部屋だけ。空き検索は、その広さの部屋だけ
       if (g.search ? !inRange(p.area ?? null, g, p.cap ?? null) : p.usual === false) continue;
-      if (!g.search && tooBig(p.area ?? null, g.date, g.base)) continue;
+      // 広さがわかる部屋は、拠点と曜日の広さの条件（東京：平日100〜200㎡・土日祝150㎡以上／大阪：平日70〜200㎡・土日祝90㎡以上）に合うものだけ
+      //   （見張りごとの「いつもの条件」は予約サイトの広さで決めているので、シートの広さに直したあとで、ここでもう一度確かめる）
+      if (!g.search && p.area != null && !bigEnough(p.area, g.date, p.cap ?? null, g.base)) continue;
       const rs = p.times.map(range).filter(Boolean).sort((a, b) => a[0] - b[0]);
       const merged = [];
       for (const r of rs) {
@@ -324,7 +327,7 @@ export function lineOk(s, G, ward, all = null) {
 //   ただし6時間に1回は、変わっていなくても送る（「調べた時刻」を新しくするため）
 // シートで「使える」にしている部屋だけを残す（slots をその場で減らす。このあとの LINE の判定も同じ配列を使うため）
 //   シートにない部屋も外す（ログに出すので、シートに足す）。SHEET_ONLY が '0' のときは外さず、ログに出すだけ
-const OSAKA_WARDS = ['大阪市', '寝屋川市', '守口市', '門真市'];
+const OSAKA_WARDS = ['大阪市', '寝屋川市', '守口市', '門真市', '堺市'];
 export async function sheetOnly(ward, slots) {
   if (!slots?.length) return;
   const st = await roomStatusFor(ward);
