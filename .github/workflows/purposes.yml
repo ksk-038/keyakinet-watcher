@@ -49,4 +49,4 @@ jobs:
         if: ${{ !startsWith(inputs.site, 'http') }}
         env:
           YANAGIBA_SECRET: ${{ secrets.YANAGIBA_SECRET }}
-        run: if [ "${{ inputs.site }}" = suita-detail ]; then node tools/suita-detail.mjs; else node tools/purposes.mjs ${{ inputs.site }}; fi
+        run: if [ "${{ inputs.site }}" = suita-detail ]; then node tools/suita-detail.mjs; elif [ "${{ inputs.site }}" = capcheck ]; then node tools/capcheck.mjs; else node tools/purposes.mjs ${{ inputs.site }}; fi

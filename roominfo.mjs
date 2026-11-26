@@ -71,6 +71,9 @@ export function parseCsv(text) {
   return rows;
 }
 
+/** 定員の欄から人数を読む（「120」「約120名」「120人程度」など。「観覧席267」のような別の数字は読まない） */
+export const capOf = (x) => { const m = String(x || '').normalize('NFKC').trim().match(/^(?:約|最大)?\s*([\d,]+)\s*(?:名|人)?\s*(?:程度|まで|位|くらい)?(?:[（(].*)?$/); return m ? Number(m[1].replace(/,/g, '')) || null : null; };
+
 const cache = new Map();
 /** その区の部屋の表（読めなければ null） */
 async function load(ward) {
@@ -88,7 +91,7 @@ async function load(ward) {
     // A No・B 施設名・C 部屋名・D 利用目的・E 広さ・F 鏡有無・G 鏡の仕様・H 利用費・I 定員・J メモ
     list = parseCsv(text)
       .filter((r) => r[1] && r[1] !== '施設名')
-      .map((r) => ({ fac: r[1], room: r[2] || '', ng: /^\s*利用不可/.test(r[9] || ''), area: Number(String(r[4] || '').replace(/,/g, '')) || null, mirror: (r[5] || '').trim(), spec: (r[6] || '').trim(), fee: (r[7] || '').trim() }));
+      .map((r) => ({ fac: r[1], room: r[2] || '', ng: /^\s*利用不可/.test(r[9] || ''), area: Number(String(r[4] || '').replace(/,/g, '')) || null, mirror: (r[5] || '').trim(), spec: (r[6] || '').trim(), fee: (r[7] || '').trim(), cap: capOf(r[8]), capRaw: (r[8] || '').trim() }));
     console.log(`部屋の表（${ward}）: ${list.length}部屋`);
   } catch (e) {
     console.warn(`⚠ 部屋の表（${ward}）が読めません: ${e.message}`);
@@ -97,7 +100,7 @@ async function load(ward) {
   return list;
 }
 
-/** 「施設 部屋」に合う行を探して { area, mirror, mirror_note, fee } を返す（見つからなければ null）。area は広さ（㎡・わからなければ null）
+/** 「施設 部屋」に合う行を探して { area, mirror, mirror_note, fee, cap } を返す（cap は定員）（見つからなければ null）。area は広さ（㎡・わからなければ null）
  *  いくつも当たったとき（「小練習室」がシートでは小練習室10〜26 など）は、使える部屋の中で同じ値のものだけ返す */
 export async function roomInfoFor(ward) {
   const list = await load(ward);
@@ -116,8 +119,9 @@ export async function roomInfoFor(ward) {
     const f = same(rows, (r) => r.fee);
     const fee = f && f !== '-' ? f : null;
     const area = same(rows, (r) => r.area);
-    if (!area && !mirror && !note && !fee) return null;
-    return { area, mirror, mirror_note: note, fee };
+    const cap = same(rows, (r) => r.cap);
+    if (!area && !mirror && !note && !fee && !cap) return null;
+    return { area, mirror, mirror_note: note, fee, cap };
   };
 }
 
@@ -141,3 +145,7 @@ export async function unseenFor(ward, places, minArea = 0) {
   const seen = new Set(places.flatMap((p) => find(p)));
   return list.filter((r) => !r.ng && !seen.has(r) && (r.area == null || r.area >= minArea)).map((r) => `${r.fac} ${r.room}${r.area ? `（${r.area}㎡）` : ''}`);
 }
+
+/** 確かめ用：その区・市の部屋の表をそのまま返す */
+export const sheetRows = (ward) => load(ward);
+export const sheetWards = Object.keys(TABS);

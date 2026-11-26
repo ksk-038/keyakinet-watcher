@@ -354,7 +354,8 @@ export async function report(G, { site, ward, url, stateDir = null }, slots) {
   // 部屋の広さ・鏡・利用費（スプレッドシートから。見つからない部屋はつけない）
   //   広さはシートの広さを優先する（シートにないときは予約サイトの広さ）。広さの条件にもかける
   const info = slots.length ? await roomInfoFor(ward) : () => null;
-  const sized = slots.map((s) => (info(s.place)?.area ? { ...s, area: info(s.place).area } : s));
+  //   定員は予約サイトに出ていればそれを、なければシートの定員を使う（広さがわからない部屋の目安に）
+  const sized = slots.map((s) => { const x = info(s.place); if (!x) return s; return { ...s, ...(x.area ? { area: x.area } : {}), ...(s.cap == null && x.cap ? { cap: x.cap } : {}) }; });
   const rows = match(sized, G, ward);
   const extra = (place) => { const x = info(place); return x ? { mirror: x.mirror, mirror_note: x.mirror_note, fee: x.fee } : {}; };
   for (const team of G.teams) {
