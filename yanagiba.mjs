@@ -14,14 +14,32 @@ const URL = 'https://jskulzunyckseeokgzax.supabase.co';
 const KEY = 'sb_publishable_ntwO028pVspqA_RiGkYhXg_8Y4d0D9U';
 const SECRET = process.env.YANAGIBA_SECRET;
 
+// YANAGIBA の「容量・通信量」に出すため、受け取った量を窓口ごとに数えておき、1回の監視の終わりにまとめて送る
+const got = new Map();
+let flushing = false;
+process.once('beforeExit', async () => {
+  if (flushing || !SECRET || !got.size) return;
+  flushing = true;
+  try {
+    await fetch(`${URL}/rest/v1/rpc/watch_track_bytes`, {
+      method: 'POST',
+      headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ p_secret: SECRET, p_rows: [...got].map(([fn, v]) => ({ fn, b: v.b, n: v.n })) }),
+    });
+  } catch { /* 記録できなくても監視には影響させない */ }
+});
+
 export async function rpc(fn, body) {
   const r = await fetch(`${URL}/rest/v1/rpc/${fn}`, {
     method: 'POST',
     headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ p_secret: SECRET, ...body }),
   });
-  if (!r.ok) throw new Error(`YANAGIBA ${fn} ${r.status}: ${(await r.text()).slice(0, 200)}`);
-  return r.json();
+  const t = await r.text();
+  const cur = got.get(fn) || { b: 0, n: 0 };
+  got.set(fn, { b: cur.b + Buffer.byteLength(t) + 300, n: cur.n + 1 });
+  if (!r.ok) throw new Error(`YANAGIBA ${fn} ${r.status}: ${t.slice(0, 200)}`);
+  return JSON.parse(t);
 }
 
 // 土日祝か
