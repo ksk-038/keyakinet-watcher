@@ -1,0 +1,8 @@
+{
+  "_説明": "足立区（p-kashikan）用の一時的な監視。dates の日の、YANAGIBA の空き検索（同じ日のもの）の時間・広さで探す。いらなくなったら dates を空にする",
+  "base": "https://k5.p-kashikan.jp/adachi-ku/",
+  "dates": ["2026-12-12"],
+  "excludeRoomWords": ["料理", "調理", "工芸", "陶芸", "美術", "印刷", "授乳", "相談", "応接", "倉庫", "図書"],
+  "notifyMarks": ["○"],
+  "quietHours": { "from": 1, "to": 6 }
+}
