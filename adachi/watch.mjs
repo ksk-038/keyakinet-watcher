@@ -76,8 +76,8 @@ export function parseDay(html) {
   return rows;
 }
 
-// 部屋名の「（180名）」から定員
-const capOf = (room) => { const m = L.norm(room).match(/(\d+)名/); return m ? Number(m[1]) : null; };
+// 部屋名の「(90人)」「（180名）」から定員
+const capOf = (room) => { const m = L.norm(room).match(/(\d+)[人名]/); return m ? Number(m[1]) : null; };
 
 async function scan(dates) {
   // 施設の一覧
